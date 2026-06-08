@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 5.1%;
+    --foreground: 0 0% 93%;
+    --card: 0 0% 10.2%;
+    --card-foreground: 0 0% 93%;
+    --popover: 0 0% 10.2%;
+    --popover-foreground: 0 0% 93%;
+    --primary: 38 92% 50%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 93%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 93%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 38 92% 50%;
+    --chart-1: 38 92% 50%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --radius: 0.75rem;
+    --font-heading: 'Inter', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-display: 'Inter', system-ui, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 80%;
+    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 93%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 38 92% 50%;
+    --size: 20px;
+  }
+
+  .dark {
+    --background: 0 0% 5.1%;
+    --foreground: 0 0% 93%;
+    --card: 0 0% 10.2%;
+    --card-foreground: 0 0% 93%;
+    --popover: 0 0% 10.2%;
+    --popover-foreground: 0 0% 93%;
+    --primary: 38 92% 50%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 93%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 93%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 38 92% 50%;
+    --chart-1: 38 92% 50%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 80%;
+    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 93%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 38 92% 50%;
+    --size: 20px;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    overflow-x: hidden;
+  }
+}
+
+/* Background animé - pattern CodePen adapté */
+.animated-background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.6;
+
+  background: conic-gradient(
+    from 180deg at 50% 70%,
+    hsla(0, 0%, 98%, 1) 0deg,
+    #eec32d 72deg,
+    #ec4b4b 144deg,
+    #e7b616 216deg,
+    #f69c1e 288deg,
+    hsla(0, 0%, 98%, 1) 1turn
+  );
+
+  -webkit-mask:
+    radial-gradient(circle at 50% 50%, rgb(226, 149, 7) 2px, transparent 2.5px)
+      50% 50% / var(--size) var(--size),
+    url("https://assets.codepen.io/605876/noise-mask.png")
+      256px 50% / 256px 256px;
+
+  mask:
+    radial-gradient(circle at 50% 50%, rgb(240, 188, 15) 2px, transparent 2.5px)
+      50% 50% / var(--size) var(--size),
+    url("https://assets.codepen.io/605876/noise-mask.png")
+      256px 50% / 256px 256px;
+
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+
+  animation: flicker 60s infinite linear;
+}
+
+@keyframes flicker {
+  to {
+    -webkit-mask-position: 50% 50%, 0 50%;
+    mask-position: 50% 50%, 0 50%;
+  }
+}

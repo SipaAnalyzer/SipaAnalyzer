@@ -1,0 +1,95 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+export default function EditProperty() {
+  const { propertyId } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { data: property, isLoading } = useQuery({
+    queryKey: ['property', propertyId],
+    queryFn: () => base44.entities.Property.get(propertyId),
+  });
+
+  const [form, setForm] = useState({});
+
+  useEffect(() => {
+    if (property) setForm({
+      nom_bien: property.nom_bien || '', adresse: property.adresse || '', ville: property.ville || '',
+      canton: property.canton || '', pays: property.pays || 'Suisse',
+      annee_construction: property.annee_construction || '', surface: property.surface || '',
+      nombre_logements: property.nombre_logements || '', statut: property.statut || 'brouillon',
+      lien_annonce: property.lien_annonce || '', latitude: property.latitude || '', longitude: property.longitude || '',
+    });
+  }, [property]);
+
+  const set = (key) => (e) => setForm(prev => ({ ...prev, [key]: typeof e === 'string' ? e : e.target.value }));
+
+  const update = useMutation({
+    mutationFn: () => base44.entities.Property.update(propertyId, {
+      ...form,
+      annee_construction: form.annee_construction ? parseInt(form.annee_construction) : undefined,
+      surface: form.surface ? parseFloat(form.surface) : undefined,
+      nombre_logements: form.nombre_logements ? parseInt(form.nombre_logements) : undefined,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      toast.success('Bien mis à jour');
+      navigate(`/property/${propertyId}`);
+    },
+  });
+
+  if (isLoading) return <div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+
+  return (
+    <div className="p-4 md:p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="h-4 w-4" /></Button>
+        <div>
+          <h1 className="font-display text-2xl font-bold">Modifier le bien</h1>
+          <p className="text-sm text-muted-foreground">Mettez à jour les informations</p>
+        </div>
+      </div>
+      <div className="bg-card rounded-xl border border-border p-6 space-y-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2"><Label className="text-xs text-muted-foreground mb-1.5 block">Nom du bien *</Label><Input value={form.nom_bien || ''} onChange={set('nom_bien')} className="bg-background border-border" /></div>
+          <div className="sm:col-span-2"><Label className="text-xs text-muted-foreground mb-1.5 block">Adresse</Label><Input value={form.adresse || ''} onChange={set('adresse')} className="bg-background border-border" /></div>
+          <div><Label className="text-xs text-muted-foreground mb-1.5 block">Ville *</Label><Input value={form.ville || ''} onChange={set('ville')} className="bg-background border-border" /></div>
+          <div><Label className="text-xs text-muted-foreground mb-1.5 block">Canton</Label><Input value={form.canton || ''} onChange={set('canton')} className="bg-background border-border" /></div>
+          <div><Label className="text-xs text-muted-foreground mb-1.5 block">Pays</Label><Input value={form.pays || ''} onChange={set('pays')} className="bg-background border-border" /></div>
+          <div><Label className="text-xs text-muted-foreground mb-1.5 block">Année de construction</Label><Input type="number" value={form.annee_construction || ''} onChange={set('annee_construction')} className="bg-background border-border" /></div>
+          <div><Label className="text-xs text-muted-foreground mb-1.5 block">Surface (m²)</Label><Input type="number" value={form.surface || ''} onChange={set('surface')} className="bg-background border-border" /></div>
+          <div><Label className="text-xs text-muted-foreground mb-1.5 block">Nombre de logements</Label><Input type="number" value={form.nombre_logements || ''} onChange={set('nombre_logements')} className="bg-background border-border" /></div>
+          <div className="sm:col-span-2"><Label className="text-xs text-muted-foreground mb-1.5 block">Lien de l'annonce</Label><Input value={form.lien_annonce || ''} onChange={set('lien_annonce')} placeholder="https://..." className="bg-background border-border" /></div>
+          <div><Label className="text-xs text-muted-foreground mb-1.5 block">Latitude (GPS)</Label><Input type="number" value={form.latitude || ''} onChange={set('latitude')} placeholder="46.5197" className="bg-background border-border" /></div>
+          <div><Label className="text-xs text-muted-foreground mb-1.5 block">Longitude (GPS)</Label><Input type="number" value={form.longitude || ''} onChange={set('longitude')} placeholder="6.6323" className="bg-background border-border" /></div>
+          <div><Label className="text-xs text-muted-foreground mb-1.5 block">Statut</Label>
+            <Select value={form.statut || 'brouillon'} onValueChange={set('statut')}>
+              <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="brouillon">Brouillon</SelectItem>
+                <SelectItem value="en_cours">En cours</SelectItem>
+                <SelectItem value="valide">Validé</SelectItem>
+                <SelectItem value="abandonne">Abandonné</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex justify-end pt-2">
+          <Button onClick={() => update.mutate()} disabled={!form.nom_bien || !form.ville || update.isPending} className="gap-2">
+            <Save className="h-4 w-4" /> {update.isPending ? 'Enregistrement...' : 'Enregistrer'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
