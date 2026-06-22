@@ -13,6 +13,8 @@ import {
   Loader2,
   UserPlus,
   Trash2,
+  Link2,
+  Copy,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -26,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Select as SelectRole, SelectContent as SelectRoleContent, SelectItem as SelectRoleItem, SelectTrigger as SelectRoleTrigger, SelectValue as SelectRoleValue } from '@/components/ui/select';
 import moment from 'moment';
 
 const LOG_LABELS = {
@@ -383,6 +386,8 @@ export default function Admin() {
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
+  const [inviteRole, setInviteRole] = useState('membre');
+  const [inviteLinkCopied, setInviteLinkCopied] = useState(false);
 
   const {
     data: users = [],
@@ -504,6 +509,18 @@ export default function Admin() {
     }
   };
 
+  const handleCopyInviteLink = async () => {
+    const link = `${window.location.origin}/register?role=${inviteRole}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setInviteLinkCopied(true);
+      toast.success(`Lien copié : ${link}`);
+      setTimeout(() => setInviteLinkCopied(false), 3000);
+    } catch {
+      toast.error("Impossible de copier le lien");
+    }
+  };
+
   if (usersLoading || permissionsListLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -553,8 +570,8 @@ export default function Admin() {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          Pour l’instant, l’invitation automatique Supabase n’est pas encore configurée.
-          Le plus simple est de demander à l’utilisateur de créer son compte.
+          Pour l'instant, l'invitation automatique Supabase n'est pas encore configurée.
+          Le plus simple est de demander à l'utilisateur de créer son compte.
           Il apparaîtra ensuite ici, et tu pourras lui attribuer son rôle.
         </p>
 
@@ -578,6 +595,48 @@ export default function Admin() {
             Inviter
           </Button>
         </div>
+      </div>
+
+      <div className="bg-card rounded-xl border border-border p-5 space-y-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Link2 className="h-4 w-4 text-primary" />
+          <h2 className="font-semibold text-sm">
+            Lien d'invitation avec r\u00f4le pr\u00e9-d\u00e9fini
+          </h2>
+        </div>
+
+        <p className="text-sm text-muted-foreground">
+          G\u00e9n\u00e9rez un lien d'inscription qui attribue automatiquement un r\u00f4le \u00e0 l'utilisateur.
+          Copiez le lien et envoyez-le \u00e0 la personne \u00e0 inviter.
+        </p>
+
+        <div className="flex items-end gap-3">
+          <div className="flex-1">
+            <Label className="text-xs text-muted-foreground mb-1.5 block">R\u00f4le \u00e0 attribuer</Label>
+            <SelectRole value={inviteRole} onValueChange={setInviteRole}>
+              <SelectRoleTrigger className="bg-background border-border">
+                <SelectRoleValue />
+              </SelectRoleTrigger>
+              <SelectRoleContent>
+                {Object.entries(ROLE_LABELS).filter(([r]) => r !== 'en_attente').map(([role, label]) => (
+                  <SelectRoleItem key={role} value={role}>{label}</SelectRoleItem>
+                ))}
+              </SelectRoleContent>
+            </SelectRole>
+          </div>
+
+          <Button
+            onClick={handleCopyInviteLink}
+            className="gap-2 shrink-0"
+          >
+            <Copy className="h-4 w-4" />
+            Copier le lien
+          </Button>
+        </div>
+
+        {inviteLinkCopied && (
+          <p className="text-xs text-emerald-400">Lien copi\u00e9 dans le presse-papier</p>
+        )}
       </div>
 
       <div className="space-y-3">

@@ -1,12 +1,64 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Loader2, Lock, Mail, UserPlus } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+
+const ROLE_PRESETS = {
+  admin: {
+    role: "admin",
+    is_admin: true,
+    can_view_properties: true,
+    can_create_property: true,
+    can_edit_property: true,
+    can_delete_property: true,
+    can_create_analysis: true,
+    can_edit_analysis: true,
+    can_delete_analysis: true,
+    can_view_comparator: true,
+    can_view_presentation: true,
+    can_comment: true,
+  },
+  direction: {
+    role: "direction",
+    is_admin: false,
+    can_view_properties: true,
+    can_create_property: true,
+    can_edit_property: true,
+    can_delete_property: true,
+    can_create_analysis: true,
+    can_edit_analysis: true,
+    can_delete_analysis: true,
+    can_view_comparator: true,
+    can_view_presentation: true,
+    can_comment: true,
+  },
+  membre: {
+    role: "membre",
+    is_admin: false,
+    can_view_properties: true,
+    can_create_property: false,
+    can_edit_property: false,
+    can_delete_property: false,
+    can_create_analysis: false,
+    can_edit_analysis: false,
+    can_delete_analysis: false,
+    can_view_comparator: true,
+    can_view_presentation: true,
+    can_comment: false,
+  },
+};
+
+const ROLE_LABELS = {
+  admin: "Admin",
+  direction: "Direction",
+  membre: "Membre",
+};
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -15,6 +67,10 @@ export default function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [accountCreated, setAccountCreated] = useState(false);
+  const [assignedRole, setAssignedRole] = useState("");
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const inviteRole = urlParams.get("role");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -28,10 +84,26 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await base44.auth.register({ email, password });
+      const result = await base44.auth.register({ email, password });
+
+      if (inviteRole && ROLE_PRESETS[inviteRole]) {
+        const userId = result?.user?.id;
+        if (userId) {
+          const preset = ROLE_PRESETS[inviteRole];
+          const { error: permError } = await supabase
+            .from("user_permissions")
+            .upsert({ user_id: userId, ...preset }, { onConflict: "user_id" });
+          if (permError) {
+            console.error("[Register] role assignment error:", permError);
+          } else {
+            setAssignedRole(ROLE_LABELS[inviteRole] || inviteRole);
+          }
+        }
+      }
+
       setAccountCreated(true);
     } catch (err) {
-      setError(err.message || "La création du compte a échoué.");
+      setError(err.message || "La cr\u00e9ation du compte a \u00e9chou\u00e9.");
     } finally {
       setLoading(false);
     }
@@ -45,15 +117,19 @@ export default function Register() {
     return (
       <AuthLayout
         icon={CheckCircle2}
-        title="Compte créé"
-        subtitle="Votre accès doit être validé par un administrateur"
+        title="Compte cr\u00e9\u00e9"
+        subtitle={assignedRole ? "Votre acc\u00e8s est d\u00e9j\u00e0 configur\u00e9" : "Votre acc\u00e8s doit \u00eatre valid\u00e9 par un administrateur"}
       >
         <div className="rounded-lg border border-border bg-background/60 p-4 text-sm text-muted-foreground">
-          Compte créé avec succès. Veuillez contacter votre administrateur afin qu'il vous attribue un rôle, puis rechargez la page.
+          {assignedRole ? (
+            <>Compte cr\u00e9\u00e9 avec succ\u00e8s. Le r\u00f4le <strong>{assignedRole}</strong> vous a \u00e9t\u00e9 attribu\u00e9 automatiquement. Vous pouvez d\u00e8s \u00e0 pr\u00e9sent vous connecter.</>
+          ) : (
+            "Compte cr\u00e9\u00e9 avec succ\u00e8s. Veuillez contacter votre administrateur afin qu'il vous attribue un r\u00f4le, puis rechargez la page."
+          )}
         </div>
 
         <Button className="w-full h-12 font-medium" asChild>
-          <Link to="/login">Aller à la connexion</Link>
+          <Link to="/login">Aller \u00e0 la connexion</Link>
         </Button>
       </AuthLayout>
     );
@@ -62,11 +138,11 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title="Créer un compte"
-      subtitle="Créez votre accès SIPA Analyzer"
+      title="Cr\u00e9er un compte"
+      subtitle="Cr\u00e9ez votre acc\u00e8s SIPA Analyzer"
       footer={
         <>
-          Vous avez déjà un compte ?{" "}
+          Vous avez d\u00e9j\u00e0 un compte ?{" "}
           <Link to="/login" className="text-primary font-medium hover:underline">
             Se connecter
           </Link>
@@ -154,10 +230,10 @@ export default function Register() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Création du compte...
+              Cr\u00e9ation du compte...
             </>
           ) : (
-            "Créer le compte"
+            "Cr\u00e9er le compte"
           )}
         </Button>
       </form>

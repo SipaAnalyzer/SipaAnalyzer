@@ -95,6 +95,16 @@
       "type": "number",
       "title": "Score global"
     },
+    "etat_batiment": {
+      "type": "string",
+      "enum": ["Excellent", "Très bon", "Bon", "Moyen", "Mauvais"],
+      "title": "État du bâtiment"
+    },
+    "emplacement_bien": {
+      "type": "string",
+      "enum": ["Excellent", "Très bon", "Bon", "Moyen", "Mauvais"],
+      "title": "Emplacement du bien"
+    },
     "note": {
       "type": "string",
       "enum": [

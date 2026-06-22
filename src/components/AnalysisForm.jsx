@@ -171,6 +171,9 @@ export default function AnalysisForm({
     banque_b_amortissement_annuel: 0,
     banque_b_evaluation: '',
 
+    etat_batiment: '',
+    emplacement_bien: '',
+
     statut: 'en_cours',
   });
 
@@ -257,6 +260,8 @@ export default function AnalysisForm({
       banque_b_taux_hypothecaire: form.banque_b_taux_hypothecaire,
       banque_b_amortissement_annuel: form.banque_b_amortissement_annuel,
       banque_b_evaluation: form.banque_b_evaluation,
+      etat_batiment: form.etat_batiment || null,
+      emplacement_bien: form.emplacement_bien || null,
       statut: form.statut,
       prix_total: calc.prix_total,
       rendement_brut: calc.rendement_brut,
@@ -313,6 +318,38 @@ export default function AnalysisForm({
                 <SelectItem value="en_cours">En cours</SelectItem>
                 <SelectItem value="valide">Validé</SelectItem>
                 <SelectItem value="abandonne">Abandonné</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">
+              État du bâtiment
+            </Label>
+            <Select value={form.etat_batiment} onValueChange={set('etat_batiment')}>
+              <SelectTrigger className="bg-background border-border">
+                <SelectValue placeholder="Sélectionner..." />
+              </SelectTrigger>
+              <SelectContent>
+                {['Excellent', 'Très bon', 'Bon', 'Moyen', 'Mauvais'].map((v) => (
+                  <SelectItem key={v} value={v}>{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">
+              Emplacement du bien
+            </Label>
+            <Select value={form.emplacement_bien} onValueChange={set('emplacement_bien')}>
+              <SelectTrigger className="bg-background border-border">
+                <SelectValue placeholder="Sélectionner..." />
+              </SelectTrigger>
+              <SelectContent>
+                {['Excellent', 'Très bon', 'Bon', 'Moyen', 'Mauvais'].map((v) => (
+                  <SelectItem key={v} value={v}>{v}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

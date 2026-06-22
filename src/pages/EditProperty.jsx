@@ -35,7 +35,7 @@ export default function EditProperty() {
       canton: property.canton || '', pays: property.pays || 'Suisse',
       annee_construction: property.annee_construction ?? '', surface: property.surface ?? '',
       nombre_logements: property.nombre_logements ?? '', statut: property.statut || 'brouillon',
-      lien_annonce: property.lien_annonce || '', latitude: property.latitude ?? '', longitude: property.longitude ?? '',
+      lien_annonce: property.lien_annonce || '', lien_piece_jointe: property.lien_piece_jointe || '', latitude: property.latitude ?? '', longitude: property.longitude ?? '',
     });
   }, [property]);
 
@@ -85,6 +85,7 @@ export default function EditProperty() {
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Surface (m²)</Label><Input type="number" value={form.surface || ''} onChange={set('surface')} className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Nombre de logements</Label><Input type="number" value={form.nombre_logements || ''} onChange={set('nombre_logements')} className="bg-background border-border" /></div>
           <div className="sm:col-span-2"><Label className="text-xs text-muted-foreground mb-1.5 block">Lien de l'annonce</Label><Input value={form.lien_annonce || ''} onChange={set('lien_annonce')} placeholder="https://..." className="bg-background border-border" /></div>
+          <div className="sm:col-span-2"><Label className="text-xs text-muted-foreground mb-1.5 block">Pièce jointe (PDF, Word, PowerPoint)</Label><Input value={form.lien_piece_jointe || ''} onChange={set('lien_piece_jointe')} placeholder="https://..." className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Latitude (GPS)</Label><Input type="number" value={form.latitude || ''} onChange={set('latitude')} placeholder="46.5197" className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Longitude (GPS)</Label><Input type="number" value={form.longitude || ''} onChange={set('longitude')} placeholder="6.6323" className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Statut</Label>

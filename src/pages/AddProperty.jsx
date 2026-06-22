@@ -15,7 +15,7 @@ export default function AddProperty() {
   const [form, setForm] = useState({
     nom_bien: '', adresse: '', ville: '', canton: '', pays: 'Suisse',
     annee_construction: '', surface: '', nombre_logements: '', statut: 'brouillon',
-    lien_annonce: '', latitude: '', longitude: '',
+    lien_annonce: '', lien_piece_jointe: '', latitude: '', longitude: '',
   });
 
   const set = (key) => (e) => setForm(prev => ({ ...prev, [key]: typeof e === 'string' ? e : e.target.value }));
@@ -80,10 +80,14 @@ export default function AddProperty() {
             <Label className="text-xs text-muted-foreground mb-1.5 block">Nombre de logements</Label>
             <Input type="number" value={form.nombre_logements} onChange={set('nombre_logements')} placeholder="12" className="bg-background border-border" />
           </div>
-          <div className="sm:col-span-2">
-            <Label className="text-xs text-muted-foreground mb-1.5 block">Lien de l'annonce</Label>
-            <Input value={form.lien_annonce} onChange={set('lien_annonce')} placeholder="https://..." className="bg-background border-border" />
-          </div>
+            <div className="sm:col-span-2">
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Lien de l'annonce</Label>
+              <Input value={form.lien_annonce} onChange={set('lien_annonce')} placeholder="https://..." className="bg-background border-border" />
+            </div>
+            <div className="sm:col-span-2">
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Pièce jointe (PDF, Word, PowerPoint)</Label>
+              <Input value={form.lien_piece_jointe} onChange={set('lien_piece_jointe')} placeholder="https://..." className="bg-background border-border" />
+            </div>
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block">Latitude (GPS)</Label>
             <Input type="number" value={form.latitude} onChange={set('latitude')} placeholder="46.5197" className="bg-background border-border" />

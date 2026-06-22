@@ -24,6 +24,7 @@ import {
   Calendar,
   Ruler,
   Home,
+  ExternalLink,
   Loader2,
   Landmark,
 } from 'lucide-react';
@@ -148,6 +149,22 @@ export default function PropertyDetail() {
                 <Home className="h-3.5 w-3.5" />
                 {property.nombre_logements} logements
               </span>
+            )}
+
+            {property.lien_annonce && (
+              <a href={property.lien_annonce} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 text-primary hover:underline">
+                <ExternalLink className="h-3.5 w-3.5" />
+                Annonce
+              </a>
+            )}
+
+            {property.lien_piece_jointe && (
+              <a href={property.lien_piece_jointe} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 text-primary hover:underline">
+                <ExternalLink className="h-3.5 w-3.5" />
+                Pièce jointe
+              </a>
             )}
           </div>
         </div>
@@ -359,8 +376,9 @@ export default function PropertyDetail() {
 
                   {canEditAnalysis && (
                     <Link to={`/edit-analysis/${analysis.id}`}>
-                      <Button size="sm" variant="ghost">
+                      <Button size="sm" variant="outline" className="gap-1.5">
                         <Pencil className="h-3.5 w-3.5" />
+                        Modifier
                       </Button>
                     </Link>
                   )}

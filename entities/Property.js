@@ -43,6 +43,10 @@
       "type": "string",
       "title": "Lien de l'annonce"
     },
+    "lien_piece_jointe": {
+      "type": "string",
+      "title": "Pièce jointe (PDF, Word, PowerPoint)"
+    },
     "latitude": {
       "type": "number",
       "title": "Latitude"
