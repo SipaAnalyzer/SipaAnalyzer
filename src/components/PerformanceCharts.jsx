@@ -92,14 +92,19 @@ export default function PerformanceCharts({ analysis }) {
   const tauxInterets =
     hypotheque > 0 ? (interetsAnnuels / hypotheque) * 100 : 0;
 
-  const fondsPropresSurPrixOriginal = fondsPropres - totalRevenueSipa;
+  const fondsPropresSurPrixOriginal =
+    analysis.fonds_propres_sur_prix_original !== undefined
+      ? safeNumber(analysis.fonds_propres_sur_prix_original)
+      : fondsPropres - totalRevenueSipa;
 
   const sipaRevenus = honorairesTransaction + margeBeneficiaire;
   const sipaRevenueSurFondsLeves =
-    fondsPropres > 0 ? (sipaRevenus / fondsPropres) * 100 : 0;
+    fondsPropresSurPrixOriginal !== 0
+      ? (sipaRevenus / fondsPropresSurPrixOriginal) * 100
+      : 0;
 
   const rendementNetPrixAchat =
-    prixOriginal > 0 ? (revenuNet / prixOriginal) * 100 : 0;
+    prixOriginal > 0 ? (revenusLocatifs / prixOriginal) * 100 : 0;
 
   return (
     <div className="space-y-4">

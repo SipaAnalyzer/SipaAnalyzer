@@ -74,9 +74,8 @@ export function calculateAnalysis(data) {
     revenusLocatifs -
     chargesOperationnelles -
     interets_hypothecaires -
-    commission_broker_hypotheque -
     gestion -
-    amort_autres_charges;
+    autres_couts;
 
   const tauxImpotPct =
     data.taux_impot_pct !== undefined
@@ -120,6 +119,14 @@ export function calculateAnalysis(data) {
     prix_total_investisseur: Math.round(prix_total_investisseur),
     fonds_propres_sur_prix_total: Math.round(fonds_propres_sur_prix_total),
     fonds_propres_sur_prix_original: Math.round(fonds_propres_sur_prix_original),
+    sipa_revenue_sur_fonds_leves: round2(
+      fonds_propres_sur_prix_original !== 0
+        ? ((honoraires_sipa + marge_beneficiaire) / fonds_propres_sur_prix_original) * 100
+        : 0
+    ),
+    rendement_net_prix_achat: round2(
+      prixBien > 0 ? (revenusLocatifs / prixBien) * 100 : 0
+    ),
     prix_total: Math.round(prix_total),
     rendement_brut: round2(rendement_brut),
     revenu_net: Math.round(revenu_net),
