@@ -4,16 +4,16 @@ import { useAuth } from '@/lib/AuthContext';
 
 const DEFAULT_PERMISSIONS = {
   is_admin: false,
-  can_view_properties: true,
+  can_view_properties: false,
   can_create_property: false,
   can_edit_property: false,
   can_delete_property: false,
   can_create_analysis: false,
   can_edit_analysis: false,
   can_delete_analysis: false,
-  can_view_comparator: true,
-  can_view_presentation: true,
-  can_comment: true,
+  can_view_comparator: false,
+  can_view_presentation: false,
+  can_comment: false,
 };
 
 const ADMIN_PERMISSIONS = {
@@ -63,6 +63,7 @@ export function usePermissions() {
       permissions: ADMIN_PERMISSIONS,
       isLoading,
       isAdmin: true,
+      hasAssignedRole: true,
       refetchPermissions: refetch,
     };
   }
@@ -71,6 +72,7 @@ export function usePermissions() {
     permissions: mergedPermissions,
     isLoading,
     isAdmin: false,
+    hasAssignedRole: !!permissions,
     refetchPermissions: refetch,
   };
 }

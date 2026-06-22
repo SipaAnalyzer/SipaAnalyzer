@@ -6,6 +6,7 @@ import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shiel
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import logoSipa from '@/assets/logo-sipa.png';
 
 const navItems = [
@@ -106,7 +107,20 @@ function SidebarContent({ location, user, onNavigate }) {
 export default function Layout() {
   const location = useLocation();
   const { user } = useAuth();
+  const { isLoading, hasAssignedRole } = usePermissions();
   const [open, setOpen] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!hasAssignedRole) {
+    return <UserNotRegisteredError />;
+  }
 
   return (
     <div className="flex h-screen bg-transparent overflow-hidden relative z-10">
