@@ -36,10 +36,12 @@ Netlify:
 
 À vérifier avant livraison:
 - URL du site ajoutée dans Authentication > URL Configuration.
+- Authentication > Providers > Email: désactiver la confirmation email si le flux d'inscription sans email est utilisé.
 - Redirect URLs:
   - `https://ton-domaine.com`
   - `https://ton-domaine.com/reset-password`
 - Les comptes admin existent dans `profiles` / permissions.
+- Aucun rôle ne doit être attribué automatiquement à l'inscription. Un nouvel utilisateur doit rester sans ligne `user_permissions` jusqu'à validation admin.
 - Les règles RLS autorisent les opérations attendues.
 
 ## IA

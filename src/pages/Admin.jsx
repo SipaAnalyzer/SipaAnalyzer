@@ -183,11 +183,11 @@ const PERMISSION_LABELS = [
 function UserPermissionRow({ user, existingPerm, onSave, onDelete }) {
   const [open, setOpen] = useState(false);
   const [perms, setPerms] = useState(() => {
-    const role = existingPerm?.role || (existingPerm?.is_admin ? 'admin' : 'membre');
+    const role = existingPerm?.role || (existingPerm?.is_admin ? 'admin' : null);
 
     return existingPerm
       ? { ...ROLE_PRESETS[role], ...existingPerm, role }
-      : { ...ROLE_PRESETS.membre };
+      : { role: null };
   });
 
   const [saving, setSaving] = useState(false);
@@ -253,7 +253,7 @@ function UserPermissionRow({ user, existingPerm, onSave, onDelete }) {
 
         <div className="flex items-center gap-3">
           <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-            {ROLE_LABELS[perms.role] || 'Membre'}
+            {ROLE_LABELS[perms.role] || 'Aucun rôle'}
           </span>
 
           {open ? (
@@ -345,7 +345,7 @@ function UserPermissionRow({ user, existingPerm, onSave, onDelete }) {
               <Button
                 size="sm"
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || !perms.role}
                 className="gap-2"
               >
                 {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
