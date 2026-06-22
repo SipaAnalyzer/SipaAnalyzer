@@ -41,7 +41,7 @@ Netlify:
   - `https://ton-domaine.com`
   - `https://ton-domaine.com/reset-password`
 - Les comptes admin existent dans `profiles` / permissions.
-- Aucun rôle ne doit être attribué automatiquement à l'inscription. Un nouvel utilisateur doit rester sans ligne `user_permissions` jusqu'à validation admin.
+- Le rôle par défaut accepté à l'inscription est `en_attente`, sans aucune permission. L'admin doit ensuite passer l'utilisateur en `membre`, `direction` ou `admin`.
 - Les règles RLS autorisent les opérations attendues.
 
 ## IA

@@ -54,11 +54,23 @@ export function usePermissions() {
     refetchInterval: 5000,
   });
 
-  const mergedPermissions = permissions
-    ? { ...DEFAULT_PERMISSIONS, ...permissions }
+  const normalizedRole = normalizeRole(permissions?.role);
+  const normalizedPermissions = permissions
+    ? { ...permissions, role: normalizedRole }
+    : null;
+  const isPendingRole = ['en_attente', 'pending', 'aucun', 'none', 'null', ''].includes(
+    normalizedRole
+  );
+
+  const mergedPermissions = normalizedPermissions
+    ? { ...DEFAULT_PERMISSIONS, ...normalizedPermissions }
     : DEFAULT_PERMISSIONS;
 
-  if (mergedPermissions.is_admin === true) {
+  const effectivePermissions = isPendingRole
+    ? { ...DEFAULT_PERMISSIONS, role: normalizedRole || 'en_attente' }
+    : mergedPermissions;
+
+  if (!isPendingRole && effectivePermissions.is_admin === true) {
     return {
       permissions: ADMIN_PERMISSIONS,
       isLoading,
@@ -68,11 +80,24 @@ export function usePermissions() {
     };
   }
 
+  const hasAssignedRole =
+    !!normalizedPermissions &&
+    !isPendingRole;
+
   return {
-    permissions: mergedPermissions,
+    permissions: effectivePermissions,
     isLoading,
     isAdmin: false,
-    hasAssignedRole: !!permissions,
+    hasAssignedRole,
     refetchPermissions: refetch,
   };
+}
+
+function normalizeRole(role) {
+  return String(role || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s-]+/g, '_');
 }

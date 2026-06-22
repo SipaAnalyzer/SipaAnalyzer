@@ -115,6 +115,21 @@ function AuditLogsPanel() {
 }
 
 const ROLE_PRESETS = {
+  en_attente: {
+    role: 'en_attente',
+    is_admin: false,
+    can_view_properties: false,
+    can_create_property: false,
+    can_edit_property: false,
+    can_delete_property: false,
+    can_create_analysis: false,
+    can_edit_analysis: false,
+    can_delete_analysis: false,
+    can_view_comparator: false,
+    can_view_presentation: false,
+    can_comment: false,
+  },
+
   admin: {
     role: 'admin',
     is_admin: true,
@@ -162,6 +177,7 @@ const ROLE_PRESETS = {
 };
 
 const ROLE_LABELS = {
+  en_attente: 'En attente',
   admin: 'Admin',
   direction: 'Direction',
   membre: 'Membre',
@@ -183,11 +199,12 @@ const PERMISSION_LABELS = [
 function UserPermissionRow({ user, existingPerm, onSave, onDelete }) {
   const [open, setOpen] = useState(false);
   const [perms, setPerms] = useState(() => {
-    const role = existingPerm?.role || (existingPerm?.is_admin ? 'admin' : null);
+    const role = normalizeRole(existingPerm?.role || (existingPerm?.is_admin ? 'admin' : 'en_attente'));
+    const preset = ROLE_PRESETS[role] || ROLE_PRESETS.en_attente;
 
     return existingPerm
-      ? { ...ROLE_PRESETS[role], ...existingPerm, role }
-      : { role: null };
+      ? { ...preset, ...existingPerm, role }
+      : { ...ROLE_PRESETS.en_attente };
   });
 
   const [saving, setSaving] = useState(false);
@@ -269,7 +286,7 @@ function UserPermissionRow({ user, existingPerm, onSave, onDelete }) {
           <div className="p-3 bg-secondary/30 rounded-lg space-y-3">
             <Label className="text-sm">Rôle</Label>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
               {Object.entries(ROLE_LABELS).map(([role, label]) => (
                 <Button
                   key={role}
@@ -305,7 +322,7 @@ function UserPermissionRow({ user, existingPerm, onSave, onDelete }) {
                   id={`${user.id}-${key}`}
                   checked={!!perms[key]}
                   onCheckedChange={() => toggle(key)}
-                  disabled={perms.role === 'admin'}
+                  disabled={perms.role === 'admin' || perms.role === 'en_attente'}
                 />
               </div>
             ))}
@@ -402,8 +419,8 @@ export default function Admin() {
   const otherUsers = users.filter((listedUser) => listedUser.id !== user?.id);
 
   const handleSavePermissions = async (userId, newPerms) => {
-    const role = newPerms.role || 'membre';
-    const preset = ROLE_PRESETS[role] || ROLE_PRESETS.membre;
+    const role = newPerms.role || 'en_attente';
+    const preset = ROLE_PRESETS[role] || ROLE_PRESETS.en_attente;
 
     const payload = {
       ...preset,
@@ -595,4 +612,23 @@ export default function Admin() {
       </div>
     </div>
   );
+}
+
+function normalizeRole(role) {
+  const normalized = String(role || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s-]+/g, '_');
+
+  if (!normalized || normalized === 'aucun' || normalized === 'none' || normalized === 'null') {
+    return 'en_attente';
+  }
+
+  if (normalized === 'pending') {
+    return 'en_attente';
+  }
+
+  return normalized;
 }
