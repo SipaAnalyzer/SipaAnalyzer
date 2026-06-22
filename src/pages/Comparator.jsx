@@ -1,21 +1,47 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { Building2, Download, Loader2, Plus, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import ScoreBadge from '../components/ScoreBadge';
 import ScoreGauge from '../components/ScoreGauge';
-import { formatCHF, formatPercent } from '../utils/calculations';
-import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  Radar,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts';
-import { Loader2, X, Plus, Building2 } from 'lucide-react';
+import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
+import { exportComparisonPdf } from '../utils/pdfExports';
 
 const COLORS = ['#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'];
+
+function BenchmarkTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-xl">
+      <p className="text-xs font-medium mb-2">{label}</p>
+      <div className="space-y-1">
+        {payload.map((item) => (
+          <div key={item.dataKey} className="flex items-center justify-between gap-5 text-xs">
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <span className="h-2 w-2 rounded-full" style={{ background: item.color }} />
+              {item.name}
+            </span>
+            <span className="font-mono text-foreground">
+              {item.payload[`${item.dataKey}_formatted`]}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Comparator() {
   const [selectedIds, setSelectedIds] = useState([]);
@@ -49,7 +75,7 @@ export default function Comparator() {
 
       return {
         ...property,
-        analysis: latest || null,
+        analysis: normalizeAnalysis(latest),
       };
     });
   }, [properties, analyses]);
@@ -71,21 +97,27 @@ export default function Comparator() {
     setSelectedIds((current) => current.filter((item) => item !== id));
   };
 
-  const radarData = useMemo(() => {
+  const benchmarkData = useMemo(() => {
     if (selected.length < 2) return [];
 
     const metrics = [
-      { key: 'rendement_brut', label: 'Rdt. Brut' },
-      { key: 'rendement_net_fonds_propres', label: 'Rdt. Net/FP' },
-      { key: 'revenu_distribue_fonds_propres', label: 'Rdt. Dist./FP' },
-      { key: 'score_global', label: 'Score' },
+      { key: 'score_global', label: 'Score', format: (value) => `${Math.round(value)}/100` },
+      { key: 'rendement_brut', label: 'Rdt. brut', format: formatPercent },
+      { key: 'rendement_net_fonds_propres', label: 'Rdt. net/FP', format: formatPercent },
+      { key: 'revenu_distribue_fonds_propres', label: 'Rdt. distribué/FP', format: formatPercent },
+      { key: 'revenu_net', label: 'Revenu net', format: formatCHF },
+      { key: 'revenu_distribue', label: 'Revenu distribué', format: formatCHF },
     ];
 
     return metrics.map((metric) => {
+      const rawValues = selected.map((property) => property.analysis?.[metric.key] || 0);
+      const max = Math.max(...rawValues.map((value) => Math.abs(value)), 1);
       const row = { metric: metric.label };
 
       selected.forEach((property, index) => {
-        row[`bien_${index}`] = property.analysis?.[metric.key] || 0;
+        const rawValue = property.analysis?.[metric.key] || 0;
+        row[`bien_${index}`] = Math.max(0, (rawValue / max) * 100);
+        row[`bien_${index}_formatted`] = metric.format(rawValue);
       });
 
       return row;
@@ -112,9 +144,7 @@ export default function Comparator() {
       <div className="bg-card rounded-xl border border-border p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-heading font-semibold text-sm">
-              Biens sélectionnés
-            </h2>
+            <h2 className="font-heading font-semibold text-sm">Biens sélectionnés</h2>
             <p className="text-xs text-muted-foreground mt-1">
               {selected.length}/4 biens sélectionnés
             </p>
@@ -132,6 +162,20 @@ export default function Comparator() {
           </Button>
         </div>
 
+        {selected.length >= 2 && (
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2"
+              onClick={() => exportComparisonPdf(selected)}
+            >
+              <Download className="h-4 w-4" />
+              Exporter la comparaison
+            </Button>
+          </div>
+        )}
+
         {selected.length > 0 ? (
           <div className="flex flex-wrap items-center gap-3">
             {selected.map((property, index) => (
@@ -139,13 +183,8 @@ export default function Comparator() {
                 key={property.id}
                 className="flex items-center gap-2 bg-background/70 border border-border rounded-lg px-3 py-2"
               >
-                <div
-                  className="h-3 w-3 rounded-full"
-                  style={{ background: COLORS[index] }}
-                />
-                <span className="text-sm font-medium">
-                  {property.nom_bien}
-                </span>
+                <div className="h-3 w-3 rounded-full" style={{ background: COLORS[index] }} />
+                <span className="text-sm font-medium">{property.nom_bien}</span>
                 <button
                   type="button"
                   onClick={() => removeProperty(property.id)}
@@ -165,9 +204,7 @@ export default function Comparator() {
         {showPicker && (
           <div className="border-t border-border pt-4">
             {available.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Aucun bien disponible à ajouter.
-              </p>
+              <p className="text-sm text-muted-foreground">Aucun bien disponible à ajouter.</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {available.map((property) => (
@@ -183,9 +220,7 @@ export default function Comparator() {
                       </div>
 
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {property.nom_bien}
-                        </p>
+                        <p className="text-sm font-medium truncate">{property.nom_bien}</p>
                         <p className="text-xs text-muted-foreground truncate">
                           {property.ville || 'Ville inconnue'}
                         </p>
@@ -222,124 +257,81 @@ export default function Comparator() {
         <>
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-heading font-semibold text-lg mb-1">
-              Comparaison radar
+              Benchmark des indicateurs
             </h3>
 
             <p className="text-sm text-muted-foreground mb-6">
-              Comparaison des performances entre les biens sélectionnés.
+              Vue comparative normalisée: la meilleure valeur de chaque ligne sert de référence à 100.
             </p>
 
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
-              <div className="xl:col-span-3 grid grid-cols-1 gap-4">
-                {selected.slice(0, 2).map((property, index) => (
-                  <div key={property.id}>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div
-                        className="w-4 h-4 rounded-sm"
-                        style={{ backgroundColor: COLORS[index] }}
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-6 items-stretch">
+              <div className="min-h-[420px]">
+                <ResponsiveContainer width="100%" height={420}>
+                  <BarChart data={benchmarkData} layout="vertical" barGap={4} barCategoryGap={18}>
+                    <CartesianGrid stroke="#2A2A2A" horizontal={false} />
+                    <XAxis
+                      type="number"
+                      domain={[0, 100]}
+                      tick={{ fill: '#9CA3AF', fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="metric"
+                      width={132}
+                      tick={{ fill: '#D4D4D8', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip content={<BenchmarkTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: 12, paddingTop: 16 }} />
+                    {selected.map((property, index) => (
+                      <Bar
+                        key={property.id}
+                        name={property.nom_bien}
+                        dataKey={`bien_${index}`}
+                        fill={COLORS[index]}
+                        radius={[0, 5, 5, 0]}
+                        maxBarSize={16}
                       />
-                      <span className="font-semibold text-sm truncate">
-                        {property.nom_bien}
-                      </span>
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+                {selected.map((property, index) => (
+                  <div key={property.id} className="rounded-lg border border-border bg-background/50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[index] }} />
+                          <p className="text-sm font-medium truncate">{property.nom_bien}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {property.ville || 'Ville inconnue'}
+                        </p>
+                      </div>
+                      {property.analysis && <ScoreBadge note={property.analysis.note} />}
                     </div>
 
-                    <div
-                      className="rounded-xl border p-4 bg-background/40"
-                      style={{ borderColor: COLORS[index] }}
-                    >
-                      <p className="text-muted-foreground text-xs mb-1">
-                        Score
-                      </p>
-                      <div className="flex items-end gap-2">
-                        <span
-                          className="text-4xl font-bold"
-                          style={{ color: COLORS[index] }}
-                        >
-                          {Math.round(property.analysis?.score_global || 0)}
-                        </span>
-                        <span className="text-muted-foreground text-lg mb-1">
-                          /100
-                        </span>
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground">Score</p>
+                        <p className="text-lg font-semibold">
+                          {Math.round(property.analysis?.score_global || 0)}/100
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-muted-foreground">Net/FP</p>
+                        <p className="text-lg font-semibold text-primary">
+                          {formatPercent(property.analysis?.rendement_net_fonds_propres || 0)}
+                        </p>
                       </div>
                     </div>
                   </div>
                 ))}
-              </div>
-
-              <div className="xl:col-span-6">
-                <ResponsiveContainer width="100%" height={520}>
-                  <RadarChart data={radarData}>
-                    <PolarGrid stroke="#303030" />
-
-                    <PolarAngleAxis
-                      dataKey="metric"
-                      tick={{
-                        fill: '#B0B0B0',
-                        fontSize: 15,
-                      }}
-                    />
-
-                    <Tooltip
-                      contentStyle={{
-                        background: '#161616',
-                        border: '1px solid #333',
-                        borderRadius: '12px',
-                      }}
-                    />
-
-                    {selected.map((property, index) => (
-                      <Radar
-                        key={property.id}
-                        name={property.nom_bien}
-                        dataKey={`bien_${index}`}
-                        stroke={COLORS[index]}
-                        fill={COLORS[index]}
-                        fillOpacity={0.18}
-                        strokeWidth={3}
-                      />
-                    ))}
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="xl:col-span-3 grid grid-cols-1 gap-4">
-                {selected.slice(2, 4).map((property, relativeIndex) => {
-                  const index = relativeIndex + 2;
-
-                  return (
-                    <div key={property.id}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div
-                          className="w-4 h-4 rounded-sm"
-                          style={{ backgroundColor: COLORS[index] }}
-                        />
-                        <span className="font-semibold text-sm truncate">
-                          {property.nom_bien}
-                        </span>
-                      </div>
-
-                      <div
-                        className="rounded-xl border p-4 bg-background/40"
-                        style={{ borderColor: COLORS[index] }}
-                      >
-                        <p className="text-muted-foreground text-xs mb-1">
-                          Score
-                        </p>
-                        <div className="flex items-end gap-2">
-                          <span
-                            className="text-4xl font-bold"
-                            style={{ color: COLORS[index] }}
-                          >
-                            {Math.round(property.analysis?.score_global || 0)}
-                          </span>
-                          <span className="text-muted-foreground text-lg mb-1">
-                            /100
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
             </div>
           </div>
@@ -355,13 +347,8 @@ export default function Comparator() {
                   {selected.map((property, index) => (
                     <th key={property.id} className="text-right px-5 py-3">
                       <div className="flex items-center justify-end gap-2">
-                        <div
-                          className="h-2.5 w-2.5 rounded-full"
-                          style={{ background: COLORS[index] }}
-                        />
-                        <span className="text-xs font-medium">
-                          {property.nom_bien}
-                        </span>
+                        <div className="h-2.5 w-2.5 rounded-full" style={{ background: COLORS[index] }} />
+                        <span className="text-xs font-medium">{property.nom_bien}</span>
                       </div>
                     </th>
                   ))}
@@ -390,19 +377,11 @@ export default function Comparator() {
                   { label: 'Fonds propres', fn: (a) => (a ? formatCHF(a.fonds_propres) : 'N/A') },
                   { label: 'Hypothèque', fn: (a) => (a ? formatCHF(a.hypotheque) : 'N/A') },
                 ].map((row) => (
-                  <tr
-                    key={row.label}
-                    className="border-b border-border/50 hover:bg-muted/20 transition-colors"
-                  >
-                    <td className="px-5 py-3 text-xs text-muted-foreground">
-                      {row.label}
-                    </td>
+                  <tr key={row.label} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                    <td className="px-5 py-3 text-xs text-muted-foreground">{row.label}</td>
 
                     {selected.map((property) => (
-                      <td
-                        key={property.id}
-                        className="px-5 py-3 text-right font-mono text-xs"
-                      >
+                      <td key={property.id} className="px-5 py-3 text-right font-mono text-xs">
                         {row.fn(property.analysis)}
                       </td>
                     ))}

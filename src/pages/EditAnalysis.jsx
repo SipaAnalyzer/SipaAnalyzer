@@ -1,4 +1,4 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import AnalysisForm from '../components/AnalysisForm';
@@ -20,6 +20,7 @@ export default function EditAnalysis() {
     mutationFn: (data) => base44.entities.Analysis.update(analysisId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['analyses'] });
+      queryClient.invalidateQueries({ queryKey: ['comments', analysis.property_id] });
       toast.success('Analyse mise à jour');
       navigate(`/property/${analysis.property_id}`);
     },

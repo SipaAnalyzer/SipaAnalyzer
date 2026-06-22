@@ -2,14 +2,18 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MessageSquare, Send, Trash2, Pencil } from 'lucide-react';
 import moment from 'moment';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
-export default function CommentSection({ propertyId }) {
+const AUDIT_PREFIX = '__audit__';
+
+export default function CommentSection({ propertyId, initialComments }) {
   const { user } = useAuth();
+  const { isAdmin } = usePermissions();
   const queryClient = useQueryClient();
   const [text, setText] = useState('');
   const [editId, setEditId] = useState(null);
@@ -18,8 +22,10 @@ export default function CommentSection({ propertyId }) {
   const { data: comments = [] } = useQuery({
     queryKey: ['comments', propertyId],
     queryFn: () => base44.entities.Comment.filter({ property_id: propertyId }, '-created_date', 50),
+    initialData: initialComments,
     enabled: !!propertyId,
   });
+  const visibleComments = comments.filter((comment) => !comment.commentaire?.startsWith(AUDIT_PREFIX));
 
   const addComment = useMutation({
     mutationFn: (data) => base44.entities.Comment.create(data),
@@ -38,14 +44,20 @@ export default function CommentSection({ propertyId }) {
 
   const handleSubmit = () => {
     if (!text.trim()) return;
-    addComment.mutate({ property_id: propertyId, commentaire: text, author_name: user?.full_name || 'Anonyme' });
+    const authorName =
+      user?.full_name ||
+      user?.user_metadata?.full_name ||
+      user?.email ||
+      'Anonyme';
+
+    addComment.mutate({ property_id: propertyId, commentaire: text, author_name: authorName });
   };
 
   return (
     <div className="bg-card rounded-xl border border-border">
       <div className="px-5 py-4 border-b border-border flex items-center gap-2">
         <MessageSquare className="h-4 w-4 text-primary" />
-        <h3 className="font-heading font-semibold text-sm">Commentaires ({comments.length})</h3>
+        <h3 className="font-heading font-semibold text-sm">Commentaires ({visibleComments.length})</h3>
       </div>
       <div className="p-5 space-y-4">
         <div className="flex gap-3">
@@ -55,11 +67,11 @@ export default function CommentSection({ propertyId }) {
             <Send className="h-4 w-4" />
           </Button>
         </div>
-        {comments.length === 0 && (
+        {visibleComments.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-4">Aucun commentaire pour le moment</p>
         )}
         <div className="space-y-3">
-          {comments.map(c => (
+          {visibleComments.map(c => (
             <div key={c.id} className="bg-background rounded-lg p-4 border border-border/50">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -69,11 +81,13 @@ export default function CommentSection({ propertyId }) {
                   <span className="text-xs font-medium">{c.author_name || 'Anonyme'}</span>
                   <span className="text-xs text-muted-foreground">{moment(c.created_date).fromNow()}</span>
                 </div>
-                {c.created_by_id === user?.id && (
+                {(c.created_by_id === user?.id || isAdmin) && (
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditId(c.id); setEditText(c.commentaire); }}>
-                      <Pencil className="h-3 w-3" />
-                    </Button>
+                    {c.created_by_id === user?.id && (
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditId(c.id); setEditText(c.commentaire); }}>
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                    )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive"><Trash2 className="h-3 w-3" /></Button>

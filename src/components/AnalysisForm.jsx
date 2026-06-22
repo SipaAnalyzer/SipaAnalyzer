@@ -9,7 +9,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ScoreGauge from './ScoreGauge';
 import ScoreBadge from './ScoreBadge';
-import { Calculator, Save, Building2, Landmark } from 'lucide-react';
+import { BarChart3, Building2, Calculator, DollarSign, Landmark, Percent, Save } from 'lucide-react';
+
+function roundInput(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
+}
 
 function Field({ label, value, onChange, prefix, suffix, readOnly }) {
   return (
@@ -28,7 +32,7 @@ function Field({ label, value, onChange, prefix, suffix, readOnly }) {
         <Input
           type="number"
           value={value ?? ''}
-          onChange={(event) => onChange(parseFloat(event.target.value) || 0)}
+          onChange={(event) => onChange?.(parseFloat(event.target.value) || 0)}
           readOnly={readOnly}
           className={`bg-background border-border ${
             prefix ? 'pl-10' : ''
@@ -109,6 +113,25 @@ function BankScenario({ title, description, color, values, setValue, prefix }) {
   );
 }
 
+function ResultRow({ label, value, highlight }) {
+  return (
+    <div
+      className={`flex items-center justify-between gap-4 rounded-lg px-4 py-3 ${
+        highlight
+          ? 'bg-primary/15 border border-primary/30 text-primary'
+          : 'bg-background/45 text-muted-foreground'
+      }`}
+    >
+      <span className="text-sm font-medium">
+        {label}
+      </span>
+      <span className="text-sm font-mono font-bold text-right text-foreground">
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export default function AnalysisForm({
   initialData,
   initialPropertyId,
@@ -124,21 +147,21 @@ export default function AnalysisForm({
     property_id: initialPropertyId || '',
 
     prix_bien: 0,
-    versement_copropriete: 0,
-    honoraires_sipa: 0,
+    honoraires_transaction_pct: 5,
+    marge_beneficiaire_pct: 15,
 
-    fonds_propres: 0,
-    hypotheque: 0,
+    taux_hypotheque_pct: 75,
+    taux_interet_hypothecaire_pct: 1.61,
+    versement_initial_pct: 2,
     amortization_years: 15,
 
     revenus_locatifs: 0,
-
     charges_operationnelles: 0,
-    interets_hypothecaires: 0,
-    gestion: 0,
-    amortissements: 0,
-    autres_couts: 0,
-    impot: 0,
+    amortissement_5_ans: 0,
+    commission_broker_hypotheque: 0,
+    frais_gestion_pct: 4.25,
+    taux_impot_pct: 13.79,
+    amort_autres_charges_pct: 0,
 
     banque_a_taux_hypothecaire: 0,
     banque_a_amortissement_annuel: 0,
@@ -152,12 +175,44 @@ export default function AnalysisForm({
   });
 
   useEffect(() => {
-    if (initialData) {
-      setForm((previous) => ({
-        ...previous,
-        ...initialData,
-      }));
-    }
+    if (!initialData) return;
+
+    const prixBien = Number(initialData.prix_bien || 0);
+    const revenusLocatifs = Number(initialData.revenus_locatifs || 0);
+    const revenuNet = Number(initialData.revenu_net || 0);
+    const hypotheque = Number(initialData.hypotheque || 0);
+
+    setForm((previous) => ({
+      ...previous,
+      ...initialData,
+      honoraires_transaction_pct:
+        prixBien > 0
+          ? roundInput((Number(initialData.honoraires_sipa || 0) / prixBien) * 100)
+          : previous.honoraires_transaction_pct,
+      marge_beneficiaire_pct:
+        prixBien > 0
+          ? roundInput((Number(initialData.versement_copropriete || 0) / prixBien) * 100)
+          : previous.marge_beneficiaire_pct,
+      taux_hypotheque_pct:
+        prixBien > 0
+          ? roundInput((hypotheque / prixBien) * 100)
+          : previous.taux_hypotheque_pct,
+      taux_interet_hypothecaire_pct:
+        hypotheque > 0
+          ? roundInput((Number(initialData.interets_hypothecaires || 0) / hypotheque) * 100)
+          : previous.taux_interet_hypothecaire_pct,
+      amortissement_5_ans: Number(initialData.amortissements || 0) * 5,
+      commission_broker_hypotheque: Number(initialData.autres_couts || 0),
+      frais_gestion_pct:
+        revenusLocatifs > 0
+          ? roundInput((Number(initialData.gestion || 0) / revenusLocatifs) * 100)
+          : previous.frais_gestion_pct,
+      taux_impot_pct:
+        revenuNet > 0
+          ? roundInput((Number(initialData.impot || 0) / revenuNet) * 100)
+          : previous.taux_impot_pct,
+      amort_autres_charges_pct: 0,
+    }));
   }, [initialData]);
 
   const set = (key) => (value) => {
@@ -182,8 +237,35 @@ export default function AnalysisForm({
 
   const handleSubmit = () => {
     onSubmit({
-      ...form,
-      ...calc,
+      property_id: form.property_id,
+      prix_bien: form.prix_bien,
+      versement_copropriete: calc.versement_copropriete,
+      honoraires_sipa: calc.honoraires_sipa,
+      fonds_propres: calc.fonds_propres,
+      hypotheque: calc.hypotheque,
+      amortization_years: form.amortization_years,
+      revenus_locatifs: form.revenus_locatifs,
+      charges_operationnelles: form.charges_operationnelles,
+      interets_hypothecaires: calc.interets_hypothecaires,
+      gestion: calc.gestion,
+      amortissements: calc.amortissements,
+      autres_couts: calc.autres_couts,
+      impot: calc.impot,
+      banque_a_taux_hypothecaire: form.banque_a_taux_hypothecaire,
+      banque_a_amortissement_annuel: form.banque_a_amortissement_annuel,
+      banque_a_evaluation: form.banque_a_evaluation,
+      banque_b_taux_hypothecaire: form.banque_b_taux_hypothecaire,
+      banque_b_amortissement_annuel: form.banque_b_amortissement_annuel,
+      banque_b_evaluation: form.banque_b_evaluation,
+      statut: form.statut,
+      prix_total: calc.prix_total,
+      rendement_brut: calc.rendement_brut,
+      revenu_net: calc.revenu_net,
+      rendement_net_fonds_propres: calc.rendement_net_fonds_propres,
+      revenu_distribue: calc.revenu_distribue,
+      revenu_distribue_fonds_propres: calc.revenu_distribue_fonds_propres,
+      score_global: calc.score_global,
+      note: calc.note,
     });
   };
 
@@ -209,7 +291,7 @@ export default function AnalysisForm({
               <SelectContent>
                 {properties.map((property) => (
                   <SelectItem key={property.id} value={property.id}>
-                    {property.nom_bien} — {property.ville}
+                    {property.nom_bien} - {property.ville}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -238,65 +320,176 @@ export default function AnalysisForm({
       </section>
 
       <section className="bg-card rounded-xl border border-border p-6">
-        <h3 className="font-heading font-semibold mb-4">
-          Acquisition
+        <h3 className="font-heading font-semibold mb-5 flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-primary" />
+          Revenus SIPA Immobilier SA
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Field
-            label="Prix du bien"
+            label="Prix du bien original"
             value={form.prix_bien}
             onChange={set('prix_bien')}
             prefix="CHF"
           />
 
           <Field
-            label="Versement copropriété"
-            value={form.versement_copropriete}
-            onChange={set('versement_copropriete')}
-            prefix="CHF"
+            label="Honoraires de transaction"
+            value={form.honoraires_transaction_pct}
+            onChange={set('honoraires_transaction_pct')}
+            suffix="%"
           />
 
           <Field
-            label="Honoraires SIPA"
-            value={form.honoraires_sipa}
-            onChange={set('honoraires_sipa')}
-            prefix="CHF"
+            label="Marge bénéficiaire"
+            value={form.marge_beneficiaire_pct}
+            onChange={set('marge_beneficiaire_pct')}
+            suffix="%"
           />
+        </div>
 
-          <Field
-            label="Prix total"
-            value={calc.prix_total}
-            readOnly
-            prefix="CHF"
+        <div className="mt-5 space-y-2 border-t border-border pt-4">
+          <ResultRow label="Honoraires" value={formatCHF(calc.honoraires_sipa)} />
+          <ResultRow label="Marge bénéficiaire" value={formatCHF(calc.marge_beneficiaire)} />
+          <ResultRow
+            label="Total Revenus SIPA"
+            value={formatCHF(calc.prix_total)}
+            highlight
           />
         </div>
       </section>
 
       <section className="bg-card rounded-xl border border-border p-6">
-        <h3 className="font-heading font-semibold mb-4">
-          Financement
+        <h3 className="font-heading font-semibold mb-5 flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-primary" />
+          Analyse investisseurs
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field
-            label="Fonds propres"
-            value={form.fonds_propres}
-            onChange={set('fonds_propres')}
+            label="Revenus locatifs annuels"
+            value={form.revenus_locatifs}
+            onChange={set('revenus_locatifs')}
             prefix="CHF"
           />
 
           <Field
-            label="Hypothèque"
-            value={form.hypotheque}
-            onChange={set('hypotheque')}
+            label="Charges opérationnelles"
+            value={form.charges_operationnelles}
+            onChange={set('charges_operationnelles')}
             prefix="CHF"
           />
 
           <Field
-            label="Années d'amortissement"
-            value={form.amortization_years}
-            onChange={set('amortization_years')}
+            label="Amortissement sur 5 ans"
+            value={form.amortissement_5_ans}
+            onChange={set('amortissement_5_ans')}
+            prefix="CHF"
+          />
+
+          <Field
+            label="Commission broker hypothèque"
+            value={form.commission_broker_hypotheque}
+            onChange={set('commission_broker_hypotheque')}
+            prefix="CHF"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5 pt-5 border-t border-border">
+          <Field
+            label="Frais de gestion"
+            value={form.frais_gestion_pct}
+            onChange={set('frais_gestion_pct')}
+            suffix="%"
+          />
+
+          <Field
+            label="Taux d'impôt"
+            value={form.taux_impot_pct}
+            onChange={set('taux_impot_pct')}
+            suffix="%"
+          />
+
+          <Field
+            label="Amort. / autres charges"
+            value={form.amort_autres_charges_pct}
+            onChange={set('amort_autres_charges_pct')}
+            suffix="%"
+          />
+        </div>
+
+        <div className="mt-5 space-y-2 border-t border-border pt-4">
+          <ResultRow label="Revenu net" value={formatCHF(calc.revenu_net)} />
+          <ResultRow
+            label="Revenu distribué"
+            value={formatCHF(calc.revenu_distribue)}
+            highlight
+          />
+        </div>
+      </section>
+
+      <section className="bg-card rounded-xl border border-border p-6">
+        <h3 className="font-heading font-semibold mb-5 flex items-center gap-2">
+          <Calculator className="h-4 w-4 text-primary" />
+          Financement hypothécaire
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Field
+            label="Taux hypothèque (% du prix original)"
+            value={form.taux_hypotheque_pct}
+            onChange={set('taux_hypotheque_pct')}
+            suffix="%"
+          />
+
+          <Field
+            label="Taux d'intérêt hypothécaire"
+            value={form.taux_interet_hypothecaire_pct}
+            onChange={set('taux_interet_hypothecaire_pct')}
+            suffix="%"
+          />
+
+          <Field
+            label="Versement initial (% du prix total)"
+            value={form.versement_initial_pct}
+            onChange={set('versement_initial_pct')}
+            suffix="%"
+          />
+        </div>
+
+        <div className="mt-5 space-y-2 border-t border-border pt-4">
+          <ResultRow
+            label={`Hypothèque (${formatPercent(form.taux_hypotheque_pct)})`}
+            value={formatCHF(calc.hypotheque)}
+          />
+          <ResultRow label="Intérêts annuels" value={formatCHF(calc.interets_hypothecaires)} />
+          <ResultRow
+            label="Prix total investisseur"
+            value={formatCHF(calc.prix_total_investisseur)}
+            highlight
+          />
+        </div>
+      </section>
+
+      <section className="bg-card rounded-xl border border-border p-6">
+        <h3 className="font-heading font-semibold mb-5 flex items-center gap-2">
+          <Percent className="h-4 w-4 text-primary" />
+          Récapitulatif fonds propres
+        </h3>
+
+        <div className="space-y-2">
+          <ResultRow
+            label="Fonds propres sur prix total"
+            value={formatCHF(calc.fonds_propres_sur_prix_total)}
+            highlight
+          />
+          <ResultRow
+            label="Fonds propres sur prix original"
+            value={formatCHF(calc.fonds_propres_sur_prix_original)}
+          />
+          <ResultRow
+            label="Versement initial sur SPV"
+            value={formatCHF(calc.versement_initial_spv)}
           />
         </div>
       </section>
@@ -327,78 +520,6 @@ export default function AnalysisForm({
             values={form}
             setValue={set}
             prefix="banque_b"
-          />
-        </div>
-      </section>
-
-      <section className="bg-card rounded-xl border border-border p-6">
-        <h3 className="font-heading font-semibold mb-4">
-          Revenus
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field
-            label="Revenus locatifs annuels"
-            value={form.revenus_locatifs}
-            onChange={set('revenus_locatifs')}
-            prefix="CHF"
-          />
-
-          <Field
-            label="Rendement brut"
-            value={calc.rendement_brut}
-            readOnly
-            suffix="%"
-          />
-        </div>
-      </section>
-
-      <section className="bg-card rounded-xl border border-border p-6">
-        <h3 className="font-heading font-semibold mb-4">
-          Charges
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Field
-            label="Charges opérationnelles"
-            value={form.charges_operationnelles}
-            onChange={set('charges_operationnelles')}
-            prefix="CHF"
-          />
-
-          <Field
-            label="Intérêts hypothécaires"
-            value={form.interets_hypothecaires}
-            onChange={set('interets_hypothecaires')}
-            prefix="CHF"
-          />
-
-          <Field
-            label="Gestion"
-            value={form.gestion}
-            onChange={set('gestion')}
-            prefix="CHF"
-          />
-
-          <Field
-            label="Amortissements"
-            value={form.amortissements}
-            onChange={set('amortissements')}
-            prefix="CHF"
-          />
-
-          <Field
-            label="Autres coûts"
-            value={form.autres_couts}
-            onChange={set('autres_couts')}
-            prefix="CHF"
-          />
-
-          <Field
-            label="Impôt"
-            value={form.impot}
-            onChange={set('impot')}
-            prefix="CHF"
           />
         </div>
       </section>
@@ -449,11 +570,7 @@ export default function AnalysisForm({
             />
             <Metric
               label="LTV"
-              value={formatPercent(
-                calc.prix_total > 0
-                  ? (form.hypotheque / calc.prix_total) * 100
-                  : 0
-              )}
+              value={formatPercent(form.prix_bien > 0 ? (calc.hypotheque / form.prix_bien) * 100 : 0)}
             />
           </div>
         </div>

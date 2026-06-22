@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+const parseOptionalNumber = (value) => {
+  if (value === '' || value === null || value === undefined) {
+    return null;
+  }
+
+  return Number(value);
+};
 
 export default function EditProperty() {
   const { propertyId } = useParams();
@@ -25,9 +33,9 @@ export default function EditProperty() {
     if (property) setForm({
       nom_bien: property.nom_bien || '', adresse: property.adresse || '', ville: property.ville || '',
       canton: property.canton || '', pays: property.pays || 'Suisse',
-      annee_construction: property.annee_construction || '', surface: property.surface || '',
-      nombre_logements: property.nombre_logements || '', statut: property.statut || 'brouillon',
-      lien_annonce: property.lien_annonce || '', latitude: property.latitude || '', longitude: property.longitude || '',
+      annee_construction: property.annee_construction ?? '', surface: property.surface ?? '',
+      nombre_logements: property.nombre_logements ?? '', statut: property.statut || 'brouillon',
+      lien_annonce: property.lien_annonce || '', latitude: property.latitude ?? '', longitude: property.longitude ?? '',
     });
   }, [property]);
 
@@ -36,15 +44,22 @@ export default function EditProperty() {
   const update = useMutation({
     mutationFn: () => base44.entities.Property.update(propertyId, {
       ...form,
-      annee_construction: form.annee_construction ? parseInt(form.annee_construction) : undefined,
-      surface: form.surface ? parseFloat(form.surface) : undefined,
-      nombre_logements: form.nombre_logements ? parseInt(form.nombre_logements) : undefined,
+      annee_construction: parseOptionalNumber(form.annee_construction),
+      surface: parseOptionalNumber(form.surface),
+      nombre_logements: parseOptionalNumber(form.nombre_logements),
+      latitude: parseOptionalNumber(form.latitude),
+      longitude: parseOptionalNumber(form.longitude),
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['comments', propertyId] });
       toast.success('Bien mis à jour');
       navigate(`/property/${propertyId}`);
+    },
+    onError: (error) => {
+      console.error('[EditProperty] update error:', error);
+      toast.error("Impossible d'enregistrer les modifications");
     },
   });
 

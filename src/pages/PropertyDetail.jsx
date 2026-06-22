@@ -10,9 +10,13 @@ import StatusBadge from '../components/StatusBadge';
 import PerformanceCharts from '../components/PerformanceCharts';
 import CommentSection from '../components/CommentSection';
 import AIInsights from '../components/AIInsights';
-import { formatCHF, formatPercent } from '../utils/calculations';
+import FavoriteButton from '../components/FavoriteButton';
+import TraceabilityPanel from '../components/TraceabilityPanel';
+import { formatCHF, formatPercent, normalizeAnalyses } from '../utils/calculations';
+import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
 import {
   ArrowLeft,
+  Download,
   Plus,
   Pencil,
   Trash2,
@@ -64,6 +68,12 @@ export default function PropertyDetail() {
       ),
   });
 
+  const { data: comments = [], isLoading: lc } = useQuery({
+    queryKey: ['comments', propertyId],
+    queryFn: () => base44.entities.Comment.filter({ property_id: propertyId }, '-created_date', 50),
+    enabled: !!propertyId,
+  });
+
   const deleteProperty = useMutation({
     mutationFn: () => base44.entities.Property.delete(propertyId),
     onSuccess: () => {
@@ -79,7 +89,7 @@ export default function PropertyDetail() {
     },
   });
 
-  if (lp || la) {
+  if (lp || la || lc) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -95,7 +105,8 @@ export default function PropertyDetail() {
     );
   }
 
-  const latest = analyses[0];
+  const normalizedAnalyses = normalizeAnalyses(analyses);
+  const latest = normalizedAnalyses[0];
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -142,6 +153,30 @@ export default function PropertyDetail() {
         </div>
 
         <div className="flex gap-2">
+          <FavoriteButton propertyId={propertyId} variant="outline" className="h-8 w-8" />
+
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            onClick={() => exportPropertyPdf(property, normalizedAnalyses)}
+          >
+            <Download className="h-3.5 w-3.5" />
+            PDF bien
+          </Button>
+
+          {latest && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              onClick={() => exportAnalysisPdf(property, latest)}
+            >
+              <Download className="h-3.5 w-3.5" />
+              PDF analyse
+            </Button>
+          )}
+
           {canCreateAnalysis && (
             <Link to={`/new-analysis?propertyId=${propertyId}`}>
               <Button size="sm" className="gap-2">
@@ -289,16 +324,16 @@ export default function PropertyDetail() {
 
       {latest && <AIInsights analysis={latest} property={property} />}
 
-      {analyses.length > 1 && (
+      {normalizedAnalyses.length > 1 && (
         <div className="bg-card rounded-xl border border-border">
           <div className="px-5 py-4 border-b border-border">
             <h3 className="font-heading font-semibold text-sm">
-              Historique des analyses ({analyses.length})
+              Historique des analyses ({normalizedAnalyses.length})
             </h3>
           </div>
 
           <div className="divide-y divide-border/50">
-            {analyses.map((analysis) => (
+            {normalizedAnalyses.map((analysis) => (
               <div
                 key={analysis.id}
                 className="px-5 py-3 flex items-center justify-between hover:bg-muted/20 transition-colors"
@@ -329,6 +364,14 @@ export default function PropertyDetail() {
                       </Button>
                     </Link>
                   )}
+
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => exportAnalysisPdf(property, analysis)}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
 
                   {canDeleteAnalysis && (
                     <AlertDialog>
@@ -369,7 +412,14 @@ export default function PropertyDetail() {
         </div>
       )}
 
-      <CommentSection propertyId={propertyId} />
+      <TraceabilityPanel
+        property={property}
+        analyses={normalizedAnalyses}
+        comments={comments}
+        userName={user?.full_name || user?.email}
+      />
+
+      <CommentSection propertyId={propertyId} initialComments={comments} />
     </div>
   );
 }

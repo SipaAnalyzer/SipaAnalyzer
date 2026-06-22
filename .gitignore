@@ -32,6 +32,7 @@ Thumbs.db
 # Cache
 .cache/
 .eslintcache
+supabase/.temp/
 
 # Temporary files
 *.tmp

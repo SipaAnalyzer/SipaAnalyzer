@@ -16,6 +16,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";
+import Favorites from "./pages/Favorites";
 import PropertyDetail from "./pages/PropertyDetail";
 import AddProperty from "./pages/AddProperty";
 import EditProperty from "./pages/EditProperty";
@@ -69,6 +70,7 @@ const AuthenticatedApp = () => {
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/properties" element={<Properties />} />
+          <Route path="/favorites" element={<Favorites />} />
           <Route path="/property/:propertyId" element={<PropertyDetail />} />
           <Route path="/add-property" element={<AddProperty />} />
           <Route path="/edit-property/:propertyId" element={<EditProperty />} />

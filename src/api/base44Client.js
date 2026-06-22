@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient";
+import { recordAuditLog } from "@/utils/auditLogs";
 
 /**
  * Petit adaptateur temporaire :
@@ -62,6 +63,133 @@ const cleanDataBeforeSave = (data = {}) => {
   return cleaned;
 };
 
+const withAuditFallback = async (operation, payload) => {
+  const result = await operation(payload);
+  const missingColumn = /column .* does not exist|Could not find .* column|schema cache/i.test(
+    result.error?.message || ""
+  );
+
+  if (!missingColumn) {
+    return result;
+  }
+
+  const fallback = { ...payload };
+  delete fallback.created_by_id;
+  delete fallback.updated_by_id;
+  delete fallback.updated_at;
+
+  return operation(fallback);
+};
+
+const getCurrentUserId = async () => {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id || null;
+};
+
+const getCurrentUser = async () => {
+  const { data } = await supabase.auth.getUser();
+  return data.user || null;
+};
+
+const AUDIT_PREFIX = "__audit__";
+
+const AUDIT_FIELDS = {
+  properties: {
+    nom_bien: "Nom du bien",
+    adresse: "Adresse",
+    ville: "Ville",
+    canton: "Canton",
+    pays: "Pays",
+    annee_construction: "Année de construction",
+    surface: "Surface",
+    nombre_logements: "Nombre de logements",
+    lien_annonce: "Lien annonce",
+    latitude: "Latitude",
+    longitude: "Longitude",
+    statut: "Statut",
+  },
+  analysis: {
+    prix_bien: "Prix du bien",
+    versement_copropriete: "Marge bénéficiaire",
+    honoraires_sipa: "Honoraires transaction",
+    fonds_propres: "Fonds propres",
+    hypotheque: "Hypothèque",
+    amortization_years: "Années d'amortissement",
+    revenus_locatifs: "Revenus locatifs",
+    charges_operationnelles: "Charges opérationnelles",
+    interets_hypothecaires: "Intérêts annuels",
+    gestion: "Frais de gestion",
+    amortissements: "Amortissement annuel moyen",
+    autres_couts: "Commission broker / autres charges",
+    impot: "Impôt calculé",
+    banque_a_taux_hypothecaire: "Banque A - taux",
+    banque_a_amortissement_annuel: "Banque A - amortissement",
+    banque_a_evaluation: "Banque A - évaluation",
+    banque_b_taux_hypothecaire: "Banque B - taux",
+    banque_b_amortissement_annuel: "Banque B - amortissement",
+    banque_b_evaluation: "Banque B - évaluation",
+    statut: "Statut",
+  },
+};
+
+const normalizeAuditValue = (value) => {
+  if (value === undefined || value === null || value === "") return "";
+  if (typeof value === "number") return Number(value.toFixed(6));
+  return String(value);
+};
+
+const buildAuditChanges = (table, before = {}, after = {}, submitted = {}) => {
+  const fields = AUDIT_FIELDS[table];
+  if (!fields) return [];
+
+  return Object.entries(fields)
+    .filter(([key]) => Object.prototype.hasOwnProperty.call(submitted, key))
+    .map(([key, label]) => ({
+      field: key,
+      label,
+      before: before?.[key] ?? "",
+      after: after?.[key] ?? "",
+    }))
+    .filter(
+      (change) =>
+        normalizeAuditValue(change.before) !== normalizeAuditValue(change.after)
+    );
+};
+
+const recordAuditChanges = async ({ table, id, before, after, submitted }) => {
+  const changes = buildAuditChanges(table, before, after, submitted);
+  if (changes.length === 0) return;
+
+  const propertyId =
+    table === TABLES.Property ? id : after?.property_id || before?.property_id;
+
+  if (!propertyId) return;
+
+  const user = await getCurrentUser();
+  const payload = {
+    type: table === TABLES.Property ? "property_update" : "analysis_update",
+    entity_table: table,
+    entity_id: id,
+    actor_id: user?.id || null,
+    actor_name: user?.user_metadata?.full_name || user?.email || "Utilisateur",
+    changes,
+  };
+
+  const commentPayload = {
+    property_id: propertyId,
+    commentaire: `${AUDIT_PREFIX}${JSON.stringify(payload)}`,
+    author_name: "SIPA Analyzer",
+    created_by_id: user?.id,
+  };
+
+  const result = await supabase.from(TABLES.Comment).insert(commentPayload);
+  if (!result.error) return;
+
+  const fallback = { ...commentPayload };
+  delete fallback.created_by_id;
+  await supabase.from(TABLES.Comment).insert(fallback);
+};
+
 const createEntity = (table) => ({
   async list(sort = "-created_date", limit = 100) {
     const { column, ascending } = mapSort(sort);
@@ -122,12 +250,21 @@ const createEntity = (table) => ({
 
   async create(data) {
     const payload = cleanDataBeforeSave(data);
+    const userId = await getCurrentUserId();
 
-    const { data: created, error } = await supabase
-      .from(table)
-      .insert(payload)
-      .select()
-      .single();
+    if (userId && payload.created_by_id === undefined) {
+      payload.created_by_id = userId;
+    }
+
+    const { data: created, error } = await withAuditFallback(
+      (nextPayload) =>
+        supabase
+          .from(table)
+          .insert(nextPayload)
+          .select()
+          .single(),
+      payload
+    );
 
     if (error) {
       console.error(`[Supabase] create error on ${table}:`, error);
@@ -139,17 +276,44 @@ const createEntity = (table) => ({
 
   async update(id, data) {
     const payload = cleanDataBeforeSave(data);
+    const userId = await getCurrentUserId();
+    const shouldAudit = table === TABLES.Property || table === TABLES.Analysis;
+    const { data: beforeUpdate } = shouldAudit
+      ? await supabase.from(table).select("*").eq("id", id).single()
+      : { data: null };
 
-    const { data: updated, error } = await supabase
-      .from(table)
-      .update(payload)
-      .eq("id", id)
-      .select()
-      .single();
+    if (userId && payload.updated_by_id === undefined) {
+      payload.updated_by_id = userId;
+    }
+
+    if (payload.updated_at === undefined) {
+      payload.updated_at = new Date().toISOString();
+    }
+
+    const { data: updated, error } = await withAuditFallback(
+      (nextPayload) =>
+        supabase
+          .from(table)
+          .update(nextPayload)
+          .eq("id", id)
+          .select()
+          .single(),
+      payload
+    );
 
     if (error) {
       console.error(`[Supabase] update error on ${table}:`, error);
       throw error;
+    }
+
+    if (shouldAudit) {
+      await recordAuditChanges({
+        table,
+        id,
+        before: beforeUpdate,
+        after: updated,
+        submitted: payload,
+      });
     }
 
     return normalizeRecord(updated);
@@ -218,6 +382,13 @@ export const base44 = {
         throw error;
       }
 
+      await recordAuditLog({
+        eventType: "login",
+        targetType: "auth",
+        targetLabel: email,
+        metadata: { provider: "email" },
+      });
+
       return data;
     },
 
@@ -274,6 +445,12 @@ export const base44 = {
     },
 
     async logout(redirectUrl = "/login") {
+      await recordAuditLog({
+        eventType: "logout",
+        targetType: "auth",
+        metadata: { redirectUrl },
+      });
+
       const { error } = await supabase.auth.signOut();
 
       if (error) {
@@ -335,11 +512,42 @@ export const base44 = {
 
   integrations: {
     Core: {
-      async InvokeLLM() {
+      async InvokeLLM(payload) {
+        const { data, error } = await supabase.functions.invoke("ai-insights", {
+          body: payload,
+        });
+
+        if (error) {
+          let details = "";
+
+          try {
+            details = await error.context?.json?.();
+          } catch {
+            try {
+              details = await error.context?.text?.();
+            } catch {
+              details = "";
+            }
+          }
+
+          const detailMessage =
+            typeof details === "string" ? details : details?.error;
+
+          console.error("[Supabase] AI insights error:", error);
+          throw new Error(
+            detailMessage ||
+            error.message ||
+              "Impossible de générer l'analyse IA pour le moment."
+          );
+        }
+
+        return data;
+        /*
         return {
           analysis_text:
             "L'analyse IA est désactivée temporairement pendant la migration vers Supabase.",
         };
+        */
       },
     },
   },

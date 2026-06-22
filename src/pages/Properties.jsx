@@ -8,9 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
 import ScoreGauge from '../components/ScoreGauge';
-import { formatCHF, formatPercent } from '../utils/calculations';
+import FavoriteButton from '../components/FavoriteButton';
+import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
 import { Plus, Search, Building2, MapPin, Loader2, ExternalLink } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
+import moment from 'moment';
 
 export default function Properties() {
   const { permissions, isAdmin } = usePermissions();
@@ -34,7 +36,7 @@ export default function Properties() {
   const enriched = useMemo(() => {
     return properties.map(p => {
       const propAnalyses = analyses.filter(a => a.property_id === p.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-      return { ...p, latestAnalysis: propAnalyses[0] || null, analysisCount: propAnalyses.length };
+      return { ...p, latestAnalysis: normalizeAnalysis(propAnalyses[0]), analysisCount: propAnalyses.length };
     });
   }, [properties, analyses]);
 
@@ -117,6 +119,7 @@ export default function Properties() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <FavoriteButton propertyId={p.id} className="h-8 w-8 z-10" />
                     {p.lien_annonce && (
                       <a href={p.lien_annonce} target="_blank" rel="noopener noreferrer"
                         onClick={e => e.stopPropagation()}
@@ -131,6 +134,10 @@ export default function Properties() {
                   <StatusBadge statut={p.statut} />
                   {p.latestAnalysis?.note && <ScoreBadge note={p.latestAnalysis.note} />}
                   <span className="text-xs text-muted-foreground ml-auto">{p.analysisCount} analyse{p.analysisCount > 1 ? 's' : ''}</span>
+                </div>
+                <div className="text-[11px] text-muted-foreground mb-3">
+                  Créé {moment(p.created_at || p.created_date).fromNow()}
+                  {p.updated_at && p.updated_at !== p.created_at ? ` · modifié ${moment(p.updated_at).fromNow()}` : ''}
                 </div>
                 {p.latestAnalysis && (
                   <div className="grid grid-cols-3 gap-3 pt-3 border-t border-border/50">

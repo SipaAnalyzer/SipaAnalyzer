@@ -3,6 +3,27 @@ import { supabase } from "@/api/supabaseClient";
 
 const AuthContext = createContext(null);
 
+async function enrichUserWithProfile(user) {
+  if (!user?.id) return user;
+
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[Auth] profile load error:", error);
+    return user;
+  }
+
+  return {
+    ...user,
+    full_name: profile?.full_name || user.user_metadata?.full_name || user.email,
+    email: profile?.email || user.email,
+  };
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
@@ -24,7 +45,7 @@ export function AuthProvider({ children }) {
         return null;
       }
 
-      const currentUser = data.user || null;
+      const currentUser = data.user ? await enrichUserWithProfile(data.user) : null;
 
       setUser(currentUser);
       setIsAuthenticated(!!currentUser);
@@ -43,8 +64,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     checkUserAuth();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const currentUser = session?.user || null;
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ? await enrichUserWithProfile(session.user) : null;
 
       setUser(currentUser);
       setIsAuthenticated(!!currentUser);

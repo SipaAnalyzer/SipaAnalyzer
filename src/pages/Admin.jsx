@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate } from 'react-router-dom';
 import {
+  Activity,
+  FileDown,
+  LogIn,
+  LogOut,
   Shield,
   Users,
   ChevronDown,
@@ -16,11 +20,99 @@ import { base44 } from '@/api/base44Client';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { listAuditLogs } from '@/utils/auditLogs';
 
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import moment from 'moment';
+
+const LOG_LABELS = {
+  login: { label: 'Connexion', icon: LogIn, className: 'text-emerald-400 bg-emerald-500/10' },
+  logout: { label: 'Déconnexion', icon: LogOut, className: 'text-muted-foreground bg-secondary' },
+  export_pdf: { label: 'Export PDF', icon: FileDown, className: 'text-amber-400 bg-amber-500/10' },
+};
+
+function AuditLogsPanel() {
+  const {
+    data: logs = [],
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ['audit-logs'],
+    queryFn: () => listAuditLogs(120),
+  });
+
+  return (
+    <div className="bg-card rounded-xl border border-border overflow-hidden">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-primary" />
+          <h2 className="font-semibold text-sm">Logs de connexion et d'export</h2>
+        </div>
+
+        <Button type="button" size="sm" variant="outline" onClick={() => refetch()}>
+          Rafraîchir
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="p-8 flex items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        </div>
+      ) : logs.length === 0 ? (
+        <div className="p-8 text-center text-sm text-muted-foreground">
+          Aucun log enregistré pour le moment.
+        </div>
+      ) : (
+        <div className="divide-y divide-border/50">
+          {logs.map((log) => {
+            const cfg = LOG_LABELS[log.event_type] || {
+              label: log.event_type || 'Événement',
+              icon: Activity,
+              className: 'text-primary bg-primary/10',
+            };
+            const Icon = cfg.icon;
+
+            return (
+              <div key={log.id || `${log.event_type}-${log.created_at}`} className="px-5 py-3 flex items-start gap-3">
+                <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${cfg.className}`}>
+                  <Icon className="h-4 w-4" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-medium">{cfg.label}</p>
+                    <span className="text-xs text-muted-foreground">
+                      {moment(log.created_at).format('DD MMM YYYY, HH:mm')}
+                    </span>
+                    {log.storage === 'local' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">
+                        local
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {log.actor_name || log.actor_email || 'Utilisateur inconnu'}
+                    {log.target_label ? ` · ${log.target_label}` : ''}
+                  </p>
+
+                  {log.metadata?.filename && (
+                    <p className="text-[11px] text-muted-foreground mt-1 font-mono truncate">
+                      {log.metadata.filename}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const ROLE_PRESETS = {
   admin: {
@@ -432,6 +524,8 @@ export default function Admin() {
           </p>
         </div>
       </div>
+
+      <AuditLogsPanel />
 
       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
         <div className="flex items-center gap-2 mb-2">

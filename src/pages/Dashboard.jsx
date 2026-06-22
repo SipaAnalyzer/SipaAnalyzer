@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Plus, BarChart3, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { formatPercent } from '../utils/calculations';
+import { normalizeAnalysis } from '../utils/calculations';
 
 export default function Dashboard() {
   const { data: analyses = [], isLoading: la } = useQuery({
@@ -41,7 +41,7 @@ const { data: properties = [], isLoading: lp } = useQuery({
   const abandonnes = properties.filter(p => p.statut === 'abandonne').length;
 
   const enriched = analyses
-    .map(a => ({ ...a, property: properties.find(p => p.id === a.property_id) }))
+    .map(a => ({ ...normalizeAnalysis(a), property: properties.find(p => p.id === a.property_id) }))
     .filter(a => a.property);
 
   const top5 = [...enriched].sort((a, b) => (b.score_global || 0) - (a.score_global || 0)).slice(0, 5);

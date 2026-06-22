@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
-import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation } from 'lucide-react';
+import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -11,6 +11,7 @@ import logoSipa from '@/assets/logo-sipa.png';
 const navItems = [
   { path: '/', label: 'Tableau de bord', icon: LayoutDashboard },
   { path: '/properties', label: 'Biens immobiliers', icon: Building2 },
+  { path: '/favorites', label: 'Favoris', icon: Star },
   { path: '/comparator', label: 'Comparateur', icon: GitCompareArrows },
   { path: '/presentation', label: 'Présentation', icon: Presentation },
 ];
