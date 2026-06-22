@@ -61,16 +61,17 @@ const ROLE_LABELS = {
 };
 
 export default function Register() {
-  const [email, setEmail] = useState("");
+  const urlParams = new URLSearchParams(window.location.search);
+  const inviteRole = urlParams.get("role");
+  const inviteEmail = urlParams.get("email") || "";
+
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [accountCreated, setAccountCreated] = useState(false);
   const [assignedRole, setAssignedRole] = useState("");
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const inviteRole = urlParams.get("role");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -138,8 +139,8 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title="Cr\u00e9er un compte"
-      subtitle="Cr\u00e9ez votre acc\u00e8s SIPA Analyzer"
+      title={inviteEmail ? "Vous \u00eates invit\u00e9" : "Cr\u00e9er un compte"}
+      subtitle={inviteEmail ? "Choisissez votre mot de passe pour finaliser votre inscription" : "Cr\u00e9ez votre acc\u00e8s SIPA Analyzer"}
       footer={
         <>
           Vous avez d\u00e9j\u00e0 un compte ?{" "}
@@ -149,6 +150,12 @@ export default function Register() {
         </>
       }
     >
+      {inviteRole && ROLE_LABELS[inviteRole] && (
+        <div className="mb-6 p-3 rounded-lg bg-primary/10 border border-primary/20 text-sm text-center">
+          R\u00f4le attribu\u00e9 : <strong>{ROLE_LABELS[inviteRole]}</strong>
+        </div>
+      )}
+
       <Button
         variant="outline"
         className="w-full h-12 text-sm font-medium mb-6"
@@ -182,11 +189,12 @@ export default function Register() {
               id="email"
               type="email"
               autoComplete="email"
-              autoFocus
+              autoFocus={!inviteEmail}
               placeholder="vous@example.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="pl-10 h-12"
+              disabled={!!inviteEmail}
               required
             />
           </div>
@@ -200,6 +208,7 @@ export default function Register() {
               id="password"
               type="password"
               autoComplete="new-password"
+              autoFocus={!!inviteEmail}
               placeholder="••••••••"
               value={password}
               onChange={(event) => setPassword(event.target.value)}

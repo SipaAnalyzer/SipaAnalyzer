@@ -44,6 +44,7 @@ export default function EditProperty() {
   const update = useMutation({
     mutationFn: () => base44.entities.Property.update(propertyId, {
       ...form,
+      ...(!form.lien_piece_jointe ? { lien_piece_jointe: undefined } : {}),
       annee_construction: parseOptionalNumber(form.annee_construction),
       surface: parseOptionalNumber(form.surface),
       nombre_logements: parseOptionalNumber(form.nombre_logements),

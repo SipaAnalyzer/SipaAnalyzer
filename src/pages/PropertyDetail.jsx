@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -47,6 +48,7 @@ export default function PropertyDetail() {
   const { user } = useAuth();
   const { permissions, isAdmin } = usePermissions();
   const queryClient = useQueryClient();
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState(null);
 
   const canEdit = isAdmin || permissions.can_edit_property;
   const canDelete = isAdmin || permissions.can_delete_property;
@@ -108,6 +110,9 @@ export default function PropertyDetail() {
 
   const normalizedAnalyses = normalizeAnalyses(analyses);
   const latest = normalizedAnalyses[0];
+  const selected = selectedAnalysisId
+    ? normalizedAnalyses.find((a) => a.id === selectedAnalysisId) || latest
+    : latest;
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -182,12 +187,12 @@ export default function PropertyDetail() {
             PDF bien
           </Button>
 
-          {latest && (
+          {selected && (
             <Button
               size="sm"
               variant="outline"
               className="gap-2"
-              onClick={() => exportAnalysisPdf(property, latest)}
+              onClick={() => exportAnalysisPdf(property, selected)}
             >
               <Download className="h-3.5 w-3.5" />
               PDF analyse
@@ -243,20 +248,20 @@ export default function PropertyDetail() {
         </div>
       </div>
 
-      {latest ? (
+      {selected ? (
         <div className="bg-card rounded-xl border border-border p-6">
           <div className="flex flex-col lg:flex-row gap-6 items-start">
             <div className="flex items-center gap-4">
-              <ScoreGauge score={latest.score_global || 0} size={110} />
+              <ScoreGauge score={selected.score_global || 0} size={110} />
 
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <ScoreBadge note={latest.note} />
-                  <StatusBadge statut={latest.statut} />
+                  <ScoreBadge note={selected.note} />
+                  <StatusBadge statut={selected.statut} />
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Dernière analyse
+                  {selectedAnalysisId ? 'Analyse sélectionnée' : 'Dernière analyse'}
                 </p>
               </div>
             </div>
@@ -264,28 +269,28 @@ export default function PropertyDetail() {
             <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
               <MetricCard
                 label="Prix total"
-                value={formatCHF(latest.prix_total)}
+                value={formatCHF(selected.prix_total)}
               />
               <MetricCard
                 label="Revenu net"
-                value={formatCHF(latest.revenu_net)}
+                value={formatCHF(selected.revenu_net)}
               />
               <MetricCard
                 label="Revenu distribué"
-                value={formatCHF(latest.revenu_distribue)}
+                value={formatCHF(selected.revenu_distribue)}
               />
               <MetricCard
                 label="Rdt. brut"
-                value={formatPercent(latest.rendement_brut)}
+                value={formatPercent(selected.rendement_brut)}
               />
               <MetricCard
                 label="Rdt. net / FP"
-                value={formatPercent(latest.rendement_net_fonds_propres)}
+                value={formatPercent(selected.rendement_net_fonds_propres)}
                 highlight
               />
               <MetricCard
                 label="Rdt. dist. / FP"
-                value={formatPercent(latest.revenu_distribue_fonds_propres)}
+                value={formatPercent(selected.revenu_distribue_fonds_propres)}
                 highlight
               />
             </div>
@@ -308,9 +313,9 @@ export default function PropertyDetail() {
         </div>
       )}
 
-      {latest && <PerformanceCharts analysis={latest} />}
+      {selected && <PerformanceCharts analysis={selected} />}
 
-      {latest && (
+      {selected && (
         <div className="bg-card rounded-xl border border-border p-6">
           <div className="flex items-center gap-2 mb-4">
             <Landmark className="h-4 w-4 text-primary" />
@@ -323,37 +328,47 @@ export default function PropertyDetail() {
             <BankScenarioCard
               title="Banque A"
               color="amber"
-              taux={latest.banque_a_taux_hypothecaire}
-              amortissement={latest.banque_a_amortissement_annuel}
-              evaluation={latest.banque_a_evaluation}
+              taux={selected.banque_a_taux_hypothecaire}
+              amortissement={selected.banque_a_amortissement_annuel}
+              evaluation={selected.banque_a_evaluation}
             />
 
             <BankScenarioCard
               title="Banque B"
               color="emerald"
-              taux={latest.banque_b_taux_hypothecaire}
-              amortissement={latest.banque_b_amortissement_annuel}
-              evaluation={latest.banque_b_evaluation}
+              taux={selected.banque_b_taux_hypothecaire}
+              amortissement={selected.banque_b_amortissement_annuel}
+              evaluation={selected.banque_b_evaluation}
             />
           </div>
         </div>
       )}
 
-      {latest && <AIInsights analysis={latest} property={property} />}
+      {selected && <AIInsights analysis={selected} property={property} />}
 
       {normalizedAnalyses.length > 1 && (
         <div className="bg-card rounded-xl border border-border">
-          <div className="px-5 py-4 border-b border-border">
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <h3 className="font-heading font-semibold text-sm">
               Historique des analyses ({normalizedAnalyses.length})
             </h3>
+            {selectedAnalysisId && (
+              <Button size="sm" variant="ghost" onClick={() => setSelectedAnalysisId(null)}>
+                Voir la plus récente
+              </Button>
+            )}
           </div>
 
           <div className="divide-y divide-border/50">
             {normalizedAnalyses.map((analysis) => (
               <div
                 key={analysis.id}
-                className="px-5 py-3 flex items-center justify-between hover:bg-muted/20 transition-colors"
+                className={`px-5 py-3 flex items-center justify-between transition-colors cursor-pointer ${
+                  selectedAnalysisId === analysis.id
+                    ? 'bg-primary/10 border-l-2 border-l-primary'
+                    : 'hover:bg-muted/20'
+                }`}
+                onClick={() => setSelectedAnalysisId(analysis.id)}
               >
                 <div className="flex items-center gap-3">
                   <ScoreBadge note={analysis.note} />
@@ -371,7 +386,7 @@ export default function PropertyDetail() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   <StatusBadge statut={analysis.statut} />
 
                   {canEditAnalysis && (

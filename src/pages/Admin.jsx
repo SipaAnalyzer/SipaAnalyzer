@@ -388,6 +388,7 @@ export default function Admin() {
   const [inviting, setInviting] = useState(false);
   const [inviteRole, setInviteRole] = useState('membre');
   const [inviteLinkCopied, setInviteLinkCopied] = useState(false);
+  const [inviteLinkEmail, setInviteLinkEmail] = useState('');
 
   const {
     data: users = [],
@@ -510,7 +511,8 @@ export default function Admin() {
   };
 
   const handleCopyInviteLink = async () => {
-    const link = `${window.location.origin}/register?role=${inviteRole}`;
+    const params = new URLSearchParams({ role: inviteRole, email: inviteLinkEmail });
+    const link = `${window.location.origin}/register?${params.toString()}`;
     try {
       await navigator.clipboard.writeText(link);
       setInviteLinkCopied(true);
@@ -607,11 +609,20 @@ export default function Admin() {
 
         <p className="text-sm text-muted-foreground">
           G\u00e9n\u00e9rez un lien d'inscription qui attribue automatiquement un r\u00f4le \u00e0 l'utilisateur.
-          Copiez le lien et envoyez-le \u00e0 la personne \u00e0 inviter.
+          L'utilisateur n'aura qu'\u00e0 choisir son mot de passe.
         </p>
 
-        <div className="flex items-end gap-3">
-          <div className="flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+          <div className="sm:col-span-1">
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Email de l'utilisateur</Label>
+            <Input
+              placeholder="email@example.com"
+              value={inviteLinkEmail}
+              onChange={(e) => setInviteLinkEmail(e.target.value)}
+              className="bg-background border-border"
+            />
+          </div>
+          <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block">R\u00f4le \u00e0 attribuer</Label>
             <SelectRole value={inviteRole} onValueChange={setInviteRole}>
               <SelectRoleTrigger className="bg-background border-border">
@@ -627,6 +638,7 @@ export default function Admin() {
 
           <Button
             onClick={handleCopyInviteLink}
+            disabled={!inviteLinkEmail}
             className="gap-2 shrink-0"
           >
             <Copy className="h-4 w-4" />

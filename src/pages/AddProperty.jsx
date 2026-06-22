@@ -23,6 +23,7 @@ export default function AddProperty() {
   const create = useMutation({
     mutationFn: () => base44.entities.Property.create({
       ...form,
+      ...(!form.lien_piece_jointe ? { lien_piece_jointe: undefined } : {}),
       annee_construction: form.annee_construction ? parseInt(form.annee_construction) : undefined,
       surface: form.surface ? parseFloat(form.surface) : undefined,
       nombre_logements: form.nombre_logements ? parseInt(form.nombre_logements) : undefined,
