@@ -43,7 +43,10 @@ const { data: properties = [], isLoading: lp } = useQuery({
     .map(a => ({ ...normalizeAnalysis(a), property: properties.find(p => p.id === a.property_id) }))
     .filter(a => a.property);
 
-  const top5 = [...enriched].sort((a, b) => (b.score_global || 0) - (a.score_global || 0)).slice(0, 5);
+  const top5 = [...enriched]
+    .filter(a => a.property?.statut === 'en_cours')
+    .sort((a, b) => (b.score_global || 0) - (a.score_global || 0))
+    .slice(0, 5);
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
