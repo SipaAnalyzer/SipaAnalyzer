@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
-import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star } from 'lucide-react';
+import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star, Sun, Moon } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -19,6 +20,7 @@ const navItems = [
 
 function SidebarContent({ location, user, onNavigate }) {
   const { permissions, isAdmin } = usePermissions();
+  const { theme, setTheme } = useTheme();
 
   const visibleNavItems = navItems.filter(item => {
     if (item.path === '/comparator') return isAdmin || permissions.can_view_comparator;
@@ -77,7 +79,7 @@ function SidebarContent({ location, user, onNavigate }) {
         )}
       </nav>
 
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-4 border-t border-sidebar-border space-y-2">
         <div className="flex items-center gap-3 mb-3">
           <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
             {user?.email?.[0]?.toUpperCase() || 'U'}
@@ -92,6 +94,14 @@ function SidebarContent({ location, user, onNavigate }) {
             </p>
           </div>
         </div>
+
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground w-full px-2 py-1.5 rounded transition-colors"
+        >
+          {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+          {theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+        </button>
 
         <button
           onClick={() => base44.auth.logout()}
