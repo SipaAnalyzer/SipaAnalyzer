@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { supabase } from '@/api/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Upload, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 const parseOptionalNumber = (value) => {
@@ -28,6 +29,40 @@ export default function EditProperty() {
   });
 
   const [form, setForm] = useState({});
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 20 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('Le fichier ne doit pas dépasser 20 Mo');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileName = `${Date.now()}-${file.name}`;
+      const { data, error } = await supabase.storage
+        .from('property-files')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('property-files')
+        .getPublicUrl(fileName);
+
+      setForm(prev => ({ ...prev, lien_piece_jointe: publicUrl }));
+      toast.success('Fichier uploadé');
+    } catch (err) {
+      console.error('[Upload]', err);
+      toast.error("Erreur lors de l'upload du fichier");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (property) setForm({
@@ -86,7 +121,40 @@ export default function EditProperty() {
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Surface (m²)</Label><Input type="number" value={form.surface || ''} onChange={set('surface')} className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Nombre de logements</Label><Input type="number" value={form.nombre_logements || ''} onChange={set('nombre_logements')} className="bg-background border-border" /></div>
           <div className="sm:col-span-2"><Label className="text-xs text-muted-foreground mb-1.5 block">Lien de l'annonce</Label><Input value={form.lien_annonce || ''} onChange={set('lien_annonce')} placeholder="https://..." className="bg-background border-border" /></div>
-          <div className="sm:col-span-2"><Label className="text-xs text-muted-foreground mb-1.5 block">Pièce jointe (PDF, Word, PowerPoint)</Label><Input value={form.lien_piece_jointe || ''} onChange={set('lien_piece_jointe')} placeholder="https://..." className="bg-background border-border" /></div>
+          <div className="sm:col-span-2">
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Pièce jointe (PDF, Word, PowerPoint)</Label>
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={uploading}
+                onClick={() => document.getElementById('edit-file-upload')?.click()}
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                {uploading ? 'Upload...' : 'Choisir un fichier'}
+              </Button>
+              <input
+                id="edit-file-upload"
+                type="file"
+                accept=".pdf,.doc,.docx,.ppt,.pptx"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              {form.lien_piece_jointe && (
+                <a href={form.lien_piece_jointe} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+                  <FileText className="h-3.5 w-3.5" />
+                  Voir le fichier
+                </a>
+              )}
+            </div>
+          </div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Latitude (GPS)</Label><Input type="number" value={form.latitude || ''} onChange={set('latitude')} placeholder="46.5197" className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Longitude (GPS)</Label><Input type="number" value={form.longitude || ''} onChange={set('longitude')} placeholder="6.6323" className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Statut</Label>
