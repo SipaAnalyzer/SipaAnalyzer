@@ -394,7 +394,9 @@ export default function Comparator() {
         </>
       )}
 
-      <ChatBot properties={selected} />
+      {selected.length > 0 && (
+        <ChatBot properties={selected} floating={false} />
+      )}
     </div>
   );
 }
