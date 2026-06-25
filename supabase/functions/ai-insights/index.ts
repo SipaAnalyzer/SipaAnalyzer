@@ -87,7 +87,7 @@ Deno.serve(async (request) => {
         {
           role: "system",
           content:
-            "Tu es un analyste immobilier suisse. Réponds en français, en Markdown, de façon concise, professionnelle et exploitable. Tu ne donnes pas de conseil financier réglementé, tu aides à structurer l'analyse.",
+            "Tu es un analyste immobilier suisse. Réponds en français, en Markdown. Sois très court (2-3 phrases max). Ne donne pas de conseil financier réglementé.",
         },
         {
           role: "user",
