@@ -104,7 +104,7 @@ export default function Register() {
 
       setAccountCreated(true);
     } catch (err) {
-      setError(err.message || "La cr\u00e9ation du compte a \u00e9chou\u00e9.");
+      setError(err.message || "La création du compte a échoué.");
     } finally {
       setLoading(false);
     }
@@ -118,19 +118,19 @@ export default function Register() {
     return (
       <AuthLayout
         icon={CheckCircle2}
-        title="Compte cr\u00e9\u00e9"
-        subtitle={assignedRole ? "Votre acc\u00e8s est d\u00e9j\u00e0 configur\u00e9" : "Votre acc\u00e8s doit \u00eatre valid\u00e9 par un administrateur"}
+        title="Compte créé"
+        subtitle={assignedRole ? "Votre accès est déjà configuré" : "Votre accès doit être validé par un administrateur"}
       >
         <div className="rounded-lg border border-border bg-background/60 p-4 text-sm text-muted-foreground">
           {assignedRole ? (
-            <>Compte cr\u00e9\u00e9 avec succ\u00e8s. Le r\u00f4le <strong>{assignedRole}</strong> vous a \u00e9t\u00e9 attribu\u00e9 automatiquement. Vous pouvez d\u00e8s \u00e0 pr\u00e9sent vous connecter.</>
+            <>Compte créé avec succès. Le rôle <strong>{assignedRole}</strong> vous a été attribué automatiquement. Vous pouvez dès à présent vous connecter.</>
           ) : (
-            "Compte cr\u00e9\u00e9 avec succ\u00e8s. Veuillez contacter votre administrateur afin qu'il vous attribue un r\u00f4le, puis rechargez la page."
+            "Compte créé avec succès. Veuillez contacter votre administrateur afin qu'il vous attribue un rôle, puis rechargez la page."
           )}
         </div>
 
         <Button className="w-full h-12 font-medium" asChild>
-          <Link to="/login">Aller \u00e0 la connexion</Link>
+          <Link to="/login">Aller à la connexion</Link>
         </Button>
       </AuthLayout>
     );
@@ -139,11 +139,11 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title={inviteEmail ? "Vous \u00eates invit\u00e9" : "Cr\u00e9er un compte"}
-      subtitle={inviteEmail ? "Choisissez votre mot de passe pour finaliser votre inscription" : "Cr\u00e9ez votre acc\u00e8s SIPA Analyzer"}
+      title={inviteEmail ? "Vous êtes invité" : "Créer un compte"}
+      subtitle={inviteEmail ? "Choisissez votre mot de passe pour finaliser votre inscription" : "Créez votre accès SIPA Analyzer"}
       footer={
         <>
-          Vous avez d\u00e9j\u00e0 un compte ?{" "}
+          Vous avez déjà un compte ?{" "}
           <Link to="/login" className="text-primary font-medium hover:underline">
             Se connecter
           </Link>
@@ -152,7 +152,7 @@ export default function Register() {
     >
       {inviteRole && ROLE_LABELS[inviteRole] && (
         <div className="mb-6 p-3 rounded-lg bg-primary/10 border border-primary/20 text-sm text-center">
-          R\u00f4le attribu\u00e9 : <strong>{ROLE_LABELS[inviteRole]}</strong>
+          Rôle attribué : <strong>{ROLE_LABELS[inviteRole]}</strong>
         </div>
       )}
 
@@ -239,10 +239,10 @@ export default function Register() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Cr\u00e9ation du compte...
+              Création du compte...
             </>
           ) : (
-            "Cr\u00e9er le compte"
+            "Créer le compte"
           )}
         </Button>
       </form>

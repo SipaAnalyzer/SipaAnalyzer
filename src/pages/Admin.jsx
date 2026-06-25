@@ -603,13 +603,13 @@ export default function Admin() {
         <div className="flex items-center gap-2 mb-2">
           <Link2 className="h-4 w-4 text-primary" />
           <h2 className="font-semibold text-sm">
-            Lien d'invitation avec r\u00f4le pr\u00e9-d\u00e9fini
+            Lien d'invitation avec rôle pré-défini
           </h2>
         </div>
 
         <p className="text-sm text-muted-foreground">
-          G\u00e9n\u00e9rez un lien d'inscription qui attribue automatiquement un r\u00f4le \u00e0 l'utilisateur.
-          L'utilisateur n'aura qu'\u00e0 choisir son mot de passe.
+          Générez un lien d'inscription qui attribue automatiquement un rôle à l'utilisateur.
+          L'utilisateur n'aura qu'à choisir son mot de passe.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
@@ -623,7 +623,7 @@ export default function Admin() {
             />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground mb-1.5 block">R\u00f4le \u00e0 attribuer</Label>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Rôle à attribuer</Label>
             <SelectRole value={inviteRole} onValueChange={setInviteRole}>
               <SelectRoleTrigger className="bg-background border-border">
                 <SelectRoleValue />
@@ -647,7 +647,7 @@ export default function Admin() {
         </div>
 
         {inviteLinkCopied && (
-          <p className="text-xs text-emerald-400">Lien copi\u00e9 dans le presse-papier</p>
+          <p className="text-xs text-emerald-400">Lien copié dans le presse-papier</p>
         )}
       </div>
 
