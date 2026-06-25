@@ -389,25 +389,35 @@ export default function PropertyDetail() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                  <StatusBadge statut={analysis.statut} />
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <StatusBadge statut={analysis.statut} />
 
-                  {canEditAnalysis && (
-                    <Link to={`/edit-analysis/${analysis.id}`}>
-                      <Button size="sm" variant="outline" className="gap-1.5">
-                        <Pencil className="h-3.5 w-3.5" />
-                        Modifier
-                      </Button>
-                    </Link>
-                  )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={() => setSelectedAnalysisId(analysis.id)}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      Visualiser
+                    </Button>
 
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => exportAnalysisPdf(property, analysis)}
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                  </Button>
+                    {canEditAnalysis && (
+                      <Link to={`/edit-analysis/${analysis.id}`}>
+                        <Button size="sm" variant="outline" className="gap-1.5">
+                          <Pencil className="h-3.5 w-3.5" />
+                          Modifier
+                        </Button>
+                      </Link>
+                    )}
+
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => exportAnalysisPdf(property, analysis)}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                    </Button>
 
                   {canDeleteAnalysis && (
                     <AlertDialog>
