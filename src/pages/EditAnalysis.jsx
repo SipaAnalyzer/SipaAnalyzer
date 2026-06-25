@@ -2,7 +2,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { recordAuditLog } from '@/utils/auditLogs';
-import { notifyAllUsers } from '@/utils/notifications';
 import AnalysisForm from '../components/AnalysisForm';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,9 +24,6 @@ export default function EditAnalysis() {
       queryClient.invalidateQueries({ queryKey: ['comments', analysis.property_id] });
       toast.success('Analyse mise à jour');
       recordAuditLog({ eventType: 'analysis_updated', targetType: 'analysis', targetId: analysisId, targetLabel: `Analyse #${analysisId?.slice(0, 8)}`, metadata: { property_id: analysis.property_id } });
-      if (Number(variables.rendement_brut) >= 4) {
-        notifyAllUsers({ eventType: 'yield_target_reached', targetType: 'property', targetId: analysis.property_id, targetLabel: `Rendement ${variables.rendement_brut}% atteint`, metadata: { analysis_id: analysisId, rendement_brut: variables.rendement_brut } });
-      }
       navigate(`/property/${analysis.property_id}`);
     },
   });
