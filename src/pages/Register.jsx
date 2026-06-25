@@ -38,6 +38,20 @@ const ROLE_PRESETS = {
     can_view_presentation: true,
     can_comment: true,
   },
+  staff: {
+    role: "staff",
+    is_admin: false,
+    can_view_properties: true,
+    can_create_property: false,
+    can_edit_property: true,
+    can_delete_property: false,
+    can_create_analysis: true,
+    can_edit_analysis: true,
+    can_delete_analysis: false,
+    can_view_comparator: true,
+    can_view_presentation: true,
+    can_comment: true,
+  },
   membre: {
     role: "membre",
     is_admin: false,
@@ -57,6 +71,7 @@ const ROLE_PRESETS = {
 const ROLE_LABELS = {
   admin: "Admin",
   direction: "Direction",
+  staff: "Staff",
   membre: "Membre",
 };
 
