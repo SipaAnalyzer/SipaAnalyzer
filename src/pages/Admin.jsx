@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navigate } from 'react-router-dom';
 import {
@@ -15,6 +15,8 @@ import {
   Trash2,
   Link2,
   Copy,
+  Filter,
+  Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -102,6 +104,120 @@ function AuditLogsPanel() {
                     {log.target_label ? ` · ${log.target_label}` : ''}
                   </p>
 
+                  {log.metadata?.filename && (
+                    <p className="text-[11px] text-muted-foreground mt-1 font-mono truncate">
+                      {log.metadata.filename}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UserActivityPanel({ allPerms }) {
+  const {
+    data: logs = [],
+    isLoading,
+  } = useQuery({
+    queryKey: ['user-activity-logs'],
+    queryFn: () => listAuditLogs(200),
+  });
+
+  const [selectedUserId, setSelectedUserId] = useState(null);
+
+  const userLogs = selectedUserId
+    ? logs.filter((log) => log.actor_id === selectedUserId)
+    : logs;
+
+  const userOptions = useMemo(() => {
+    const seen = new Set();
+    const result = [];
+    for (const log of logs) {
+      if (!seen.has(log.actor_id) && log.actor_id) {
+        seen.add(log.actor_id);
+        const perm = allPerms.find((p) => p.user_id === log.actor_id);
+        result.push({
+          id: log.actor_id,
+          name: log.actor_name || log.actor_email || 'Inconnu',
+          email: log.actor_email,
+          role: perm?.role || 'en_attente',
+        });
+      }
+    }
+    return result.sort((a, b) => a.name.localeCompare(b.name));
+  }, [logs, allPerms]);
+
+  const LOG_STYLES = {
+    login: { label: 'Connexion', icon: LogIn, className: 'text-emerald-400 bg-emerald-500/10' },
+    logout: { label: 'Déconnexion', icon: LogOut, className: 'text-muted-foreground bg-secondary' },
+    export_pdf: { label: 'Export PDF', icon: FileDown, className: 'text-amber-400 bg-amber-500/10' },
+  };
+
+  return (
+    <div className="bg-card rounded-xl border border-border overflow-hidden">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Eye className="h-4 w-4 text-primary" />
+          <h2 className="font-semibold text-sm">Activité par utilisateur</h2>
+        </div>
+
+        <select
+          value={selectedUserId || ''}
+          onChange={(e) => setSelectedUserId(e.target.value || null)}
+          className="text-xs bg-background border border-border rounded-lg px-2 py-1.5 text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary max-w-[200px]"
+        >
+          <option value="">Tous les utilisateurs</option>
+          {userOptions.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name} ({ROLE_LABELS[u.role] || u.role})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {isLoading ? (
+        <div className="p-8 flex items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        </div>
+      ) : userLogs.length === 0 ? (
+        <div className="p-8 text-center text-sm text-muted-foreground">
+          Aucune activité enregistrée.
+        </div>
+      ) : (
+        <div className="divide-y divide-border/50 max-h-[400px] overflow-y-auto">
+          {userLogs.slice(0, 100).map((log) => {
+            const cfg = LOG_STYLES[log.event_type] || {
+              label: log.event_type || 'Événement',
+              icon: Activity,
+              className: 'text-primary bg-primary/10',
+            };
+            const Icon = cfg.icon;
+
+            return (
+              <div key={log.id || `${log.event_type}-${log.created_at}`} className="px-5 py-3 flex items-start gap-3">
+                <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${cfg.className}`}>
+                  <Icon className="h-4 w-4" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-medium">{cfg.label}</p>
+                    <span className="text-xs text-muted-foreground">
+                      {moment(log.created_at).format('DD MMM YYYY, HH:mm')}
+                    </span>
+                    {log.storage === 'local' && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">local</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {log.actor_name || log.actor_email || 'Utilisateur inconnu'}
+                    {log.target_label ? ` · ${log.target_label}` : ''}
+                  </p>
                   {log.metadata?.filename && (
                     <p className="text-[11px] text-muted-foreground mt-1 font-mono truncate">
                       {log.metadata.filename}
@@ -389,6 +505,7 @@ export default function Admin() {
   const [inviteRole, setInviteRole] = useState('membre');
   const [inviteLinkCopied, setInviteLinkCopied] = useState(false);
   const [inviteLinkEmail, setInviteLinkEmail] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
 
   const {
     data: users = [],
@@ -423,6 +540,13 @@ export default function Admin() {
   }
 
   const otherUsers = users.filter((listedUser) => listedUser.id !== user?.id);
+
+  const filteredUsers = roleFilter === 'all'
+    ? otherUsers
+    : otherUsers.filter((u) => {
+        const perm = allPerms.find((p) => p.user_id === u.id);
+        return normalizeRole(perm?.role || (perm?.is_admin ? 'admin' : 'en_attente')) === roleFilter;
+      });
 
   const handleSavePermissions = async (userId, newPerms) => {
     const role = newPerms.role || 'en_attente';
@@ -551,6 +675,8 @@ export default function Admin() {
 
       <AuditLogsPanel />
 
+      <UserActivityPanel allPerms={allPerms} />
+
       <div className="bg-card rounded-xl border border-border p-5 space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <UserPlus className="h-4 w-4 text-primary" />
@@ -640,23 +766,41 @@ export default function Admin() {
       </div>
 
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
 
-          <h2 className="font-semibold text-sm">
-            {otherUsers.length} utilisateur{otherUsers.length > 1 ? 's' : ''}
-          </h2>
+            <h2 className="font-semibold text-sm">
+              {filteredUsers.length} / {otherUsers.length} utilisateur{otherUsers.length > 1 ? 's' : ''}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="text-xs bg-background border border-border rounded-lg px-2 py-1.5 text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="all">Tous les rôles</option>
+              {Object.entries(ROLE_LABELS).map(([role, label]) => (
+                <option key={role} value={role}>{label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {otherUsers.length === 0 ? (
+        {filteredUsers.length === 0 ? (
           <div className="bg-card rounded-xl border border-border p-10 text-center">
             <Users className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">
-              Aucun autre utilisateur pour l’instant.
+              {roleFilter === 'all'
+                ? "Aucun autre utilisateur pour l'instant."
+                : `Aucun utilisateur avec le rôle "${ROLE_LABELS[roleFilter] || roleFilter}".`}
             </p>
           </div>
         ) : (
-          otherUsers.map((listedUser) => (
+          filteredUsers.map((listedUser) => (
             <UserPermissionRow
               key={listedUser.id}
               user={listedUser}

@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { recordAuditLog } from '@/utils/auditLogs';
 import AnalysisForm from '../components/AnalysisForm';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ export default function EditAnalysis() {
       queryClient.invalidateQueries({ queryKey: ['analyses'] });
       queryClient.invalidateQueries({ queryKey: ['comments', analysis.property_id] });
       toast.success('Analyse mise à jour');
+      recordAuditLog({ eventType: 'analysis_updated', targetType: 'analysis', targetId: analysisId, targetLabel: `Analyse #${analysisId?.slice(0, 8)}`, metadata: { property_id: analysis.property_id } });
       navigate(`/property/${analysis.property_id}`);
     },
   });

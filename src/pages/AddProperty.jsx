@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { supabase } from '@/api/supabaseClient';
+import { recordAuditLog } from '@/utils/auditLogs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -68,6 +69,7 @@ export default function AddProperty() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       toast.success('Bien ajouté avec succès');
+      recordAuditLog({ eventType: 'property_created', targetType: 'property', targetId: result.id, targetLabel: result.nom_bien });
       navigate(`/property/${result.id}`);
     },
   });

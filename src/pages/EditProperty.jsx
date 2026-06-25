@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { supabase } from '@/api/supabaseClient';
+import { recordAuditLog } from '@/utils/auditLogs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -91,6 +92,7 @@ export default function EditProperty() {
       queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
       queryClient.invalidateQueries({ queryKey: ['comments', propertyId] });
       toast.success('Bien mis à jour');
+      recordAuditLog({ eventType: 'property_updated', targetType: 'property', targetId: propertyId, targetLabel: form.nom_bien || undefined });
       navigate(`/property/${propertyId}`);
     },
     onError: (error) => {

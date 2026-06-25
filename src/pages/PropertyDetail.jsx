@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -15,6 +15,8 @@ import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
 import { formatCHF, formatPercent, normalizeAnalyses } from '../utils/calculations';
 import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
+import { listAuditLogs } from '../utils/auditLogs';
+import moment from 'moment';
 import {
   ArrowLeft,
   Download,
@@ -28,6 +30,7 @@ import {
   ExternalLink,
   Loader2,
   Landmark,
+  Activity,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -40,7 +43,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import moment from 'moment';
 
 export default function PropertyDetail() {
   const { propertyId } = useParams();
@@ -452,7 +454,78 @@ export default function PropertyDetail() {
         userName={user?.full_name || user?.email}
       />
 
+      <ActivityFeed propertyId={propertyId} />
+
       <CommentSection propertyId={propertyId} initialComments={comments} />
+    </div>
+  );
+}
+
+function ActivityFeed({ propertyId }) {
+  const { data: logs = [], isLoading } = useQuery({
+    queryKey: ['property-activity', propertyId],
+    queryFn: () => listAuditLogs(200),
+  });
+
+  const relevantLogs = useMemo(() => {
+    return logs
+      .filter((log) => log.target_id === propertyId || log.metadata?.property_id === propertyId)
+      .slice(0, 30);
+  }, [logs, propertyId]);
+
+  const EVENT_STYLES = {
+    login: { label: 'Connexion', icon: 'LogIn', className: 'text-emerald-400 bg-emerald-500/10' },
+    logout: { label: 'Déconnexion', icon: 'LogOut', className: 'text-muted-foreground bg-secondary' },
+    export_pdf: { label: 'Export PDF', icon: 'FileDown', className: 'text-amber-400 bg-amber-500/10' },
+    property_created: { label: 'Bien créé', icon: 'FileText', className: 'text-primary bg-primary/10' },
+    property_updated: { label: 'Bien modifié', icon: 'Pencil', className: 'text-blue-400 bg-blue-500/10' },
+    analysis_created: { label: 'Analyse créée', icon: 'Activity', className: 'text-violet-400 bg-violet-500/10' },
+    analysis_updated: { label: 'Analyse modifiée', icon: 'Pencil', className: 'text-blue-400 bg-blue-500/10' },
+  };
+
+  return (
+    <div className="bg-card rounded-xl border border-border">
+      <div className="px-5 py-4 border-b border-border flex items-center gap-2">
+        <Activity className="h-4 w-4 text-primary" />
+        <h3 className="font-heading font-semibold text-sm">Fil d'activité</h3>
+        {!isLoading && <span className="text-xs text-muted-foreground ml-auto">{relevantLogs.length} événement{relevantLogs.length > 1 ? 's' : ''}</span>}
+      </div>
+
+      <div className="p-5">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          </div>
+        ) : relevantLogs.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">Aucune activité enregistrée pour ce bien.</p>
+        ) : (
+          <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            {relevantLogs.map((log) => {
+              const style = EVENT_STYLES[log.event_type] || { label: log.event_type || 'Événement', icon: 'Activity', className: 'text-primary bg-primary/10' };
+
+              return (
+                <div key={log.id || `${log.event_type}-${log.created_at}`} className="flex gap-3">
+                  <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${style.className}`}>
+                    <Activity className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium">{style.label}</p>
+                      <span className="text-xs text-muted-foreground">{moment(log.created_at).format('DD MMM YYYY, HH:mm')}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {log.actor_name || log.actor_email || 'Utilisateur inconnu'}
+                    </p>
+                    {log.target_label && (
+                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{log.target_label}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

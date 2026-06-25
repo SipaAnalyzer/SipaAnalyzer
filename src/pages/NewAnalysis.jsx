@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { recordAuditLog } from '@/utils/auditLogs';
 import AnalysisForm from '../components/AnalysisForm';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -18,6 +19,7 @@ export default function NewAnalysis() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['analyses'] });
       toast.success('Analyse enregistrée avec succès');
+      recordAuditLog({ eventType: 'analysis_created', targetType: 'analysis', targetId: result.id, targetLabel: `Analyse #${result.id?.slice(0, 8)}`, metadata: { property_id: result.property_id } });
       navigate(`/property/${result.property_id}`);
     },
   });
