@@ -17,7 +17,6 @@ import ChatBot from '../components/ChatBot';
 import { formatCHF, formatPercent, normalizeAnalyses } from '../utils/calculations';
 import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
 import { listAuditLogs } from '../utils/auditLogs';
-import { notifyAllUsers } from '../utils/notifications';
 import moment from 'moment';
 import {
   ArrowLeft,
@@ -85,7 +84,6 @@ export default function PropertyDetail() {
     mutationFn: () => base44.entities.Property.delete(propertyId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      notifyAllUsers({ eventType: 'property_deleted', targetType: 'property', targetId: propertyId, targetLabel: property?.nom_bien });
       navigate('/properties');
     },
   });
