@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type Provider = "openai" | "deepseek" | "zenmux";
+type Provider = "openai" | "deepseek" | "zenmux" | "grok";
 
 type InvokePayload = {
   prompt?: string;
@@ -31,6 +31,12 @@ const PROVIDER_CONFIG: Record<Provider, { apiKeyEnv: string; url: string; modelE
     modelEnv: "ZENMUX_MODEL",
     defaultModel: "z-ai/glm-4.7-flash-free",
   },
+  grok: {
+    apiKeyEnv: "GROK_API_KEY",
+    url: "https://api.x.ai/v1/chat/completions",
+    modelEnv: "GROK_MODEL",
+    defaultModel: "grok-2-latest",
+  },
 };
 
 Deno.serve(async (request) => {
@@ -44,7 +50,7 @@ Deno.serve(async (request) => {
 
   const payload = (await request.json().catch(() => ({}))) as InvokePayload;
   const prompt = payload.prompt?.trim();
-  const provider: Provider = (payload.provider === "deepseek" || payload.provider === "zenmux") ? payload.provider : "openai";
+  const provider: Provider = (payload.provider === "deepseek" || payload.provider === "zenmux" || payload.provider === "grok") ? payload.provider : "openai";
   const cfg = PROVIDER_CONFIG[provider];
 
   const apiKey = Deno.env.get(cfg.apiKeyEnv);

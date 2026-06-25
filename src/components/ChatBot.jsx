@@ -27,7 +27,7 @@ export default function ChatBot({ property, analysis }) {
       const context = buildChatContext({ property, analysis });
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `${context}\n\nQuestion de l'utilisateur :\n${userMsg}`,
-        provider: 'zenmux',
+        provider: 'grok',
       });
 
       setMessages((prev) => [
@@ -61,7 +61,7 @@ export default function ChatBot({ property, analysis }) {
       <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-primary/5">
         <div className="flex items-center gap-2">
           <Bot className="h-4 w-4 text-primary" />
-          <span className="text-sm font-medium">Assistant IA (ZenMux)</span>
+          <span className="text-sm font-medium">Assistant IA (Grok)</span>
         </div>
         <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
           <X className="h-4 w-4" />
