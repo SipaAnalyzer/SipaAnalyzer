@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
-import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star, Sun, Moon, Bell } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import NotificationBell from '@/components/NotificationBell';
 import logoSipa from '@/assets/logo-sipa.png';
 
 const navItems = [
@@ -94,6 +95,8 @@ function SidebarContent({ location, user, onNavigate }) {
             </p>
           </div>
         </div>
+
+        <NotificationBell />
 
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

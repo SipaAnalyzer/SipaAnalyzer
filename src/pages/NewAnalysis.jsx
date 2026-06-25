@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { recordAuditLog } from '@/utils/auditLogs';
+import { notifyAllUsers } from '@/utils/notifications';
 import AnalysisForm from '../components/AnalysisForm';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -20,6 +21,9 @@ export default function NewAnalysis() {
       queryClient.invalidateQueries({ queryKey: ['analyses'] });
       toast.success('Analyse enregistrée avec succès');
       recordAuditLog({ eventType: 'analysis_created', targetType: 'analysis', targetId: result.id, targetLabel: `Analyse #${result.id?.slice(0, 8)}`, metadata: { property_id: result.property_id } });
+      if (Number(result.rendement_brut) >= 4) {
+        notifyAllUsers({ eventType: 'yield_target_reached', targetType: 'property', targetId: result.property_id, targetLabel: `Rendement ${result.rendement_brut}% atteint`, metadata: { analysis_id: result.id, rendement_brut: result.rendement_brut } });
+      }
       navigate(`/property/${result.property_id}`);
     },
   });
