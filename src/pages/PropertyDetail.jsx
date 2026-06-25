@@ -393,16 +393,15 @@ export default function PropertyDetail() {
                   <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     <StatusBadge statut={analysis.statut} />
 
-                    <Link
-                      to={`/analysis/${analysis.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={() => exportAnalysisPdf(property, analysis)}
                     >
-                      <Button size="sm" variant="outline" className="gap-1.5">
-                        <Eye className="h-3.5 w-3.5" />
-                        Visualiser
-                      </Button>
-                    </Link>
+                      <Eye className="h-3.5 w-3.5" />
+                      Visualiser
+                    </Button>
 
                     {canEditAnalysis && (
                       <Link to={`/edit-analysis/${analysis.id}`}>
