@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MessageSquare, Send, Loader2, Bot, User, X } from 'lucide-react';
 
-export default function ChatBot({ property, analysis }) {
+export default function ChatBot({ property, analysis, properties }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -24,7 +24,7 @@ export default function ChatBot({ property, analysis }) {
     setLoading(true);
 
     try {
-      const context = buildChatContext({ property, analysis });
+      const context = properties ? buildChatContext({ properties }) : buildChatContext({ property, analysis });
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `${context}\n\nQuestion de l'utilisateur :\n${userMsg}`,
         provider: 'groq',
@@ -71,7 +71,7 @@ export default function ChatBot({ property, analysis }) {
       <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[400px] min-h-[200px]">
         {messages.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-8">
-            Posez une question sur ce bien ou son analyse.
+            {properties ? 'Posez une question sur ces biens comparés.' : 'Posez une question sur ce bien ou son analyse.'}
           </p>
         )}
         {messages.map((msg, i) => (
@@ -121,7 +121,19 @@ export default function ChatBot({ property, analysis }) {
   );
 }
 
-function buildChatContext({ property, analysis }) {
+function buildChatContext({ property, analysis, properties }) {
+  if (properties && properties.length > 0) {
+    const lines = ['Contexte des biens immobiliers comparés :'];
+    properties.forEach((p, i) => {
+      const a = p.analysis;
+      lines.push(`\nBien ${i + 1} : ${p.nom_bien || 'N/A'} à ${p.ville || 'N/A'}${p.canton ? `, ${p.canton}` : ''}`);
+      if (a) {
+        lines.push(`  - Prix total : ${a.prix_total || 0} CHF · Rdt brut : ${a.rendement_brut || 0}% · Rdt net/FP : ${a.rendement_net_fonds_propres || 0}% · Score : ${a.score_global || 0}/100`);
+      }
+    });
+    return lines.join('\n');
+  }
+
   if (!property && !analysis) return '';
   return [
     'Contexte du bien immobilier analysé :',

@@ -15,6 +15,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import ScoreBadge from '../components/ScoreBadge';
 import ScoreGauge from '../components/ScoreGauge';
+import ChatBot from '../components/ChatBot';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
 import { exportComparisonPdf } from '../utils/pdfExports';
 
@@ -392,6 +393,8 @@ export default function Comparator() {
           </div>
         </>
       )}
+
+      <ChatBot properties={selected} />
     </div>
   );
 }
