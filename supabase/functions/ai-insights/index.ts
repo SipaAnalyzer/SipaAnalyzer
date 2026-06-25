@@ -35,7 +35,7 @@ const PROVIDER_CONFIG: Record<Provider, { apiKeyEnv: string; url: string; modelE
     apiKeyEnv: "GROK_API_KEY",
     url: "https://api.x.ai/v1/chat/completions",
     modelEnv: "GROK_MODEL",
-    defaultModel: "grok-2-latest",
+    defaultModel: "grok-2",
   },
 };
 
