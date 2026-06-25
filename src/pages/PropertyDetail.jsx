@@ -32,6 +32,7 @@ import {
   Loader2,
   Landmark,
   Activity,
+  Eye,
 } from 'lucide-react';
 import {
   AlertDialog,
