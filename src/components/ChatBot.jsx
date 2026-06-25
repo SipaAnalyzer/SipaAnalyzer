@@ -72,7 +72,7 @@ export default function ChatBot({ property, analysis, properties, floating = tru
       <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[400px] min-h-[200px]">
         {messages.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-8">
-            {properties ? 'Posez une question sur ces biens comparés.' : 'Posez une question sur ce bien ou son analyse.'}
+            {properties?.length > 0 ? 'Posez une question sur ces biens comparés.' : property ? 'Posez une question sur ce bien ou son analyse.' : 'Posez votre question sur les biens immobiliers.'}
           </p>
         )}
         {messages.map((msg, i) => (
@@ -144,7 +144,7 @@ export default function ChatBot({ property, analysis, properties, floating = tru
           <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto min-h-[200px]">
             {messages.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-8">
-                {properties ? 'Posez une question sur ces biens comparés.' : 'Posez une question sur ce bien ou son analyse.'}
+            {properties?.length > 0 ? 'Posez une question sur ces biens comparés.' : property ? 'Posez une question sur ce bien ou son analyse.' : 'Posez votre question sur les biens immobiliers.'}
               </p>
             )}
             {messages.map((msg, i) => (
