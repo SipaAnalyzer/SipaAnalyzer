@@ -10,3 +10,13 @@ create table if not exists public.audit_logs (
   metadata jsonb default '{}'::jsonb,
   created_at timestamptz default now()
 );
+
+alter table public.audit_logs enable row level security;
+
+create policy "Allow insert for authenticated users"
+  on public.audit_logs for insert
+  with check (auth.role() = 'authenticated');
+
+create policy "Allow select for authenticated users"
+  on public.audit_logs for select
+  using (auth.role() = 'authenticated');
