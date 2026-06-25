@@ -181,9 +181,8 @@ function save(doc, filename, auditLog) {
 
 function view(doc, filename, auditLog) {
   finalizeDoc(doc, filename, auditLog);
-  const blob = doc.output('blob');
-  const url = URL.createObjectURL(blob);
-  window.open(url, '_blank');
+  const dataUrl = doc.output('datauristring');
+  window.open(dataUrl, '_blank');
 }
 
 function propertyRows(property) {

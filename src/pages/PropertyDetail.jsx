@@ -15,7 +15,7 @@ import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
 import ChatBot from '../components/ChatBot';
 import { formatCHF, formatPercent, normalizeAnalyses } from '../utils/calculations';
-import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
+import { exportAnalysisPdf, exportPropertyPdf, viewAnalysisPdf } from '../utils/pdfExports';
 import { listAuditLogs } from '../utils/auditLogs';
 import moment from 'moment';
 import {
@@ -393,16 +393,15 @@ export default function PropertyDetail() {
                   <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     <StatusBadge statut={analysis.statut} />
 
-                    <Link
-                      to={`/analysis/${analysis.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5"
+                      onClick={() => viewAnalysisPdf(property, analysis)}
                     >
-                      <Button size="sm" variant="outline" className="gap-1.5">
-                        <Eye className="h-3.5 w-3.5" />
-                        Visualiser
-                      </Button>
-                    </Link>
+                      <Eye className="h-3.5 w-3.5" />
+                      Visualiser
+                    </Button>
 
                     {canEditAnalysis && (
                       <Link to={`/edit-analysis/${analysis.id}`}>

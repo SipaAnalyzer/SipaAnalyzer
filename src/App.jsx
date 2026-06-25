@@ -26,7 +26,6 @@ import EditAnalysis from "./pages/EditAnalysis";
 import Comparator from "./pages/Comparator";
 import Presentation from "./pages/Presentation";
 import Admin from "./pages/Admin";
-import ViewAnalysis from "./pages/ViewAnalysis";
 
 const AuthenticatedApp = () => {
   const {
@@ -78,7 +77,6 @@ const AuthenticatedApp = () => {
           <Route path="/edit-property/:propertyId" element={<EditProperty />} />
           <Route path="/new-analysis" element={<NewAnalysis />} />
           <Route path="/edit-analysis/:analysisId" element={<EditAnalysis />} />
-          <Route path="/analysis/:analysisId" element={<ViewAnalysis />} />
           <Route path="/comparator" element={<Comparator />} />
           <Route path="/presentation" element={<Presentation />} />
           <Route path="/admin" element={<Admin />} />
