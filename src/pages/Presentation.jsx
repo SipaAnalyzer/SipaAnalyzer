@@ -118,7 +118,7 @@ export default function Presentation() {
 
   const validated = useMemo(() => {
     return properties
-      .filter((property) => property.statut === 'valide')
+      .filter((property) => property.statut === 'en_cours')
       .map((property) => {
         const latest = analyses
           .filter((analysis) => analysis.property_id === property.id)
@@ -275,7 +275,7 @@ export default function Presentation() {
           </div>
 
           {ranked.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">Aucun bien validé pour le moment</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">Aucun bien en cours d'analyse</p>
           ) : (
             <div className="space-y-3">
               {ranked.slice(0, 5).map((property, index) => (
