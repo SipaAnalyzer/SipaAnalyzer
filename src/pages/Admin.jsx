@@ -458,37 +458,25 @@ export default function Admin() {
 
   const handleDeleteUser = async (userId) => {
     const confirmed = window.confirm(
-      "Supprimer cet utilisateur de l'application ?\n\nCela supprimera son profil et ses permissions, mais pas encore son compte Supabase Auth."
+      "Supprimer définitivement cet utilisateur ?\n\nLe compte Supabase, le profil et les permissions seront supprimés."
     );
 
     if (!confirmed) return;
 
-    const { error: permissionsDeleteError } = await supabase
-      .from('user_permissions')
-      .delete()
-      .eq('user_id', userId);
+    const { error } = await supabase.functions.invoke('delete-user', {
+      body: { user_id: userId },
+    });
 
-    if (permissionsDeleteError) {
-      console.error(permissionsDeleteError);
-      toast.error('Impossible de supprimer les permissions');
-      return;
-    }
-
-    const { error: profileDeleteError } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', userId);
-
-    if (profileDeleteError) {
-      console.error(profileDeleteError);
-      toast.error('Impossible de supprimer le profil');
+    if (error) {
+      console.error(error);
+      toast.error("Erreur lors de la suppression de l'utilisateur");
       return;
     }
 
     await queryClient.invalidateQueries();
     await queryClient.refetchQueries();
 
-    toast.success("Utilisateur supprimé de l'application");
+    toast.success("Utilisateur supprimé définitivement");
   };
 
   const handleInvite = async () => {
