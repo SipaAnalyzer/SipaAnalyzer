@@ -13,6 +13,7 @@ import CommentSection from '../components/CommentSection';
 import AIInsights from '../components/AIInsights';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
+import ChatBot from '../components/ChatBot';
 import { formatCHF, formatPercent, normalizeAnalyses } from '../utils/calculations';
 import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
 import { listAuditLogs } from '../utils/auditLogs';
@@ -457,6 +458,8 @@ export default function PropertyDetail() {
       <ActivityFeed propertyId={propertyId} />
 
       <CommentSection propertyId={propertyId} initialComments={comments} />
+
+      <ChatBot property={property} analysis={selected} />
     </div>
   );
 }

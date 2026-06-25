@@ -5,8 +5,26 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+type Provider = "openai" | "deepseek";
+
 type InvokePayload = {
   prompt?: string;
+  provider?: Provider;
+};
+
+const PROVIDER_CONFIG: Record<Provider, { apiKeyEnv: string; url: string; modelEnv: string; defaultModel: string }> = {
+  openai: {
+    apiKeyEnv: "OPENAI_API_KEY",
+    url: "https://api.openai.com/v1/chat/completions",
+    modelEnv: "OPENAI_MODEL",
+    defaultModel: "gpt-4.1-mini",
+  },
+  deepseek: {
+    apiKeyEnv: "DEEPSEEK_API_KEY",
+    url: "https://api.deepseek.com/v1/chat/completions",
+    modelEnv: "DEEPSEEK_MODEL",
+    defaultModel: "deepseek-chat",
+  },
 };
 
 Deno.serve(async (request) => {
@@ -18,26 +36,26 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: "Méthode non autorisée." }, 405);
   }
 
-  const apiKey = Deno.env.get("OPENAI_API_KEY");
+  const payload = (await request.json().catch(() => ({}))) as InvokePayload;
+  const prompt = payload.prompt?.trim();
+  const provider: Provider = payload.provider === "deepseek" ? "deepseek" : "openai";
+  const cfg = PROVIDER_CONFIG[provider];
+
+  const apiKey = Deno.env.get(cfg.apiKeyEnv);
   if (!apiKey) {
     return jsonResponse(
-      {
-        error:
-          "OPENAI_API_KEY est manquant dans les secrets Supabase de la fonction.",
-      },
+      { error: `${cfg.apiKeyEnv} est manquant dans les secrets Supabase.` },
       500
     );
   }
-
-  const model = Deno.env.get("OPENAI_MODEL") || "gpt-4.1-mini";
-  const payload = (await request.json().catch(() => ({}))) as InvokePayload;
-  const prompt = payload.prompt?.trim();
 
   if (!prompt) {
     return jsonResponse({ error: "Prompt IA manquant." }, 400);
   }
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const model = Deno.env.get(cfg.modelEnv) || cfg.defaultModel;
+
+  const response = await fetch(cfg.url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -46,8 +64,8 @@ Deno.serve(async (request) => {
     body: JSON.stringify({
       model,
       temperature: 0.25,
-      max_output_tokens: 1600,
-      input: [
+      max_tokens: 2000,
+      messages: [
         {
           role: "system",
           content:
@@ -68,7 +86,7 @@ Deno.serve(async (request) => {
       {
         error:
           result?.error?.message ||
-          "OpenAI n'a pas pu générer l'analyse IA.",
+          `L'IA ${provider} n'a pas pu générer l'analyse.`,
       },
       response.status
     );
@@ -94,15 +112,8 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
 }
 
 function extractOutputText(result: any) {
-  if (typeof result?.output_text === "string") {
-    return result.output_text;
+  if (result?.choices?.[0]?.message?.content) {
+    return result.choices[0].message.content;
   }
-
-  const parts =
-    result?.output
-      ?.flatMap((item: any) => item?.content || [])
-      ?.map((content: any) => content?.text)
-      ?.filter(Boolean) || [];
-
-  return parts.join("\n").trim();
+  return "";
 }
