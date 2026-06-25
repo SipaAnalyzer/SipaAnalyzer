@@ -151,7 +151,7 @@ function simpleTable(doc, state, headers, rows, widths) {
   state.y += 4;
 }
 
-function save(doc, filename, auditLog) {
+function finalizeDoc(doc, filename, auditLog) {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i += 1) {
     doc.setPage(i);
@@ -172,7 +172,18 @@ function save(doc, filename, auditLog) {
     });
   }
 
-  doc.save(filename);
+  return doc;
+}
+
+function save(doc, filename, auditLog) {
+  finalizeDoc(doc, filename, auditLog).save(filename);
+}
+
+function view(doc, filename, auditLog) {
+  finalizeDoc(doc, filename, auditLog);
+  const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
 }
 
 function propertyRows(property) {
@@ -303,6 +314,36 @@ export function exportAnalysisPdf(property, analysis) {
   );
 
   save(doc, `fiche-analyse-${fileSafe(property?.nom_bien)}.pdf`, {
+    targetType: 'analysis',
+    targetId: analysis?.id,
+    targetLabel: property?.nom_bien,
+    metadata: { export_kind: 'fiche_analyse', property_id: property?.id },
+  });
+}
+
+export function viewAnalysisPdf(property, analysis) {
+  const { doc, y } = createDoc(
+    `Fiche analyse - ${property?.nom_bien || 'Bien'}`,
+    `Analyse du ${formatDate(analysis?.created_at || analysis?.created_date || new Date())}`
+  );
+  const state = { y };
+
+  sectionTitle(doc, state, 'Bien analyse');
+  keyValueTable(doc, state, propertyRows(property));
+
+  sectionTitle(doc, state, 'Synthese financiere');
+  keyValueTable(doc, state, analysisRows(analysis));
+
+  sectionTitle(doc, state, 'Scenarios bancaires');
+  simpleTable(
+    doc,
+    state,
+    ['Scenario', 'Taux', 'Amort. annuel', 'Evaluation'],
+    bankRows(analysis),
+    [28, 25, 38, 88]
+  );
+
+  view(doc, `fiche-analyse-${fileSafe(property?.nom_bien)}.pdf`, {
     targetType: 'analysis',
     targetId: analysis?.id,
     targetLabel: property?.nom_bien,
