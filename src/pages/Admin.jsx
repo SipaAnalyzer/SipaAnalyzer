@@ -673,11 +673,23 @@ export default function Admin() {
         </div>
       </div>
 
-      <AuditLogsPanel />
+      <nav className="sticky top-0 z-20 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3 bg-background/90 backdrop-blur-sm border-b border-border flex flex-wrap gap-2 text-sm">
+        <a href="#section-logs" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Logs</a>
+        <a href="#section-user-activity" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Activité</a>
+        <a href="#section-invite" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Invitation</a>
+        <a href="#section-invite-link" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Lien d'invitation</a>
+        <a href="#section-users" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Utilisateurs</a>
+      </nav>
 
-      <UserActivityPanel allPerms={allPerms} />
+      <div id="section-logs">
+        <AuditLogsPanel />
+      </div>
 
-      <div className="bg-card rounded-xl border border-border p-5 space-y-3">
+      <div id="section-user-activity">
+        <UserActivityPanel allPerms={allPerms} />
+      </div>
+
+      <div id="section-invite" className="bg-card rounded-xl border border-border p-5 space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <UserPlus className="h-4 w-4 text-primary" />
           <h2 className="font-semibold text-sm">
@@ -713,7 +725,7 @@ export default function Admin() {
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border border-border p-5 space-y-3">
+      <div id="section-invite-link" className="bg-card rounded-xl border border-border p-5 space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <Link2 className="h-4 w-4 text-primary" />
           <h2 className="font-semibold text-sm">
@@ -765,7 +777,7 @@ export default function Admin() {
         )}
       </div>
 
-      <div className="space-y-3">
+      <div id="section-users" className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-primary" />
