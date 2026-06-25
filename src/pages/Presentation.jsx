@@ -10,6 +10,7 @@ import ScoreBadge from '../components/ScoreBadge';
 import {
   AlertTriangle,
   BarChart3,
+  CheckCircle2,
   ExternalLink,
   Loader2,
   MapPin,
@@ -116,7 +117,7 @@ export default function Presentation() {
     queryFn: () => base44.entities.Analysis.list('-created_date', 500),
   });
 
-  const validated = useMemo(() => {
+  const enCours = useMemo(() => {
     return properties
       .filter((property) => property.statut === 'en_cours')
       .map((property) => {
@@ -128,26 +129,40 @@ export default function Presentation() {
       });
   }, [properties, analyses]);
 
+  const valides = useMemo(() => {
+    return properties
+      .filter((property) => property.statut === 'valide')
+      .map((property) => {
+        const latest = analyses
+          .filter((analysis) => analysis.property_id === property.id)
+          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+
+        return { ...property, analysis: normalizeAnalysis(latest) };
+      });
+  }, [properties, analyses]);
+
+  const allWithAnalysis = useMemo(() => [...enCours, ...valides], [enCours, valides]);
+
   const ranked = useMemo(() => {
-    return [...validated].sort((a, b) => {
+    return [...enCours].sort((a, b) => {
       const scoreDiff = safeNumber(b.analysis?.score_global) - safeNumber(a.analysis?.score_global);
       if (scoreDiff !== 0) return scoreDiff;
       return safeNumber(b.analysis?.rendement_net_fonds_propres) - safeNumber(a.analysis?.rendement_net_fonds_propres);
     });
-  }, [validated]);
+  }, [enCours]);
 
-  const withCoords = validated.filter((property) => {
+  const withCoords = allWithAnalysis.filter((property) => {
     const lat = Number(property.latitude);
     const lng = Number(property.longitude);
     return Number.isFinite(lat) && Number.isFinite(lng);
   });
 
-  const withoutCoords = validated.filter((property) => !withCoords.some((item) => item.id === property.id));
+  const withoutCoords = allWithAnalysis.filter((property) => !withCoords.some((item) => item.id === property.id));
 
   const mapCenter = LEMAN_CENTER;
 
   const summary = useMemo(() => {
-    const withAnalysis = validated.filter((property) => property.analysis);
+    const withAnalysis = enCours.filter((property) => property.analysis);
     const totalValue = withAnalysis.reduce((sum, property) => sum + safeNumber(property.analysis?.prix_total), 0);
     const totalEquity = withAnalysis.reduce((sum, property) => sum + safeNumber(property.analysis?.fonds_propres), 0);
     const best = ranked.find((property) => property.analysis);
@@ -160,7 +175,7 @@ export default function Presentation() {
       best,
       withAnalysis: withAnalysis.length,
     };
-  }, [ranked, validated]);
+  }, [ranked, enCours]);
 
   if (lp || la) {
     return (
@@ -176,7 +191,7 @@ export default function Presentation() {
         <div>
           <h1 className="font-display text-2xl font-bold">Présentation</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Vue portefeuille des biens validés pour lecture comité
+            Vue portefeuille des biens en cours d'analyse pour lecture comité
           </p>
         </div>
         <Button variant="outline" className="gap-2 self-start" onClick={() => window.print()}>
@@ -188,9 +203,9 @@ export default function Presentation() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiTile
           icon={MapPin}
-          label="Biens validés"
-          value={validated.length}
-          detail={`${withCoords.length} localisé${withCoords.length > 1 ? 's' : ''} sur la carte`}
+          label="En cours d'analyse"
+          value={enCours.length}
+          detail={`Dont ${withCoords.length} sur la carte`}
         />
         <KpiTile
           icon={Wallet}
@@ -217,7 +232,7 @@ export default function Presentation() {
           {withCoords.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[460px] gap-3 text-muted-foreground">
               <MapPin className="h-10 w-10" />
-              <p className="text-sm">Renseignez les coordonnées GPS des biens validés pour les afficher sur la carte</p>
+              <p className="text-sm">Renseignez les coordonnées GPS des biens pour les afficher sur la carte</p>
             </div>
           ) : (
             <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} style={{ height: 460, width: '100%' }} className="z-0">
@@ -317,7 +332,7 @@ export default function Presentation() {
         <div className="bg-card rounded-lg border border-border p-5">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="h-4 w-4 text-amber-400" />
-            <h2 className="font-heading font-semibold text-sm">Biens validés sans coordonnées GPS</h2>
+            <h2 className="font-heading font-semibold text-sm">Biens sans coordonnées GPS</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
             {withoutCoords.map((property) => (
@@ -337,9 +352,15 @@ export default function Presentation() {
         </div>
       )}
 
-      {validated.length > 0 && (
+      <div className="pt-2">
+        <h2 className="font-heading font-semibold text-sm mb-4 flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+          Biens validés ({valides.length})
+        </h2>
+      </div>
+      {valides.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {validated.map((property) => (
+          {valides.map((property) => (
             <div key={property.id} className="bg-card rounded-lg border border-border p-5 hover:border-primary/30 transition-all">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
