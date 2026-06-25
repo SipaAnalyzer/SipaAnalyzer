@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type Provider = "openai" | "deepseek";
+type Provider = "openai" | "deepseek" | "zenmux";
 
 type InvokePayload = {
   prompt?: string;
@@ -25,6 +25,12 @@ const PROVIDER_CONFIG: Record<Provider, { apiKeyEnv: string; url: string; modelE
     modelEnv: "DEEPSEEK_MODEL",
     defaultModel: "deepseek-chat",
   },
+  zenmux: {
+    apiKeyEnv: "ZENMUX_API_KEY",
+    url: "https://zenmux.ai/api/v1/chat/completions",
+    modelEnv: "ZENMUX_MODEL",
+    defaultModel: "z-ai/glm-4.7-flash-free",
+  },
 };
 
 Deno.serve(async (request) => {
@@ -38,7 +44,7 @@ Deno.serve(async (request) => {
 
   const payload = (await request.json().catch(() => ({}))) as InvokePayload;
   const prompt = payload.prompt?.trim();
-  const provider: Provider = payload.provider === "deepseek" ? "deepseek" : "openai";
+  const provider: Provider = (payload.provider === "deepseek" || payload.provider === "zenmux") ? payload.provider : "openai";
   const cfg = PROVIDER_CONFIG[provider];
 
   const apiKey = Deno.env.get(cfg.apiKeyEnv);
