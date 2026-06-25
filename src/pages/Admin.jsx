@@ -283,7 +283,7 @@ const ROLE_PRESETS = {
     role: 'staff',
     is_admin: false,
     can_view_properties: true,
-    can_create_property: false,
+    can_create_property: true,
     can_edit_property: true,
     can_delete_property: false,
     can_create_analysis: true,
