@@ -11,7 +11,6 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
-  UserPlus,
   Trash2,
   Link2,
   Copy,
@@ -516,8 +515,6 @@ export default function Admin() {
   const { isAdmin, isLoading: permissionsLoading } = usePermissions();
   const queryClient = useQueryClient();
 
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviting, setInviting] = useState(false);
   const [inviteRole, setInviteRole] = useState('membre');
   const [inviteLinkCopied, setInviteLinkCopied] = useState(false);
   const [inviteLinkEmail, setInviteLinkEmail] = useState('');
@@ -619,25 +616,6 @@ export default function Admin() {
     toast.success("Utilisateur supprimé définitivement");
   };
 
-  const handleInvite = async () => {
-    if (!inviteEmail) return;
-
-    try {
-      setInviting(true);
-      await base44.users.inviteUser(inviteEmail, 'user');
-      toast.success(`Invitation envoyée à ${inviteEmail}`);
-      setInviteEmail('');
-      await queryClient.invalidateQueries({ queryKey: ['all-users'] });
-    } catch (error) {
-      console.error(error);
-      toast.error(
-        "L'invitation automatique n'est pas encore configurée avec Supabase. Demande à l'utilisateur de créer son compte, puis il apparaîtra ici."
-      );
-    } finally {
-      setInviting(false);
-    }
-  };
-
   const handleCopyInviteLink = async () => {
     const params = new URLSearchParams({ role: inviteRole, email: inviteLinkEmail });
     const link = `${window.location.origin}/register?${params.toString()}`;
@@ -692,7 +670,6 @@ export default function Admin() {
       <nav className="sticky top-0 z-20 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3 bg-background/90 backdrop-blur-sm border-b border-border flex flex-wrap gap-2 text-sm">
         <a href="#section-logs" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Logs</a>
         <a href="#section-user-activity" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Activité</a>
-        <a href="#section-invite" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Invitation</a>
         <a href="#section-invite-link" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Lien d'invitation</a>
         <a href="#section-users" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Utilisateurs</a>
       </nav>
@@ -704,44 +681,9 @@ export default function Admin() {
       <div id="section-user-activity">
         <UserActivityPanel allPerms={allPerms} />
       </div>
-
-      <div id="section-invite" className="bg-card rounded-xl border border-border p-5 space-y-3">
-        <div className="flex items-center gap-2 mb-2">
-          <UserPlus className="h-4 w-4 text-primary" />
-          <h2 className="font-semibold text-sm">
-            Ajouter un futur utilisateur
-          </h2>
-        </div>
-
-        <p className="text-sm text-muted-foreground">
-          Pour l'instant, l'invitation automatique Supabase n'est pas encore configurée.
-          Le plus simple est de demander à l'utilisateur de créer son compte.
-          Il apparaîtra ensuite ici, et tu pourras lui attribuer son rôle.
-        </p>
-
-        <div className="flex gap-3">
-          <Input
-            placeholder="adresse@email.com"
-            value={inviteEmail}
-            onChange={(event) => setInviteEmail(event.target.value)}
-            className="bg-background border-border"
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') handleInvite();
-            }}
-          />
-
-          <Button
-            onClick={handleInvite}
-            disabled={!inviteEmail || inviting}
-            className="gap-2 shrink-0"
-          >
-            {inviting && <Loader2 className="h-4 w-4 animate-spin" />}
-            Inviter
-          </Button>
-        </div>
-      </div>
-
-      <div id="section-invite-link" className="bg-card rounded-xl border border-border p-5 space-y-3">
+      
+      
+            <div id="section-invite-link" className="bg-card rounded-xl border border-border p-5 space-y-3">
         <div className="flex items-center gap-2 mb-2">
           <Link2 className="h-4 w-4 text-primary" />
           <h2 className="font-semibold text-sm">
