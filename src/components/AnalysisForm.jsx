@@ -21,7 +21,7 @@ function Field({ label, value, onChange, prefix, readOnly }) {
         <Input
           type="number"
           value={value ?? ''}
-          onChange={(event) => onChange?.(parseFloat(event.target.value) || 0)}
+          onChange={(event) => onChange?.(event.target.value === '' ? null : parseFloat(event.target.value) || 0)}
           readOnly={readOnly}
           className={`bg-background border-border ${prefix ? 'pl-10' : ''} ${readOnly ? 'opacity-60' : ''}`}
         />
@@ -39,20 +39,20 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const [form, setForm] = useState({
     property_id: initialPropertyId || '',
     statut: 'en_cours',
-    prix_bien: 0,
-    versement_initial: 0,
-    amortissement_5_ans: 0,
-    honoraires_sipa: 0,
-    frais_dossier_bancaire: 0,
-    fonds_propres: 0,
-    hypotheque: 0,
-    revenus_locatifs: 0,
-    charges_operationnelles: 0,
-    interets_hypothecaires: 0,
-    gestion: 0,
-    impot: 0,
-    banque_a_taux_hypothecaire: 0,
-    banque_a_amortissement_annuel: 0,
+    prix_bien: null,
+    versement_initial: null,
+    amortissement_5_ans: null,
+    honoraires_sipa: null,
+    frais_dossier_bancaire: null,
+    fonds_propres: null,
+    hypotheque: null,
+    revenus_locatifs: null,
+    charges_operationnelles: null,
+    interets_hypothecaires: null,
+    gestion: null,
+    impot: null,
+    banque_a_taux_hypothecaire: null,
+    banque_a_amortissement_annuel: null,
     banque_a_evaluation: '',
     banque_b_taux_hypothecaire: 0,
     banque_b_amortissement_annuel: 0,
