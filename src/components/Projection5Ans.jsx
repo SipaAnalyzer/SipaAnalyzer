@@ -254,12 +254,14 @@ function ProjectionTable({ label, color, data, outflows }) {
 export default function Projection5Ans({ analysis }) {
   const hypo = Number(analysis?.hypotheque || 0);
   const prixBien = Number(analysis?.prix_bien || 0);
-  const defaultDuree = 20;
+  const defaultDuree = 5;
   const defaultRateA = analysis?.banque_a_taux_hypothecaire
     ?? (analysis?.interets_hypothecaires && hypo > 0 ? Math.round((analysis.interets_hypothecaires / hypo) * 10000) / 100 : null);
   const defaultRateB = analysis?.banque_b_taux_hypothecaire
     ?? (analysis?.interets_hypothecaires && hypo > 0 ? Math.round((analysis.interets_hypothecaires / hypo) * 10000) / 100 : null);
-  const defaultAmort = hypo > 0 ? Math.round(hypo / defaultDuree) : 0;
+  const defaultAmort = hypo > 0
+    ? (analysis?.amortissement_5_ans ? Math.round(analysis.amortissement_5_ans / defaultDuree) : Math.round(hypo / defaultDuree))
+    : 0;
   const [saronRate, setSaronRate] = useState(null);
   const [saronLoading, setSaronLoading] = useState(true);
 
