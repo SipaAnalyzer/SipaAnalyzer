@@ -3,10 +3,43 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatCHF } from '../utils/calculations';
 
-function BankInputs({ name, color, taux, onTaux, amort, onAmort }) {
+function BankInputs({ name, color, state, setState, hypo }) {
   const borderClass = color === 'amber' ? 'border-amber-500/25' : 'border-emerald-500/25';
   const bgClass = color === 'amber' ? 'bg-amber-500/5' : 'bg-emerald-500/5';
   const textClass = color === 'amber' ? 'text-amber-400' : 'text-emerald-400';
+
+  const handleTaux = (v) => {
+    setState((prev) => {
+      const next = { ...prev, taux: v };
+      if (v != null && v > 0 && prev.duree != null && prev.duree > 0) {
+        const rate = v / 100;
+        const n = prev.duree;
+        const pmt = hypo * rate * Math.pow(1 + rate, n) / (Math.pow(1 + rate, n) - 1);
+        next.amort = Math.round(pmt);
+      }
+      return next;
+    });
+  };
+
+  const handleAmort = (v) => {
+    setState((prev) => {
+      const next = { ...prev, amort: v };
+      if (v != null && v > 0) {
+        next.duree = Math.round(hypo / v);
+      }
+      return next;
+    });
+  };
+
+  const handleDuree = (v) => {
+    setState((prev) => {
+      const next = { ...prev, duree: v };
+      if (v != null && v > 0) {
+        next.amort = Math.round(hypo / v);
+      }
+      return next;
+    });
+  };
 
   return (
     <div className={`rounded-xl border ${borderClass} ${bgClass} p-5`}>
@@ -17,11 +50,23 @@ function BankInputs({ name, color, taux, onTaux, amort, onAmort }) {
           <div className="relative">
             <Input
               type="number"
-              value={taux ?? ''}
-              onChange={(e) => onTaux(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
+              value={state.taux ?? ''}
+              onChange={(e) => handleTaux(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
               className="bg-background border-border pr-8 text-right"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground mb-1.5 block">Durée</Label>
+          <div className="relative">
+            <Input
+              type="number"
+              value={state.duree ?? ''}
+              onChange={(e) => handleDuree(e.target.value === '' ? null : Math.round(parseFloat(e.target.value)) || 0)}
+              className="bg-background border-border pr-8 text-right"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">ans</span>
           </div>
         </div>
         <div>
@@ -30,8 +75,8 @@ function BankInputs({ name, color, taux, onTaux, amort, onAmort }) {
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">CHF</span>
             <Input
               type="number"
-              value={amort ?? ''}
-              onChange={(e) => onAmort(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
+              value={state.amort ?? ''}
+              onChange={(e) => handleAmort(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
               className="bg-background border-border pl-10"
             />
           </div>
@@ -80,16 +125,26 @@ function ProjectionTable({ label, color, data, outflows }) {
 }
 
 export default function Projection5Ans({ analysis }) {
-  const [bankA, setBankA] = useState({
-    taux: analysis?.banque_a_taux_hypothecaire ?? null,
-    amort: analysis?.banque_a_amortissement_annuel ?? null,
-  });
-  const [bankB, setBankB] = useState({
-    taux: analysis?.banque_b_taux_hypothecaire ?? null,
-    amort: analysis?.banque_b_amortissement_annuel ?? null,
+  const hypo = Number(analysis?.hypotheque || 0);
+  const defaultDuree = 20;
+
+  const [bankA, setBankA] = useState(() => {
+    const a = analysis?.banque_a_amortissement_annuel;
+    return {
+      taux: analysis?.banque_a_taux_hypothecaire ?? null,
+      duree: a && a > 0 ? Math.round(hypo / a) : defaultDuree,
+      amort: a ?? null,
+    };
   });
 
-  const hypo = Number(analysis?.hypotheque || 0);
+  const [bankB, setBankB] = useState(() => {
+    const a = analysis?.banque_b_amortissement_annuel;
+    return {
+      taux: analysis?.banque_b_taux_hypothecaire ?? null,
+      duree: a && a > 0 ? Math.round(hypo / a) : defaultDuree,
+      amort: a ?? null,
+    };
+  });
 
   const generate = useCallback((taux, amort) => {
     if (!taux && !amort) return null;
@@ -127,22 +182,8 @@ export default function Projection5Ans({ analysis }) {
       <h3 className="font-heading font-semibold mb-5">Projection 5 ans</h3>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-        <BankInputs
-          name="Banque A"
-          color="amber"
-          taux={bankA.taux}
-          onTaux={(v) => setBankA((p) => ({ ...p, taux: v }))}
-          amort={bankA.amort}
-          onAmort={(v) => setBankA((p) => ({ ...p, amort: v }))}
-        />
-        <BankInputs
-          name="Banque B"
-          color="emerald"
-          taux={bankB.taux}
-          onTaux={(v) => setBankB((p) => ({ ...p, taux: v }))}
-          amort={bankB.amort}
-          onAmort={(v) => setBankB((p) => ({ ...p, amort: v }))}
-        />
+        <BankInputs name="Banque A" color="amber" state={bankA} setState={setBankA} hypo={hypo} />
+        <BankInputs name="Banque B" color="emerald" state={bankB} setState={setBankB} hypo={hypo} />
       </div>
 
       {(projA || projB) ? (
