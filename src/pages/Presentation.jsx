@@ -192,8 +192,15 @@ export default function Presentation() {
     geocodeProperties(toGeocode, (done, total) => {
       setGeocodeProgress(done);
       setGeocodeTotal(total);
-    }).then((results) => {
+    }).then(async (results) => {
       setGeocodedCoords(results);
+      for (const { id, latitude, longitude } of results) {
+        try {
+          await base44.entities.Property.update(id, { latitude, longitude });
+        } catch {
+          /* silencieux */
+        }
+      }
       setGeocoding(false);
     });
   }, [allWithAnalysis]);
