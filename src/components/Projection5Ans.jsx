@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatCHF } from '../utils/calculations';
 
-function BankInputs({ name, color, state, setState, hypo }) {
+function BankInputs({ name, color, state, setState, hypo, prixBien }) {
   const borderClass = color === 'amber' ? 'border-amber-500/25' : 'border-emerald-500/25';
   const bgClass = color === 'amber' ? 'bg-amber-500/5' : 'bg-emerald-500/5';
   const textClass = color === 'amber' ? 'text-amber-400' : 'text-emerald-400';
@@ -42,10 +42,54 @@ function BankInputs({ name, color, state, setState, hypo }) {
     });
   };
 
+  const handleEvalPct = (v) => {
+    setState((prev) => {
+      const next = { ...prev, evalPct: v };
+      if (v != null && v > 0 && prixBien > 0) {
+        next.evalMontant = Math.round(prixBien * v / 100);
+      }
+      return next;
+    });
+  };
+
+  const handleEvalMontant = (v) => {
+    setState((prev) => {
+      const next = { ...prev, evalMontant: v };
+      if (v != null && v > 0 && prixBien > 0) {
+        next.evalPct = Math.round((v / prixBien) * 10000) / 100;
+      }
+      return next;
+    });
+  };
+
   return (
     <div className={`rounded-xl border ${borderClass} ${bgClass} p-5`}>
       <h4 className={`font-semibold mb-4 ${textClass}`}>{name}</h4>
       <div className="space-y-3">
+        <div>
+          <Label className="text-xs text-muted-foreground mb-1.5 block">Évaluation du bien</Label>
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">CHF</span>
+              <Input
+                type="number"
+                value={state.evalMontant ?? ''}
+                onChange={(e) => handleEvalMontant(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
+                className="bg-background border-border pl-10"
+              />
+            </div>
+            <div className="relative w-24 shrink-0">
+              <Input
+                type="number"
+                value={state.evalPct ?? ''}
+                onChange={(e) => handleEvalPct(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
+                className="bg-background border-border pr-8 text-right"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1">du prix du bâtiment</p>
+        </div>
         <div>
           <Label className="text-xs text-muted-foreground mb-1.5 block">Taux hypothécaire</Label>
           <div className="relative">
@@ -127,6 +171,7 @@ function ProjectionTable({ label, color, data, outflows }) {
 
 export default function Projection5Ans({ analysis }) {
   const hypo = Number(analysis?.hypotheque || 0);
+  const prixBien = Number(analysis?.prix_bien || 0);
   const defaultDuree = 20;
 
   const [bankA, setBankA] = useState(() => {
@@ -135,6 +180,8 @@ export default function Projection5Ans({ analysis }) {
       taux: analysis?.banque_a_taux_hypothecaire ?? null,
       duree: a && a > 0 ? Math.round(hypo / a) : defaultDuree,
       amort: a ?? null,
+      evalPct: null,
+      evalMontant: null,
     };
   });
 
@@ -144,6 +191,8 @@ export default function Projection5Ans({ analysis }) {
       taux: analysis?.banque_b_taux_hypothecaire ?? null,
       duree: a && a > 0 ? Math.round(hypo / a) : defaultDuree,
       amort: a ?? null,
+      evalPct: null,
+      evalMontant: null,
     };
   });
 
@@ -183,8 +232,8 @@ export default function Projection5Ans({ analysis }) {
       <h3 className="font-heading font-semibold mb-5">Projection 5 ans</h3>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-        <BankInputs name="Banque A" color="amber" state={bankA} setState={setBankA} hypo={hypo} />
-        <BankInputs name="Banque B" color="emerald" state={bankB} setState={setBankB} hypo={hypo} />
+        <BankInputs name="Banque A" color="amber" state={bankA} setState={setBankA} hypo={hypo} prixBien={prixBien} />
+        <BankInputs name="Banque B" color="emerald" state={bankB} setState={setBankB} hypo={hypo} prixBien={prixBien} />
       </div>
 
       {(projA || projB) ? (
