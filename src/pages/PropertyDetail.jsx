@@ -251,8 +251,17 @@ export default function PropertyDetail() {
         </div>
       </div>
 
+      <nav className="sticky top-0 z-20 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3 bg-background/90 backdrop-blur-sm border-b border-border flex flex-wrap gap-2 text-sm">
+        <a href="#analyse" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Analyse</a>
+        <a href="#graphiques" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Graphiques</a>
+        <a href="#banques" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Banques</a>
+        {normalizedAnalyses.length > 1 && <a href="#historique" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Historique</a>}
+        <a href="#activite" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Activité</a>
+        <a href="#commentaires" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Commentaires</a>
+      </nav>
+
       {selected ? (
-        <div className="bg-card rounded-xl border border-border p-6">
+        <div id="analyse" className="bg-card rounded-xl border border-border p-6">
           <div className="flex flex-col lg:flex-row gap-6 items-start">
             <div className="flex items-center gap-4">
               <ScoreGauge score={selected.score_global || 0} size={110} />
@@ -316,10 +325,10 @@ export default function PropertyDetail() {
         </div>
       )}
 
-      {selected && <PerformanceCharts analysis={selected} />}
+      {selected && <div id="graphiques"><PerformanceCharts analysis={selected} /></div>}
 
       {selected && (
-        <div className="bg-card rounded-xl border border-border p-6">
+        <div id="banques" className="bg-card rounded-xl border border-border p-6">
           <div className="flex items-center gap-2 mb-4">
             <Landmark className="h-4 w-4 text-primary" />
             <h3 className="font-heading font-semibold">
@@ -348,7 +357,7 @@ export default function PropertyDetail() {
       )}
 
       {normalizedAnalyses.length > 1 && (
-        <div className="bg-card rounded-xl border border-border">
+        <div id="historique" className="bg-card rounded-xl border border-border">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <h3 className="font-heading font-semibold text-sm">
               Historique des analyses ({normalizedAnalyses.length})
@@ -464,9 +473,9 @@ export default function PropertyDetail() {
         userName={user?.full_name || user?.email}
       />
 
-      <ActivityFeed propertyId={propertyId} />
+      <div id="activite"><ActivityFeed propertyId={propertyId} /></div>
 
-      <CommentSection propertyId={propertyId} initialComments={comments} />
+      <div id="commentaires"><CommentSection propertyId={propertyId} initialComments={comments} /></div>
 
       <ChatBot property={property} analysis={selected} />
     </div>
