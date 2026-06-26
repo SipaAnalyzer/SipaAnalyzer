@@ -67,6 +67,28 @@ export const STATUS_CONFIG = {
   abandonne: { label: 'Abandonné', class: 'bg-red-500/20 text-red-400' },
 };
 
+export function solveRateFromAmort(amort, pv, n) {
+  if (!amort || amort <= 0 || !pv || pv <= 0 || !n || n <= 0) return null;
+  const target = amort / pv;
+  if (target <= 0) return null;
+
+  let lo = 0.00005;
+  let hi = 0.15;
+  for (let i = 0; i < 100; i++) {
+    const mid = (lo + hi) / 2;
+    const f = mid / (1 - Math.pow(1 + mid, -n));
+    if (f > target) hi = mid;
+    else lo = mid;
+  }
+  const r = (lo + hi) / 2;
+
+  const pmt = pv * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+  const computedAmort = Math.round(pmt - pv * r);
+  if (computedAmort !== Math.round(amort)) return null;
+
+  return r;
+}
+
 export const NOTE_CONFIG = {
   A: { class: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
   B: { class: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },

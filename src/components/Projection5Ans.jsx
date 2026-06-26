@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatCHF } from '../utils/calculations';
+import { formatCHF, solveRateFromAmort } from '../utils/calculations';
 import { fetchSaronRate } from '../utils/saronRate';
 import { Loader2 } from 'lucide-react';
 
@@ -40,7 +40,13 @@ function BankInputs({ name, color, state, setState, hypo, prixBien, saronRate, s
   const handleAmort = (v) => {
     setState((prev) => {
       const next = { ...prev, amort: v };
-      if (v != null && v > 0) next.duree = Math.round(hypo / v);
+      if (v != null && v > 0) {
+        next.duree = Math.round(hypo / v);
+        if (prev.taux == null && prev.duree != null && prev.duree > 0) {
+          const solved = solveRateFromAmort(v, hypo, prev.duree);
+          if (solved != null) next.taux = Math.round(solved * 10000) / 100;
+        }
+      }
       return next;
     });
   };
@@ -48,7 +54,13 @@ function BankInputs({ name, color, state, setState, hypo, prixBien, saronRate, s
   const handleDuree = (v) => {
     setState((prev) => {
       const next = { ...prev, duree: v };
-      if (v != null && v > 0) next.amort = Math.round(hypo / v);
+      if (v != null && v > 0) {
+        next.amort = Math.round(hypo / v);
+        if (prev.taux == null && prev.amort != null && prev.amort > 0) {
+          const solved = solveRateFromAmort(prev.amort, hypo, v);
+          if (solved != null) next.taux = Math.round(solved * 10000) / 100;
+        }
+      }
       return next;
     });
   };
