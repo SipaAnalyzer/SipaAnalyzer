@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent } from '../utils/calculations';
@@ -10,23 +10,47 @@ import ScoreGauge from './ScoreGauge';
 import ScoreBadge from './ScoreBadge';
 import { Calculator, Save } from 'lucide-react';
 
-function Field({ label, value, onChange, prefix, readOnly }) {
+function InputField({ value, onChange, prefix, className }) {
   return (
-    <div>
-      <Label className="text-xs text-muted-foreground mb-1.5 block">{label}</Label>
-      <div className="relative">
-        {prefix && (
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{prefix}</span>
-        )}
-        <Input
-          type="number"
-          value={value ?? ''}
-          onChange={(event) => onChange?.(event.target.value === '' ? null : parseFloat(event.target.value) || 0)}
-          readOnly={readOnly}
-          className={`bg-background border-border ${prefix ? 'pl-10' : ''} ${readOnly ? 'opacity-60' : ''}`}
-        />
-      </div>
+    <div className="relative">
+      {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{prefix}</span>}
+      <Input
+        type="number"
+        value={value ?? ''}
+        onChange={(e) => onChange?.(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
+        className={`bg-background border-border ${prefix ? 'pl-10' : ''} ${className || ''}`}
+      />
     </div>
+  );
+}
+
+function PctRow({ label, amount, onAmount, pct, onPct }) {
+  return (
+    <tr>
+      <td className="py-2 pr-4 text-sm">{label}</td>
+      <td className="py-2 pl-4">
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">CHF</span>
+            <Input
+              type="number"
+              value={amount ?? ''}
+              onChange={(e) => onAmount?.(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
+              className="bg-background border-border pl-10"
+            />
+          </div>
+          <div className="relative w-24 shrink-0">
+            <Input
+              type="number"
+              value={pct ?? ''}
+              onChange={(e) => onPct?.(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
+              className="bg-background border-border pr-8 text-right"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+          </div>
+        </div>
+      </td>
+    </tr>
   );
 }
 
@@ -43,19 +67,24 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     versement_initial: null,
     amortissement_5_ans: null,
     honoraires_sipa: null,
+    honoraires_sipa_pct: null,
     frais_dossier_bancaire: null,
     fonds_propres: null,
     hypotheque: null,
+    hypotheque_pct: null,
     revenus_locatifs: null,
     charges_operationnelles: null,
     interets_hypothecaires: null,
+    interets_hypothecaires_pct: null,
     gestion: null,
+    gestion_pct: null,
     impot: null,
+    impot_pct: null,
     banque_a_taux_hypothecaire: null,
     banque_a_amortissement_annuel: null,
     banque_a_evaluation: '',
-    banque_b_taux_hypothecaire: 0,
-    banque_b_amortissement_annuel: 0,
+    banque_b_taux_hypothecaire: null,
+    banque_b_amortissement_annuel: null,
     banque_b_evaluation: '',
     etat_batiment: '',
     emplacement_bien: '',
@@ -63,8 +92,80 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
 
   useEffect(() => {
     if (!initialData) return;
-    setForm((prev) => ({ ...prev, ...initialData }));
+    setForm((prev) => {
+      const data = { ...prev, ...initialData };
+      const prixTotal = Number(data.prix_bien || 0) + Number(data.versement_initial || 0) + Number(data.amortissement_5_ans || 0) + Number(data.honoraires_sipa || 0) + Number(data.frais_dossier_bancaire || 0);
+      const revenuNet = Number(data.revenus_locatifs || 0) - Number(data.charges_operationnelles || 0) - Number(data.interets_hypothecaires || 0) - Number(data.gestion || 0);
+      if (Number(data.prix_bien) > 0 && data.honoraires_sipa != null) data.honoraires_sipa_pct = Math.round((data.honoraires_sipa / data.prix_bien) * 10000) / 100;
+      if (prixTotal > 0 && data.hypotheque != null) data.hypotheque_pct = Math.round((data.hypotheque / prixTotal) * 10000) / 100;
+      if (Number(data.hypotheque) > 0 && data.interets_hypothecaires != null) data.interets_hypothecaires_pct = Math.round((data.interets_hypothecaires / data.hypotheque) * 10000) / 100;
+      if (Number(data.revenus_locatifs) > 0 && data.gestion != null) data.gestion_pct = Math.round((data.gestion / data.revenus_locatifs) * 10000) / 100;
+      if (revenuNet > 0 && data.impot != null) data.impot_pct = Math.round((data.impot / revenuNet) * 10000) / 100;
+      return data;
+    });
   }, [initialData]);
+
+  const makeAmountHandler = useCallback((key, pctKey, getBase) => (value) => {
+    setForm((prev) => {
+      const base = getBase(prev);
+      if (base && value !== null) {
+        const pct = Math.round((value / base) * 10000) / 100;
+        return { ...prev, [key]: value, [pctKey]: pct };
+      }
+      return { ...prev, [key]: value, [pctKey]: null };
+    });
+  }, []);
+
+  const makePctHandler = useCallback((key, pctKey, getBase) => (value) => {
+    setForm((prev) => {
+      const base = getBase(prev);
+      if (base && value !== null) {
+        const amount = Math.round(base * value / 100);
+        return { ...prev, [key]: amount, [pctKey]: value };
+      }
+      return { ...prev, [key]: null, [pctKey]: value };
+    });
+  }, []);
+
+  const handlers = useMemo(() => {
+    const honoraires = {
+      amount: makeAmountHandler('honoraires_sipa', 'honoraires_sipa_pct', (s) => Number(s.prix_bien || 0)),
+      pct: makePctHandler('honoraires_sipa', 'honoraires_sipa_pct', (s) => Number(s.prix_bien || 0)),
+    };
+    const hypotheque = {
+      amount: makeAmountHandler('hypotheque', 'hypotheque_pct', (s) =>
+        Number(s.prix_bien || 0) + Number(s.versement_initial || 0) + Number(s.amortissement_5_ans || 0) + Number(s.honoraires_sipa || 0) + Number(s.frais_dossier_bancaire || 0)
+      ),
+      pct: makePctHandler('hypotheque', 'hypotheque_pct', (s) =>
+        Number(s.prix_bien || 0) + Number(s.versement_initial || 0) + Number(s.amortissement_5_ans || 0) + Number(s.honoraires_sipa || 0) + Number(s.frais_dossier_bancaire || 0)
+      ),
+    };
+    const interets = {
+      amount: makeAmountHandler('interets_hypothecaires', 'interets_hypothecaires_pct', (s) => Number(s.hypotheque || 0)),
+      pct: makePctHandler('interets_hypothecaires', 'interets_hypothecaires_pct', (s) => Number(s.hypotheque || 0)),
+    };
+    const gestion = {
+      amount: makeAmountHandler('gestion', 'gestion_pct', (s) => Number(s.revenus_locatifs || 0)),
+      pct: makePctHandler('gestion', 'gestion_pct', (s) => Number(s.revenus_locatifs || 0)),
+    };
+    const impot = {
+      amount: makeAmountHandler('impot', 'impot_pct', (s) => {
+        const rev = Number(s.revenus_locatifs || 0);
+        const ch = Number(s.charges_operationnelles || 0);
+        const int = Number(s.interets_hypothecaires || 0);
+        const ges = Number(s.gestion || 0);
+        return rev - ch - int - ges;
+      }),
+      pct: makePctHandler('impot', 'impot_pct', (s) => {
+        const rev = Number(s.revenus_locatifs || 0);
+        const ch = Number(s.charges_operationnelles || 0);
+        const int = Number(s.interets_hypothecaires || 0);
+        const ges = Number(s.gestion || 0);
+        return rev - ch - int - ges;
+      }),
+    };
+    return { honoraires, hypotheque, interets, gestion, impot };
+  }, [makeAmountHandler, makePctHandler]);
 
   const set = (key) => (value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -185,38 +286,39 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
-                <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-48">Montant</th>
+                <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-72">Montant</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
               <tr>
                 <td className="py-2.5 pr-4">Prix du bien</td>
                 <td className="py-2.5 pl-4">
-                  <Field value={form.prix_bien} onChange={set('prix_bien')} prefix="CHF" />
+                  <InputField value={form.prix_bien} onChange={set('prix_bien')} prefix="CHF" />
                 </td>
               </tr>
               <tr>
                 <td className="py-2.5 pr-4">Versement initial sur le compte de la copropriété</td>
                 <td className="py-2.5 pl-4">
-                  <Field value={form.versement_initial} onChange={set('versement_initial')} prefix="CHF" />
+                  <InputField value={form.versement_initial} onChange={set('versement_initial')} prefix="CHF" />
                 </td>
               </tr>
               <tr>
                 <td className="py-2.5 pr-4">Amortissement sur 5 ans</td>
                 <td className="py-2.5 pl-4">
-                  <Field value={form.amortissement_5_ans} onChange={set('amortissement_5_ans')} prefix="CHF" />
+                  <InputField value={form.amortissement_5_ans} onChange={set('amortissement_5_ans')} prefix="CHF" />
                 </td>
               </tr>
-              <tr>
-                <td className="py-2.5 pr-4">Honoraires transaction Sipa Immobilier SA</td>
-                <td className="py-2.5 pl-4">
-                  <Field value={form.honoraires_sipa} onChange={set('honoraires_sipa')} prefix="CHF" />
-                </td>
-              </tr>
+              <PctRow
+                label="Honoraires transaction Sipa Immobilier SA"
+                amount={form.honoraires_sipa}
+                onAmount={handlers.honoraires.amount}
+                pct={form.honoraires_sipa_pct}
+                onPct={handlers.honoraires.pct}
+              />
               <tr>
                 <td className="py-2.5 pr-4">Frais de dossier bancaire</td>
                 <td className="py-2.5 pl-4">
-                  <Field value={form.frais_dossier_bancaire} onChange={set('frais_dossier_bancaire')} prefix="CHF" />
+                  <InputField value={form.frais_dossier_bancaire} onChange={set('frais_dossier_bancaire')} prefix="CHF" />
                 </td>
               </tr>
               <tr className="bg-primary/5 border-primary/20">
@@ -228,19 +330,20 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
               <tr>
                 <td className="py-2.5 pr-4">Fonds propres</td>
                 <td className="py-2.5 pl-4">
-                  <Field value={form.fonds_propres} onChange={set('fonds_propres')} prefix="CHF" />
+                  <InputField value={form.fonds_propres} onChange={set('fonds_propres')} prefix="CHF" />
                 </td>
               </tr>
-              <tr>
-                <td className="py-2.5 pr-4">Hypothèque</td>
-                <td className="py-2.5 pl-4">
-                  <Field value={form.hypotheque} onChange={set('hypotheque')} prefix="CHF" />
-                </td>
-              </tr>
+              <PctRow
+                label="Hypothèque"
+                amount={form.hypotheque}
+                onAmount={handlers.hypotheque.amount}
+                pct={form.hypotheque_pct}
+                onPct={handlers.hypotheque.pct}
+              />
               <tr className="border-t-2 border-border">
                 <td className="py-2.5 pr-4">Revenus locatifs (hors charges)</td>
                 <td className="py-2.5 pl-4">
-                  <Field value={form.revenus_locatifs} onChange={set('revenus_locatifs')} prefix="CHF" />
+                  <InputField value={form.revenus_locatifs} onChange={set('revenus_locatifs')} prefix="CHF" />
                 </td>
               </tr>
               <tr>
@@ -254,21 +357,23 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
               <tr>
                 <td className="py-2.5 pr-4">Charges opérationnelles</td>
                 <td className="py-2.5 pl-4">
-                  <Field value={form.charges_operationnelles} onChange={set('charges_operationnelles')} prefix="CHF" />
+                  <InputField value={form.charges_operationnelles} onChange={set('charges_operationnelles')} prefix="CHF" />
                 </td>
               </tr>
-              <tr>
-                <td className="py-2.5 pr-4">Intérêt hypothécaire (Estimé en moyenne sur 5 ans)</td>
-                <td className="py-2.5 pl-4">
-                  <Field value={form.interets_hypothecaires} onChange={set('interets_hypothecaires')} prefix="CHF" />
-                </td>
-              </tr>
-              <tr>
-                <td className="py-2.5 pr-4">Honoraires de gestion</td>
-                <td className="py-2.5 pl-4">
-                  <Field value={form.gestion} onChange={set('gestion')} prefix="CHF" />
-                </td>
-              </tr>
+              <PctRow
+                label="Intérêt hypothécaire (Estimé en moyenne sur 5 ans)"
+                amount={form.interets_hypothecaires}
+                onAmount={handlers.interets.amount}
+                pct={form.interets_hypothecaires_pct}
+                onPct={handlers.interets.pct}
+              />
+              <PctRow
+                label="Honoraires de gestion"
+                amount={form.gestion}
+                onAmount={handlers.gestion.amount}
+                pct={form.gestion_pct}
+                onPct={handlers.gestion.pct}
+              />
               <tr className="bg-primary/5 border-primary/20">
                 <td className="py-2.5 pr-4 font-semibold text-primary">Revenu net</td>
                 <td className="py-2.5 pl-4 font-mono font-bold text-primary text-right">
@@ -283,12 +388,13 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                   {formatPercent(calc.rendement_net_fonds_propres)}
                 </td>
               </tr>
-              <tr>
-                <td className="py-2.5 pr-4">Impôt</td>
-                <td className="py-2.5 pl-4">
-                  <Field value={form.impot} onChange={set('impot')} prefix="CHF" />
-                </td>
-              </tr>
+              <PctRow
+                label="Impôt"
+                amount={form.impot}
+                onAmount={handlers.impot.amount}
+                pct={form.impot_pct}
+                onPct={handlers.impot.pct}
+              />
               <tr className="bg-primary/5 border-primary/20">
                 <td className="py-2.5 pr-4 font-semibold text-primary">Revenu distribué</td>
                 <td className="py-2.5 pl-4 font-mono font-bold text-primary text-right">
@@ -359,8 +465,14 @@ function BankScenario({ title, form, set, prefix }) {
     <div className="bg-background/40 rounded-xl border border-border p-5 space-y-4">
       <h4 className="font-heading font-semibold text-sm">{title}</h4>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Taux hypothécaire" value={form[`${prefix}_taux_hypothecaire`]} onChange={set(`${prefix}_taux_hypothecaire`)} suffix="%" />
-        <Field label="Amortissement annuel" value={form[`${prefix}_amortissement_annuel`]} onChange={set(`${prefix}_amortissement_annuel`)} prefix="CHF" />
+        <div>
+          <Label className="text-xs text-muted-foreground mb-1.5 block">Taux hypothécaire</Label>
+          <InputField value={form[`${prefix}_taux_hypothecaire`]} onChange={set(`${prefix}_taux_hypothecaire`)} />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground mb-1.5 block">Amortissement annuel</Label>
+          <InputField value={form[`${prefix}_amortissement_annuel`]} onChange={set(`${prefix}_amortissement_annuel`)} prefix="CHF" />
+        </div>
       </div>
       <div>
         <Label className="text-xs text-muted-foreground mb-1.5 block">Évaluation</Label>
