@@ -157,12 +157,14 @@ export default function Presentation() {
     });
   }, [enCours]);
 
+  const hasValidCoords = (property) => {
+    const lat = Number(property.latitude);
+    const lng = Number(property.longitude);
+    return Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0) && property.latitude !== '' && property.latitude != null;
+  };
+
   const withCoords = useMemo(() => {
-    const native = allWithAnalysis.filter((property) => {
-      const lat = Number(property.latitude);
-      const lng = Number(property.longitude);
-      return Number.isFinite(lat) && Number.isFinite(lng);
-    });
+    const native = allWithAnalysis.filter(hasValidCoords);
 
     const geocoded = allWithAnalysis
       .filter((property) => geocodedCoords.some((c) => c.id === property.id))
@@ -179,11 +181,7 @@ export default function Presentation() {
   );
 
   useEffect(() => {
-    const toGeocode = allWithAnalysis.filter((property) => {
-      const lat = Number(property.latitude);
-      const lng = Number(property.longitude);
-      return !Number.isFinite(lat) || !Number.isFinite(lng);
-    });
+    const toGeocode = allWithAnalysis.filter((property) => !hasValidCoords(property));
 
     if (toGeocode.length === 0) return;
 
