@@ -7,7 +7,7 @@ import PdfExportDialog from '../components/PdfExportDialog';
 import ScoreGauge from '../components/ScoreGauge';
 import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
-import PerformanceCharts from '../components/PerformanceCharts';
+import FinancialTable from '../components/FinancialTable';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, MapPin, Landmark } from 'lucide-react';
 import moment from 'moment';
@@ -106,7 +106,7 @@ export default function ViewAnalysis() {
         </span>
       </div>
 
-      <PerformanceCharts analysis={analysis} />
+      <FinancialTable analysis={analysis} />
 
       <div className="bg-card rounded-xl border border-border p-6">
         <div className="flex items-center gap-2 mb-4">
