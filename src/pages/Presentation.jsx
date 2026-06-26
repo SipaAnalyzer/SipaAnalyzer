@@ -179,11 +179,14 @@ export default function Presentation() {
   );
 
   useEffect(() => {
+    console.log('[presentation] allWithAnalysis length:', allWithAnalysis.length);
     const toGeocode = allWithAnalysis.filter((property) => !hasValidCoords(property));
+    console.log('[presentation] toGeocode count:', toGeocode.length);
 
     if (toGeocode.length === 0) return;
 
     geocodeProperties(toGeocode).then(async (results) => {
+      console.log('[presentation] geocode results:', results.length);
       setGeocodedCoords(results);
       for (const { id, latitude, longitude } of results) {
         try {
