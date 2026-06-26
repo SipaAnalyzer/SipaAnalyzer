@@ -29,9 +29,35 @@ Deno.serve(async (req) => {
   });
 
   const { user_id } = await req.json();
-
   if (!user_id) {
     return jsonResponse({ error: "user_id est requis." }, 400);
+  }
+
+  // Vérifier que l'appelant est admin
+  const caller = await supabaseAdmin.auth.getUser(authHeader.replace("Bearer ", ""));
+  if (caller.error || !caller.data.user) {
+    return jsonResponse({ error: "Token invalide." }, 401);
+  }
+
+  const { data: callerPerm, error: callerPermError } = await supabaseAdmin
+    .from("user_permissions")
+    .select("role")
+    .eq("user_id", caller.data.user.id)
+    .single();
+
+  if (callerPermError || callerPerm?.role !== "admin") {
+    return jsonResponse({ error: "Seuls les administrateurs peuvent supprimer des utilisateurs." }, 403);
+  }
+
+  // Vérifier que la cible n'est pas un admin
+  const { data: targetPerm, error: targetPermError } = await supabaseAdmin
+    .from("user_permissions")
+    .select("role")
+    .eq("user_id", user_id)
+    .single();
+
+  if (!targetPermError && targetPerm?.role === "admin") {
+    return jsonResponse({ error: "Impossible de supprimer un administrateur." }, 403);
   }
 
   const { error: permissionsError } = await supabaseAdmin
