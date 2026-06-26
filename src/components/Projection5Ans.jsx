@@ -6,7 +6,7 @@ import { formatCHF } from '../utils/calculations';
 import { fetchSaronRate } from '../utils/saronRate';
 import { Loader2 } from 'lucide-react';
 
-function BankInputs({ name, color, state, setState, hypo, prixBien, saronRate, saronLoading }) {
+function BankInputs({ name, color, state, setState, hypo, prixTotal, saronRate, saronLoading }) {
   const borderClass = color === 'amber' ? 'border-amber-500/25' : 'border-emerald-500/25';
   const bgClass = color === 'amber' ? 'bg-amber-500/5' : 'bg-emerald-500/5';
   const textClass = color === 'amber' ? 'text-amber-400' : 'text-emerald-400';
@@ -38,7 +38,7 @@ function BankInputs({ name, color, state, setState, hypo, prixBien, saronRate, s
   const handleEvalPct = (v) => {
     setState((prev) => {
       const next = { ...prev, evalPct: v };
-      if (v != null && v > 0 && prixBien > 0) next.evalMontant = Math.round(prixBien * v / 100);
+      if (v != null && v > 0 && prixTotal > 0) next.evalMontant = Math.round(prixTotal * v / 100);
       return next;
     });
   };
@@ -46,7 +46,7 @@ function BankInputs({ name, color, state, setState, hypo, prixBien, saronRate, s
   const handleEvalMontant = (v) => {
     setState((prev) => {
       const next = { ...prev, evalMontant: v };
-      if (v != null && v > 0 && prixBien > 0) next.evalPct = Math.round((v / prixBien) * 10000) / 100;
+      if (v != null && v > 0 && prixTotal > 0) next.evalPct = Math.round((v / prixTotal) * 10000) / 100;
       return next;
     });
   };
@@ -77,7 +77,7 @@ function BankInputs({ name, color, state, setState, hypo, prixBien, saronRate, s
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
             </div>
           </div>
-          <p className="text-[10px] text-muted-foreground mt-1">du prix du bâtiment</p>
+          <p className="text-[10px] text-muted-foreground mt-1">du prix total</p>
         </div>
 
         <div>
@@ -254,6 +254,11 @@ function ProjectionTable({ label, color, data, outflows }) {
 export default function Projection5Ans({ analysis }) {
   const hypo = Number(analysis?.hypotheque || 0);
   const prixBien = Number(analysis?.prix_bien || 0);
+  const prixTotal = Math.round(prixBien
+    + Number(analysis?.versement_initial || 0)
+    + Number(analysis?.amortissement_5_ans || 0)
+    + Number(analysis?.honoraires_sipa || 0)
+    + Number(analysis?.frais_dossier_bancaire || 0));
   const defaultDuree = 5;
   const defaultRateA = analysis?.banque_a_taux_hypothecaire
     ?? (analysis?.interets_hypothecaires && hypo > 0 ? Math.round((analysis.interets_hypothecaires / hypo) * 10000) / 100 : null);
@@ -355,8 +360,8 @@ export default function Projection5Ans({ analysis }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-        <BankInputs name="Banque A" color="amber" state={bankA} setState={setBankA} hypo={hypo} prixBien={prixBien} saronRate={saronRate} saronLoading={saronLoading} />
-        <BankInputs name="Banque B" color="emerald" state={bankB} setState={setBankB} hypo={hypo} prixBien={prixBien} saronRate={saronRate} saronLoading={saronLoading} />
+        <BankInputs name="Banque A" color="amber" state={bankA} setState={setBankA} hypo={hypo} prixTotal={prixTotal} saronRate={saronRate} saronLoading={saronLoading} />
+        <BankInputs name="Banque B" color="emerald" state={bankB} setState={setBankB} hypo={hypo} prixTotal={prixTotal} saronRate={saronRate} saronLoading={saronLoading} />
       </div>
 
       {(projA || projB) ? (
