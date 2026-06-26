@@ -252,8 +252,8 @@ export default function PropertyDetail() {
       </div>
 
       <nav className="sticky top-0 z-20 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3 bg-background/90 backdrop-blur-sm border-b border-border flex flex-wrap gap-2 text-sm">
-        <a href="#analyse" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Analyse</a>
-        <a href="#graphiques" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Graphiques</a>
+        <a href="#analyse" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Revenus</a>
+        <a href="#graphiques" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Analyse</a>
         <a href="#banques" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Banques</a>
         {normalizedAnalyses.length > 1 && <a href="#historique" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Historique</a>}
         <a href="#activite" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Activité</a>
