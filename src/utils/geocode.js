@@ -12,23 +12,29 @@ function buildAddress(property) {
 
 export async function geocodeProperty(property) {
   const address = buildAddress(property);
-  if (!address) return null;
+  if (!address) {
+    console.warn('[geocode] Adresse vide pour', property.id, property.nom_bien);
+    return null;
+  }
 
   const cached = cache.get(address);
   if (cached) return cached;
 
   try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,
-      { headers: { 'User-Agent': 'SipaAnalyzer/1.0' } }
-    );
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
+    console.log('[geocode] Requête Nominatim:', address);
 
-    if (!res.ok) return null;
+    const res = await fetch(url, { headers: { 'User-Agent': 'SipaAnalyzer/1.0' } });
+
+    if (!res.ok) {
+      console.warn('[geocode] Erreur HTTP', res.status, 'pour', address);
+      return null;
+    }
 
     const data = await res.json();
 
     if (data.length === 0) {
-      cache.set(address, null);
+      console.warn('[geocode] Aucun résultat pour:', address);
       return null;
     }
 
@@ -37,9 +43,11 @@ export async function geocodeProperty(property) {
       longitude: parseFloat(data[0].lon),
     };
 
+    console.log('[geocode] Trouvé:', address, '->', result.latitude, result.longitude);
     cache.set(address, result);
     return result;
-  } catch {
+  } catch (err) {
+    console.warn('[geocode] Erreur réseau pour', address, err);
     return null;
   }
 }
@@ -53,7 +61,7 @@ export async function geocodeProperties(properties, onProgress) {
       results.push({ id: properties[i].id, ...coords });
     }
     if (onProgress) onProgress(i + 1, properties.length);
-    await new Promise((r) => setTimeout(r, 1100));
+    await new Promise((r) => setTimeout(r, 1000));
   }
 
   return results;
