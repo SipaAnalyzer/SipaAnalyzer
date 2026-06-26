@@ -46,7 +46,7 @@ function BankInputs({ name, color, state, setState, hypo, prixTotal, saronRate, 
   const handleEvalMontant = (v) => {
     setState((prev) => {
       const next = { ...prev, evalMontant: v };
-      if (v != null && v > 0 && prixTotal > 0) next.evalPct = Math.round((v / prixTotal) * 10000) / 100;
+      if (v != null && v > 0 && prixTotal > 0) next.evalPct = Math.round((v / prixTotal) * 1000000) / 10000;
       return next;
     });
   };
@@ -67,10 +67,11 @@ function BankInputs({ name, color, state, setState, hypo, prixTotal, saronRate, 
                 className="bg-background border-border pl-10"
               />
             </div>
-            <div className="relative w-24 shrink-0">
+            <div className="relative w-28 shrink-0">
               <Input
                 type="number"
-                value={state.evalPct ?? ''}
+                step="0.0001"
+                value={state.evalPct != null ? state.evalPct.toFixed(4) : ''}
                 onChange={(e) => handleEvalPct(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
                 className="bg-background border-border pr-8 text-right"
               />
