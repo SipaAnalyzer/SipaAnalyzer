@@ -15,7 +15,8 @@ function BankInputs({ name, color, state, setState, hypo }) {
         const rate = v / 100;
         const n = prev.duree;
         const pmt = hypo * rate * Math.pow(1 + rate, n) / (Math.pow(1 + rate, n) - 1);
-        next.amort = Math.round(pmt);
+        const year1Interest = hypo * rate;
+        next.amort = Math.round(Math.max(0, pmt - year1Interest));
       }
       return next;
     });
