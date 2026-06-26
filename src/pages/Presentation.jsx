@@ -146,9 +146,6 @@ export default function Presentation() {
   const allWithAnalysis = useMemo(() => [...enCours, ...valides], [enCours, valides]);
 
   const [geocodedCoords, setGeocodedCoords] = useState([]);
-  const [geocoding, setGeocoding] = useState(false);
-  const [geocodeProgress, setGeocodeProgress] = useState(0);
-  const [geocodeTotal, setGeocodeTotal] = useState(0);
 
   const ranked = useMemo(() => {
     return [...enCours].sort((a, b) => {
@@ -186,14 +183,7 @@ export default function Presentation() {
 
     if (toGeocode.length === 0) return;
 
-    setGeocoding(true);
-    setGeocodeTotal(toGeocode.length);
-    setGeocodeProgress(0);
-
-    geocodeProperties(toGeocode, (done, total) => {
-      setGeocodeProgress(done);
-      setGeocodeTotal(total);
-    }).then(async (results) => {
+    geocodeProperties(toGeocode).then(async (results) => {
       setGeocodedCoords(results);
       for (const { id, latitude, longitude } of results) {
         try {
@@ -203,7 +193,6 @@ export default function Presentation() {
         }
       }
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      setGeocoding(false);
     });
   }, [allWithAnalysis]);
 
@@ -253,7 +242,7 @@ export default function Presentation() {
           icon={MapPin}
           label="En cours d'analyse"
           value={enCours.length}
-          detail={`${withCoords.length} sur la carte${geocoding ? ` (géocodage en cours... ${geocodeProgress}/${geocodeTotal})` : ''}`}
+          detail={`${withCoords.length} sur la carte`}
         />
         <KpiTile
           icon={Wallet}
@@ -276,14 +265,8 @@ export default function Presentation() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)] gap-5">
-        <div className="bg-card rounded-lg border border-border overflow-hidden min-h-[460px] relative">
-          {geocoding && (
-            <div className="absolute inset-0 z-10 bg-background/80 flex flex-col items-center justify-center gap-3 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <p className="text-sm">Géocodage des adresses... {geocodeProgress}/{geocodeTotal}</p>
-            </div>
-          )}
-          {withCoords.length === 0 && !geocoding ? (
+        <div className="bg-card rounded-lg border border-border overflow-hidden min-h-[460px]">
+          {withCoords.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[460px] gap-3 text-muted-foreground">
               <MapPin className="h-10 w-10" />
               <p className="text-sm">Aucune adresse à géocoder</p>
