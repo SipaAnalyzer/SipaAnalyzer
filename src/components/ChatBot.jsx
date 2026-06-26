@@ -10,10 +10,15 @@ export default function ChatBot({ property, analysis, properties, floating = tru
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
+  const contextRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    contextRef.current = properties ? buildChatContext({ properties }) : buildChatContext({ property, analysis });
+  }, [property, analysis, properties]);
 
   const send = async () => {
     if (!input.trim() || loading) return;
@@ -24,9 +29,17 @@ export default function ChatBot({ property, analysis, properties, floating = tru
     setLoading(true);
 
     try {
-      const context = properties ? buildChatContext({ properties }) : buildChatContext({ property, analysis });
+      const history = messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      const userMessage = contextRef.current
+        ? `${contextRef.current}\n\nQuestion de l'utilisateur :\n${userMsg}`
+        : userMsg;
+
       const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `${context}\n\nQuestion de l'utilisateur :\n${userMsg}`,
+        messages: [...history, { role: 'user', content: userMessage }],
         provider: 'groq',
       });
 
@@ -72,7 +85,11 @@ export default function ChatBot({ property, analysis, properties, floating = tru
       <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[400px] min-h-[200px]">
         {messages.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-8">
-            {properties?.length > 0 ? 'Posez une question sur ces biens comparés.' : property ? 'Posez une question sur ce bien ou son analyse.' : 'Posez votre question sur les biens immobiliers.'}
+            {properties?.length > 0
+              ? 'Comparez ces biens et posez vos questions.'
+              : property
+                ? 'Posez une question sur ce bien ou son analyse financière.'
+                : 'Posez votre question sur les biens immobiliers.'}
           </p>
         )}
         {messages.map((msg, i) => (
@@ -144,7 +161,7 @@ export default function ChatBot({ property, analysis, properties, floating = tru
           <div className="p-4 space-y-3 max-h-[400px] overflow-y-auto min-h-[200px]">
             {messages.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-8">
-            {properties?.length > 0 ? 'Posez une question sur ces biens comparés.' : property ? 'Posez une question sur ce bien ou son analyse.' : 'Posez votre question sur les biens immobiliers.'}
+            {properties?.length > 0 ? 'Comparez ces biens et posez vos questions.' : property ? 'Posez une question sur ce bien ou son analyse.' : 'Posez votre question sur les biens immobiliers.'}
               </p>
             )}
             {messages.map((msg, i) => (
@@ -200,27 +217,53 @@ function buildChatContext({ property, analysis, properties }) {
     const lines = ['Contexte des biens immobiliers comparés :'];
     properties.forEach((p, i) => {
       const a = p.analysis;
-      lines.push(`\nBien ${i + 1} : ${p.nom_bien || 'N/A'} à ${p.ville || 'N/A'}${p.canton ? `, ${p.canton}` : ''}`);
+      lines.push(`\n--- Bien ${i + 1} : ${p.nom_bien || 'N/A'} à ${p.ville || 'N/A'}${p.canton ? `, ${p.canton}` : ''} ---`);
       if (a) {
-        lines.push(`  - Prix total : ${a.prix_total || 0} CHF · Rdt brut : ${a.rendement_brut || 0}% · Rdt net/FP : ${a.rendement_net_fonds_propres || 0}% · Score : ${a.score_global || 0}/100`);
+        lines.push(buildAnalysisDetail(a));
       }
     });
     return lines.join('\n');
   }
 
   if (!property && !analysis) return '';
-  return [
+  const lines = [
     'Contexte du bien immobilier analysé :',
     property ? `- Bien : ${property.nom_bien || 'N/A'} à ${property.ville || 'N/A'}${property.canton ? `, ${property.canton}` : ''}` : '',
     property?.annee_construction ? `- Année de construction : ${property.annee_construction}` : '',
     property?.surface ? `- Surface : ${property.surface} m²` : '',
     property?.nombre_logements ? `- Logements : ${property.nombre_logements}` : '',
-    analysis ? 'Données financières de l\'analyse :' : '',
-    analysis ? `- Prix total : ${analysis.prix_total || 0} CHF` : '',
-    analysis ? `- Fonds propres : ${analysis.fonds_propres || 0} CHF` : '',
-    analysis ? `- Hypothèque : ${analysis.hypotheque || 0} CHF` : '',
-    analysis ? `- Rendement brut : ${analysis.rendement_brut || 0}%` : '',
-    analysis ? `- Rendement net/FP : ${analysis.rendement_net_fonds_propres || 0}%` : '',
-    analysis ? `- Score global : ${analysis.score_global || 0}/100` : '',
-  ].filter(Boolean).join('\n');
+  ];
+
+  if (analysis) {
+    lines.push('\nDonnées financières (TABLEAU FINANCIER) :');
+    lines.push(buildAnalysisDetail(analysis));
+  }
+
+  return lines.filter(Boolean).join('\n');
+}
+
+function buildAnalysisDetail(a) {
+  return [
+    `Prix du bien : ${a.prix_bien || 0} CHF`,
+    `Versement initial : ${a.versement_initial || 0} CHF`,
+    `Amortissement sur 5 ans : ${a.amortissement_5_ans || 0} CHF`,
+    `Honoraires SIPA : ${a.honoraires_sipa || 0} CHF`,
+    `Frais dossier bancaire : ${a.frais_dossier_bancaire || 0} CHF`,
+    `Prix total : ${a.prix_total || 0} CHF`,
+    `Fonds propres : ${a.fonds_propres || 0} CHF`,
+    `Hypothèque : ${a.hypotheque || 0} CHF (LTV: ${a.hypotheque && a.prix_total ? Math.round(a.hypotheque / a.prix_total * 100) : '?'}%)`,
+    `Revenus locatifs : ${a.revenus_locatifs || 0} CHF`,
+    `Rendement brut : ${a.rendement_brut || 0}%`,
+    `Charges opérationnelles : ${a.charges_operationnelles || 0} CHF`,
+    `Intérêts hypothécaires : ${a.interets_hypothecaires || 0} CHF`,
+    `Gestion : ${a.gestion || 0} CHF`,
+    `Revenu net : ${a.revenu_net || 0} CHF`,
+    `Rendement net / FP : ${a.rendement_net_fonds_propres || 0}%`,
+    `Impôt : ${a.impot || 0} CHF`,
+    `Revenu distribué : ${a.revenu_distribue || 0} CHF`,
+    `Rdt distribué / FP : ${a.revenu_distribue_fonds_propres || 0}%`,
+    `Note : ${a.note || '?'} (score: ${a.score_global || 0}/100)`,
+    `Banque A : ${a.banque_a_taux_hypothecaire || '?'}% / ${a.banque_a_amortissement_annuel || 0} CHF/an`,
+    `Banque B : ${a.banque_b_taux_hypothecaire || '?'}% / ${a.banque_b_amortissement_annuel || 0} CHF/an`,
+  ].join('\n');
 }

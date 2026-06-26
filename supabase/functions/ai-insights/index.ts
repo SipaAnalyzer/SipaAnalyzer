@@ -7,9 +7,16 @@ const corsHeaders = {
 
 type Provider = "openai" | "deepseek" | "zenmux" | "grok" | "groq";
 
+type Message = {
+  role: "system" | "user" | "assistant";
+  content: string;
+};
+
 type InvokePayload = {
   prompt?: string;
+  system?: string;
   provider?: Provider;
+  messages?: Message[];
 };
 
 const PROVIDER_CONFIG: Record<Provider, { apiKeyEnv: string; url: string; modelEnv: string; defaultModel: string }> = {
@@ -45,6 +52,25 @@ const PROVIDER_CONFIG: Record<Provider, { apiKeyEnv: string; url: string; modelE
   },
 };
 
+const DEFAULT_SYSTEM = `Tu es un expert en analyse immobilière suisse. Tu travailles pour SIPA Immobilier SA.
+
+TÂCHES AUTORISÉES :
+- Analyser des biens immobiliers, leur rentabilité et leur structure financière
+- Expliquer les métriques : rendement brut, rendement net/fonds propres, revenu distribué, score global (A-E)
+- Comparer plusieurs biens ou scénarios bancaires
+- Calculer des ratios, LTV (loan-to-value), rendements
+- Expliquer le TABLEAU FINANCIER : Prix total = Prix du bien + Versement initial + Amort. 5 ans + Honoraires SIPA + Frais dossier bancaire
+- Interpréter la projection 5 ans (intérêts, amortissement, solde, cash-flow)
+- Donner des avis argumentés basés sur les chiffres
+
+RÈGLES :
+- Réponds toujours en français
+- Utilise le Markdown pour structurer (listes, tableaux, **gras**)
+- Sois précis et cite les chiffres
+- Quand on te demande un conseil, précise "analyse à titre indicatif, soumise à validation par un conseiller SIPA"
+- Ne donne PAS de conseil fiscal ou juridique personnalisé
+- Reste professionnel et factuel`;
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -55,8 +81,7 @@ Deno.serve(async (request) => {
   }
 
   const payload = (await request.json().catch(() => ({}))) as InvokePayload;
-  const prompt = payload.prompt?.trim();
-  const provider: Provider = (payload.provider === "deepseek" || payload.provider === "zenmux" || payload.provider === "grok" || payload.provider === "groq") ? payload.provider : "openai";
+  const provider: Provider = (payload.provider === "deepseek" || payload.provider === "zenmux" || payload.provider === "grok" || payload.provider === "groq") ? payload.provider : "groq";
   const cfg = PROVIDER_CONFIG[provider];
 
   const apiKey = Deno.env.get(cfg.apiKeyEnv);
@@ -67,7 +92,14 @@ Deno.serve(async (request) => {
     );
   }
 
-  if (!prompt) {
+  const system = payload.system || DEFAULT_SYSTEM;
+  const messages: Message[] = [{ role: "system", content: system }];
+
+  if (payload.messages && payload.messages.length > 0) {
+    messages.push(...payload.messages);
+  } else if (payload.prompt) {
+    messages.push({ role: "user", content: payload.prompt });
+  } else {
     return jsonResponse({ error: "Prompt IA manquant." }, 400);
   }
 
@@ -81,19 +113,9 @@ Deno.serve(async (request) => {
     },
     body: JSON.stringify({
       model,
-      temperature: 0.25,
-      max_tokens: 2000,
-      messages: [
-        {
-          role: "system",
-          content:
-            "Tu es un analyste immobilier suisse. Réponds en français, en Markdown. Sois très court (2-3 phrases max). Ne donne pas de conseil financier réglementé.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
+      temperature: 0.7,
+      max_tokens: 4096,
+      messages,
     }),
   });
 
