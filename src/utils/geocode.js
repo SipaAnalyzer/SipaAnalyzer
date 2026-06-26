@@ -1,55 +1,67 @@
 const cache = new Map();
 
-function buildAddress(property) {
-  const parts = [
-    property.adresse,
-    property.ville,
-    property.canton,
-    'Suisse',
-  ].filter(Boolean);
-  return parts.join(', ');
+function buildAddresses(property) {
+  const { adresse, ville, canton } = property;
+  const city = [ville, canton].filter(Boolean).join(', ');
+
+  const queries = [];
+
+  if (adresse && ville) {
+    queries.push(`${adresse}, ${ville}, Suisse`);
+    queries.push(`${adresse}, ${city}`);
+  }
+
+  if (ville) {
+    queries.push(`${ville}, ${canton ? `${canton}, ` : ''}Suisse`);
+    queries.push(city);
+    queries.push(ville);
+  }
+
+  return [...new Set(queries)];
+}
+
+async function tryGeocode(query) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=ch`;
+  console.log('[geocode] Requête Nominatim:', query);
+
+  const res = await fetch(url, { headers: { 'User-Agent': 'SipaAnalyzer/1.0' } });
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  if (data.length === 0) {
+    console.warn('[geocode] Aucun résultat pour:', query);
+    return null;
+  }
+
+  return {
+    latitude: parseFloat(data[0].lat),
+    longitude: parseFloat(data[0].lon),
+  };
 }
 
 export async function geocodeProperty(property) {
-  const address = buildAddress(property);
-  if (!address) {
+  const queries = buildAddresses(property);
+
+  if (queries.length === 0) {
     console.warn('[geocode] Adresse vide pour', property.id, property.nom_bien);
     return null;
   }
 
-  const cached = cache.get(address);
+  const cacheKey = queries[0];
+  const cached = cache.get(cacheKey);
   if (cached) return cached;
 
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
-    console.log('[geocode] Requête Nominatim:', address);
-
-    const res = await fetch(url, { headers: { 'User-Agent': 'SipaAnalyzer/1.0' } });
-
-    if (!res.ok) {
-      console.warn('[geocode] Erreur HTTP', res.status, 'pour', address);
-      return null;
+  for (const query of queries) {
+    const result = await tryGeocode(query);
+    if (result) {
+      console.log('[geocode] Trouvé:', query, '->', result.latitude, result.longitude);
+      cache.set(cacheKey, result);
+      return result;
     }
-
-    const data = await res.json();
-
-    if (data.length === 0) {
-      console.warn('[geocode] Aucun résultat pour:', address);
-      return null;
-    }
-
-    const result = {
-      latitude: parseFloat(data[0].lat),
-      longitude: parseFloat(data[0].lon),
-    };
-
-    console.log('[geocode] Trouvé:', address, '->', result.latitude, result.longitude);
-    cache.set(address, result);
-    return result;
-  } catch (err) {
-    console.warn('[geocode] Erreur réseau pour', address, err);
-    return null;
   }
+
+  console.warn('[geocode] Aucune requête n\'a trouvé de résultat pour', property.nom_bien);
+  return null;
 }
 
 export async function geocodeProperties(properties, onProgress) {
