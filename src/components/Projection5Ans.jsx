@@ -1,12 +1,27 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCHF } from '../utils/calculations';
+import { fetchSaronRate } from '../utils/saronRate';
+import { Loader2 } from 'lucide-react';
 
-function BankInputs({ name, color, state, setState, hypo, prixBien }) {
+function BankInputs({ name, color, state, setState, hypo, prixBien, saronRate, saronLoading }) {
   const borderClass = color === 'amber' ? 'border-amber-500/25' : 'border-emerald-500/25';
   const bgClass = color === 'amber' ? 'bg-amber-500/5' : 'bg-emerald-500/5';
   const textClass = color === 'amber' ? 'text-amber-400' : 'text-emerald-400';
+
+  const rateType = state.rateType || 'fixe';
+  const tauxSaisi = state.taux;
+  const marge = state.marge ?? 0.5;
+
+  const effectiveRate = useMemo(() => {
+    if (rateType === 'fixe') return tauxSaisi;
+    const saron = saronRate ?? 0;
+    if (rateType === 'saron') return saron + marge;
+    if (rateType === 'mixte') return (tauxSaisi ?? 0) + saron;
+    return tauxSaisi;
+  }, [rateType, tauxSaisi, marge, saronRate]);
 
   const handleTaux = (v) => {
     setState((prev) => {
@@ -25,9 +40,7 @@ function BankInputs({ name, color, state, setState, hypo, prixBien }) {
   const handleAmort = (v) => {
     setState((prev) => {
       const next = { ...prev, amort: v };
-      if (v != null && v > 0) {
-        next.duree = Math.round(hypo / v);
-      }
+      if (v != null && v > 0) next.duree = Math.round(hypo / v);
       return next;
     });
   };
@@ -35,9 +48,7 @@ function BankInputs({ name, color, state, setState, hypo, prixBien }) {
   const handleDuree = (v) => {
     setState((prev) => {
       const next = { ...prev, duree: v };
-      if (v != null && v > 0) {
-        next.amort = Math.round(hypo / v);
-      }
+      if (v != null && v > 0) next.amort = Math.round(hypo / v);
       return next;
     });
   };
@@ -45,9 +56,7 @@ function BankInputs({ name, color, state, setState, hypo, prixBien }) {
   const handleEvalPct = (v) => {
     setState((prev) => {
       const next = { ...prev, evalPct: v };
-      if (v != null && v > 0 && prixBien > 0) {
-        next.evalMontant = Math.round(prixBien * v / 100);
-      }
+      if (v != null && v > 0 && prixBien > 0) next.evalMontant = Math.round(prixBien * v / 100);
       return next;
     });
   };
@@ -55,9 +64,7 @@ function BankInputs({ name, color, state, setState, hypo, prixBien }) {
   const handleEvalMontant = (v) => {
     setState((prev) => {
       const next = { ...prev, evalMontant: v };
-      if (v != null && v > 0 && prixBien > 0) {
-        next.evalPct = Math.round((v / prixBien) * 10000) / 100;
-      }
+      if (v != null && v > 0 && prixBien > 0) next.evalPct = Math.round((v / prixBien) * 10000) / 100;
       return next;
     });
   };
@@ -90,18 +97,111 @@ function BankInputs({ name, color, state, setState, hypo, prixBien }) {
           </div>
           <p className="text-[10px] text-muted-foreground mt-1">du prix du bâtiment</p>
         </div>
+
         <div>
-          <Label className="text-xs text-muted-foreground mb-1.5 block">Taux hypothécaire</Label>
-          <div className="relative">
-            <Input
-              type="number"
-              value={state.taux ?? ''}
-              onChange={(e) => handleTaux(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
-              className="bg-background border-border pr-8 text-right"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
-          </div>
+          <Label className="text-xs text-muted-foreground mb-1.5 block">Type de taux</Label>
+          <Select
+            value={rateType}
+            onValueChange={(v) => setState((prev) => ({ ...prev, rateType: v }))}
+          >
+            <SelectTrigger className="bg-background border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fixe">Taux fixe</SelectItem>
+              <SelectItem value="saron">Saron</SelectItem>
+              <SelectItem value="mixte">Base fixe + Saron</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
+        {rateType === 'fixe' && (
+          <div>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Taux hypothécaire</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                value={state.taux ?? ''}
+                onChange={(e) => handleTaux(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
+                className="bg-background border-border pr-8 text-right"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+            </div>
+          </div>
+        )}
+
+        {rateType === 'saron' && (
+          <>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Taux SARON actuel</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={saronRate != null ? saronRate.toFixed(3) : ''}
+                  readOnly
+                  className="bg-muted/50 border-border pr-8 text-right opacity-70"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                {saronLoading && <Loader2 className="absolute right-8 top-1/2 -translate-y-1/2 h-3 w-3 animate-spin text-muted-foreground" />}
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Marge</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={state.marge ?? 0.5}
+                  onChange={(e) => setState((prev) => ({ ...prev, marge: parseFloat(e.target.value) || 0 }))}
+                  className="bg-background border-border pr-8 text-right"
+                  step="0.05"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {rateType === 'mixte' && (
+          <>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Base fixe</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={state.taux ?? ''}
+                  onChange={(e) => handleTaux(e.target.value === '' ? null : parseFloat(e.target.value) || 0)}
+                  className="bg-background border-border pr-8 text-right"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Indexation SARON</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  value={saronRate != null ? `${saronRate >= 0 ? '+' : ''}${saronRate.toFixed(3)}` : ''}
+                  readOnly
+                  className="bg-muted/50 border-border pr-8 text-right opacity-70"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                {saronLoading && <Loader2 className="absolute right-8 top-1/2 -translate-y-1/2 h-3 w-3 animate-spin text-muted-foreground" />}
+              </div>
+            </div>
+          </>
+        )}
+
+        {(rateType === 'saron' || rateType === 'mixte') && effectiveRate != null && (
+          <div className="pt-1">
+            <div className="rounded-lg bg-background/60 border border-border/60 px-3 py-2 flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">Taux effectif</span>
+              <span className={`font-mono font-bold text-sm ${textClass}`}>
+                {effectiveRate.toFixed(3)}%
+              </span>
+            </div>
+          </div>
+        )}
+
         <div>
           <Label className="text-xs text-muted-foreground mb-1.5 block">Durée</Label>
           <div className="relative">
@@ -173,11 +273,27 @@ export default function Projection5Ans({ analysis }) {
   const hypo = Number(analysis?.hypotheque || 0);
   const prixBien = Number(analysis?.prix_bien || 0);
   const defaultDuree = 20;
+  const [saronRate, setSaronRate] = useState(null);
+  const [saronLoading, setSaronLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSaronLoading(true);
+    fetchSaronRate().then((rate) => {
+      if (!cancelled) {
+        setSaronRate(rate);
+        setSaronLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const [bankA, setBankA] = useState(() => {
     const a = analysis?.banque_a_amortissement_annuel;
     return {
+      rateType: 'fixe',
       taux: analysis?.banque_a_taux_hypothecaire ?? null,
+      marge: 0.5,
       duree: a && a > 0 ? Math.round(hypo / a) : defaultDuree,
       amort: a ?? null,
       evalPct: null,
@@ -188,7 +304,9 @@ export default function Projection5Ans({ analysis }) {
   const [bankB, setBankB] = useState(() => {
     const a = analysis?.banque_b_amortissement_annuel;
     return {
+      rateType: 'fixe',
       taux: analysis?.banque_b_taux_hypothecaire ?? null,
+      marge: 0.5,
       duree: a && a > 0 ? Math.round(hypo / a) : defaultDuree,
       amort: a ?? null,
       evalPct: null,
@@ -196,10 +314,19 @@ export default function Projection5Ans({ analysis }) {
     };
   });
 
-  const generate = useCallback((taux, amort) => {
-    if (!taux && !amort) return null;
-    const rate = Number(taux || 0) / 100;
-    const amortVal = Number(amort || 0);
+  const getEffective = (bank) => {
+    if (bank.rateType === 'fixe') return bank.taux;
+    const saron = saronRate ?? 0;
+    if (bank.rateType === 'saron') return saron + (bank.marge ?? 0.5);
+    if (bank.rateType === 'mixte') return (bank.taux ?? 0) + saron;
+    return bank.taux;
+  };
+
+  const generate = useCallback((bank) => {
+    const effective = getEffective(bank);
+    if (effective == null && !bank.amort) return null;
+    const rate = Number(effective || 0) / 100;
+    const amortVal = Number(bank.amort || 0);
     let balance = hypo;
     const years = [];
     for (let y = 1; y <= 5; y++) {
@@ -214,10 +341,10 @@ export default function Projection5Ans({ analysis }) {
       });
     }
     return years;
-  }, [hypo]);
+  }, [hypo, saronRate]);
 
-  const projA = useMemo(() => generate(bankA.taux, bankA.amort), [generate, bankA]);
-  const projB = useMemo(() => generate(bankB.taux, bankB.amort), [generate, bankB]);
+  const projA = useMemo(() => generate(bankA), [generate, bankA]);
+  const projB = useMemo(() => generate(bankB), [generate, bankB]);
 
   const outflows = useMemo(() => {
     const rev = Number(analysis?.revenus_locatifs || 0);
@@ -229,11 +356,24 @@ export default function Projection5Ans({ analysis }) {
 
   return (
     <div className="bg-card rounded-xl border border-border p-6">
-      <h3 className="font-heading font-semibold mb-5">Projection 5 ans</h3>
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="font-heading font-semibold">Projection 5 ans</h3>
+        {saronLoading && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            SARON...
+          </div>
+        )}
+        {!saronLoading && saronRate != null && (
+          <div className="text-xs text-muted-foreground">
+            SARON: <span className="font-mono font-medium">{saronRate.toFixed(3)}%</span>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-        <BankInputs name="Banque A" color="amber" state={bankA} setState={setBankA} hypo={hypo} prixBien={prixBien} />
-        <BankInputs name="Banque B" color="emerald" state={bankB} setState={setBankB} hypo={hypo} prixBien={prixBien} />
+        <BankInputs name="Banque A" color="amber" state={bankA} setState={setBankA} hypo={hypo} prixBien={prixBien} saronRate={saronRate} saronLoading={saronLoading} />
+        <BankInputs name="Banque B" color="emerald" state={bankB} setState={setBankB} hypo={hypo} prixBien={prixBien} saronRate={saronRate} saronLoading={saronLoading} />
       </div>
 
       {(projA || projB) ? (
