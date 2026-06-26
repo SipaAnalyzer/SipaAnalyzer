@@ -254,7 +254,7 @@ function ProjectionTable({ label, color, data, outflows }) {
 export default function Projection5Ans({ analysis }) {
   const hypo = Number(analysis?.hypotheque || 0);
   const prixBien = Number(analysis?.prix_bien || 0);
-  const prixTotal = Math.round(prixBien
+  const prixTotal = Number(analysis?.prix_total) || Math.round(prixBien
     + Number(analysis?.versement_initial || 0)
     + Number(analysis?.amortissement_5_ans || 0)
     + Number(analysis?.honoraires_sipa || 0)
