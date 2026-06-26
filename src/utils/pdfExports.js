@@ -214,7 +214,6 @@ function analysisRows(analysis) {
     { label: 'Rdt. brut', value: formatPercent(analysis?.rendement_brut) },
     { label: 'Rdt. net / FP', value: formatPercent(analysis?.rendement_net_fonds_propres), highlight: true },
     { label: 'Rdt. dist. / FP', value: formatPercent(analysis?.revenu_distribue_fonds_propres), highlight: true },
-    { label: 'Score', value: `${Math.round(analysis?.score_global || 0)}/100 (${analysis?.note || 'N/A'})`, highlight: true },
   ];
 }
 
