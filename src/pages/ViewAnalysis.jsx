@@ -7,7 +7,6 @@ import ScoreGauge from '../components/ScoreGauge';
 import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
 import PerformanceCharts from '../components/PerformanceCharts';
-import AIInsights from '../components/AIInsights';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, Download, MapPin, Landmark } from 'lucide-react';
 import moment from 'moment';
@@ -140,7 +139,6 @@ export default function ViewAnalysis() {
         </div>
       </div>
 
-      {property && <AIInsights analysis={analysis} property={property} />}
     </div>
   );
 }

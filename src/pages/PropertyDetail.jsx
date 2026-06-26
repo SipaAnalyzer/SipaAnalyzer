@@ -10,7 +10,6 @@ import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
 import PerformanceCharts from '../components/PerformanceCharts';
 import CommentSection from '../components/CommentSection';
-import AIInsights from '../components/AIInsights';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
 import ChatBot from '../components/ChatBot';
@@ -347,8 +346,6 @@ export default function PropertyDetail() {
           </div>
         </div>
       )}
-
-      {selected && <AIInsights analysis={selected} property={property} />}
 
       {normalizedAnalyses.length > 1 && (
         <div className="bg-card rounded-xl border border-border">
