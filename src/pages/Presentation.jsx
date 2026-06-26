@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
@@ -7,6 +7,7 @@ import L from 'leaflet';
 import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
 import ScoreBadge from '../components/ScoreBadge';
+import { geocodeProperties } from '../utils/geocode';
 import {
   AlertTriangle,
   BarChart3,
@@ -143,6 +144,11 @@ export default function Presentation() {
 
   const allWithAnalysis = useMemo(() => [...enCours, ...valides], [enCours, valides]);
 
+  const [geocodedCoords, setGeocodedCoords] = useState([]);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeProgress, setGeocodeProgress] = useState(0);
+  const [geocodeTotal, setGeocodeTotal] = useState(0);
+
   const ranked = useMemo(() => {
     return [...enCours].sort((a, b) => {
       const scoreDiff = safeNumber(b.analysis?.score_global) - safeNumber(a.analysis?.score_global);
@@ -151,13 +157,48 @@ export default function Presentation() {
     });
   }, [enCours]);
 
-  const withCoords = allWithAnalysis.filter((property) => {
-    const lat = Number(property.latitude);
-    const lng = Number(property.longitude);
-    return Number.isFinite(lat) && Number.isFinite(lng);
-  });
+  const withCoords = useMemo(() => {
+    const native = allWithAnalysis.filter((property) => {
+      const lat = Number(property.latitude);
+      const lng = Number(property.longitude);
+      return Number.isFinite(lat) && Number.isFinite(lng);
+    });
 
-  const withoutCoords = allWithAnalysis.filter((property) => !withCoords.some((item) => item.id === property.id));
+    const geocoded = allWithAnalysis
+      .filter((property) => geocodedCoords.some((c) => c.id === property.id))
+      .map((property) => {
+        const coords = geocodedCoords.find((c) => c.id === property.id);
+        return { ...property, latitude: coords.latitude, longitude: coords.longitude };
+      });
+
+    return [...native, ...geocoded];
+  }, [allWithAnalysis, geocodedCoords]);
+
+  const withoutCoords = allWithAnalysis.filter(
+    (property) => !withCoords.some((item) => item.id === property.id)
+  );
+
+  useEffect(() => {
+    const toGeocode = allWithAnalysis.filter((property) => {
+      const lat = Number(property.latitude);
+      const lng = Number(property.longitude);
+      return !Number.isFinite(lat) || !Number.isFinite(lng);
+    });
+
+    if (toGeocode.length === 0) return;
+
+    setGeocoding(true);
+    setGeocodeTotal(toGeocode.length);
+    setGeocodeProgress(0);
+
+    geocodeProperties(toGeocode, (done, total) => {
+      setGeocodeProgress(done);
+      setGeocodeTotal(total);
+    }).then((results) => {
+      setGeocodedCoords(results);
+      setGeocoding(false);
+    });
+  }, [allWithAnalysis]);
 
   const mapCenter = LEMAN_CENTER;
 
@@ -205,7 +246,7 @@ export default function Presentation() {
           icon={MapPin}
           label="En cours d'analyse"
           value={enCours.length}
-          detail={`Dont ${withCoords.length} sur la carte`}
+          detail={`${withCoords.length} sur la carte${geocoding ? ` (géocodage en cours... ${geocodeProgress}/${geocodeTotal})` : ''}`}
         />
         <KpiTile
           icon={Wallet}
@@ -228,11 +269,17 @@ export default function Presentation() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)] gap-5">
-        <div className="bg-card rounded-lg border border-border overflow-hidden min-h-[460px]">
-          {withCoords.length === 0 ? (
+        <div className="bg-card rounded-lg border border-border overflow-hidden min-h-[460px] relative">
+          {geocoding && (
+            <div className="absolute inset-0 z-10 bg-background/80 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <p className="text-sm">Géocodage des adresses... {geocodeProgress}/{geocodeTotal}</p>
+            </div>
+          )}
+          {withCoords.length === 0 && !geocoding ? (
             <div className="flex flex-col items-center justify-center h-[460px] gap-3 text-muted-foreground">
               <MapPin className="h-10 w-10" />
-              <p className="text-sm">Renseignez les coordonnées GPS des biens pour les afficher sur la carte</p>
+              <p className="text-sm">Aucune adresse à géocoder</p>
             </div>
           ) : (
             <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} style={{ height: 460, width: '100%' }} className="z-0">
