@@ -46,7 +46,7 @@ function BankInputs({ name, color, state, setState, hypo, prixTotal, saronRate, 
   const handleEvalMontant = (v) => {
     setState((prev) => {
       const next = { ...prev, evalMontant: v };
-      if (v != null && v > 0 && prixTotal > 0) next.evalPct = Math.round((v / prixTotal) * 100);
+      if (v != null && v > 0 && prixTotal > 0) next.evalPct = Math.round((v / prixTotal) * 10000) / 100;
       return next;
     });
   };
