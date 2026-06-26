@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import ScoreGauge from '../components/ScoreGauge';
 import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
-import PerformanceCharts from '../components/PerformanceCharts';
+import Projection5Ans from '../components/Projection5Ans';
 import CommentSection from '../components/CommentSection';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
@@ -30,7 +30,6 @@ import {
   Home,
   ExternalLink,
   Loader2,
-  Landmark,
   Activity,
   Eye,
 } from 'lucide-react';
@@ -246,8 +245,7 @@ export default function PropertyDetail() {
 
       <nav className="sticky top-0 z-20 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3 bg-background/90 backdrop-blur-sm border-b border-border flex flex-wrap gap-2 text-sm">
         <a href="#analyse" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Revenus</a>
-        <a href="#graphiques" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Analyse</a>
-        <a href="#banques" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Banques</a>
+        <a href="#projection" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Projection</a>
         {normalizedAnalyses.length > 1 && <a href="#historique" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Historique</a>}
         <a href="#activite" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Activité</a>
         <a href="#commentaires" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Commentaires</a>
@@ -318,36 +316,7 @@ export default function PropertyDetail() {
         </div>
       )}
 
-      {selected && <div id="graphiques"><PerformanceCharts analysis={selected} /></div>}
-
-      {selected && (
-        <div id="banques" className="bg-card rounded-xl border border-border p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Landmark className="h-4 w-4 text-primary" />
-            <h3 className="font-heading font-semibold">
-              Hypothèses bancaires
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <BankScenarioCard
-              title="Banque A"
-              color="amber"
-              taux={selected.banque_a_taux_hypothecaire}
-              amortissement={selected.banque_a_amortissement_annuel}
-              evaluation={selected.banque_a_evaluation}
-            />
-
-            <BankScenarioCard
-              title="Banque B"
-              color="emerald"
-              taux={selected.banque_b_taux_hypothecaire}
-              amortissement={selected.banque_b_amortissement_annuel}
-              evaluation={selected.banque_b_evaluation}
-            />
-          </div>
-        </div>
-      )}
+      {selected && <div id="projection"><Projection5Ans analysis={selected} /></div>}
 
       {normalizedAnalyses.length > 1 && (
         <div id="historique" className="bg-card rounded-xl border border-border">
@@ -537,67 +506,6 @@ function ActivityFeed({ propertyId }) {
             })}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function BankScenarioCard({
-  title,
-  color,
-  taux,
-  amortissement,
-  evaluation,
-}) {
-  const colorClasses = {
-    amber: {
-      border: 'border-amber-500/25',
-      bg: 'bg-amber-500/5',
-      text: 'text-amber-400',
-    },
-    emerald: {
-      border: 'border-emerald-500/25',
-      bg: 'bg-emerald-500/5',
-      text: 'text-emerald-400',
-    },
-  };
-
-  const theme = colorClasses[color] || colorClasses.amber;
-
-  return (
-    <div className={`rounded-xl border ${theme.border} ${theme.bg} p-5`}>
-      <h4 className={`font-semibold mb-4 ${theme.text}`}>
-        {title}
-      </h4>
-
-      <div className="space-y-2 text-sm">
-        <div className="flex justify-between gap-4">
-          <span className="text-muted-foreground">
-            Taux hypothécaire
-          </span>
-          <span className="font-mono font-semibold">
-            {Number(taux || 0).toFixed(2)} %
-          </span>
-        </div>
-
-        <div className="flex justify-between gap-4">
-          <span className="text-muted-foreground">
-            Amortissement annuel
-          </span>
-          <span className="font-mono font-semibold">
-            {formatCHF(amortissement || 0)}
-          </span>
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <p className="text-xs text-muted-foreground mb-2">
-          Évaluation
-        </p>
-
-        <div className="rounded-lg bg-background/50 p-3 text-sm leading-relaxed min-h-[72px] whitespace-pre-wrap">
-          {evaluation || 'Aucune évaluation'}
-        </div>
       </div>
     </div>
   );
