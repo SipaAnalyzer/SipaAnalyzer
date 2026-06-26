@@ -274,27 +274,34 @@ export function exportPropertyPdf(property, analyses = []) {
   });
 }
 
-export function exportAnalysisPdf(property, analysis) {
+export function exportAnalysisPdf(property, analysis, sections) {
+  const opts = { property: true, financial: true, banks: true, ...(sections || {}) };
   const { doc, y } = createDoc(
     `Fiche analyse - ${property?.nom_bien || 'Bien'}`,
     `Analyse du ${formatDate(analysis?.created_at || analysis?.created_date || new Date())}`
   );
   const state = { y };
 
-  sectionTitle(doc, state, 'Bien analyse');
-  keyValueTable(doc, state, propertyRows(property));
+  if (opts.property) {
+    sectionTitle(doc, state, 'Bien analyse');
+    keyValueTable(doc, state, propertyRows(property));
+  }
 
-  sectionTitle(doc, state, 'Synthese financiere');
-  keyValueTable(doc, state, analysisRows(analysis));
+  if (opts.financial) {
+    sectionTitle(doc, state, 'Synthese financiere');
+    keyValueTable(doc, state, analysisRows(analysis));
+  }
 
-  sectionTitle(doc, state, 'Scenarios bancaires');
-  simpleTable(
-    doc,
-    state,
-    ['Scenario', 'Taux', 'Amort. annuel', 'Evaluation'],
-    bankRows(analysis),
-    [28, 25, 38, 88]
-  );
+  if (opts.banks) {
+    sectionTitle(doc, state, 'Scenarios bancaires');
+    simpleTable(
+      doc,
+      state,
+      ['Scenario', 'Taux', 'Amort. annuel', 'Evaluation'],
+      bankRows(analysis),
+      [28, 25, 38, 88]
+    );
+  }
 
   save(doc, `fiche-analyse-${fileSafe(property?.nom_bien)}.pdf`, {
     targetType: 'analysis',

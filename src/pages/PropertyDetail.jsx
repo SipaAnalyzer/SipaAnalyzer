@@ -15,6 +15,7 @@ import TraceabilityPanel from '../components/TraceabilityPanel';
 import ChatBot from '../components/ChatBot';
 import { formatCHF, formatPercent, normalizeAnalyses } from '../utils/calculations';
 import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
+import PdfExportDialog from '../components/PdfExportDialog';
 import { listAuditLogs } from '../utils/auditLogs';
 import moment from 'moment';
 import {
@@ -191,15 +192,7 @@ export default function PropertyDetail() {
           </Button>
 
           {selected && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-2"
-              onClick={() => exportAnalysisPdf(property, selected)}
-            >
-              <Download className="h-3.5 w-3.5" />
-              PDF analyse
-            </Button>
+            <PdfExportDialog onExport={(sections) => exportAnalysisPdf(property, selected, sections)} />
           )}
 
           {canCreateAnalysis && (
@@ -419,13 +412,11 @@ export default function PropertyDetail() {
                       </Link>
                     )}
 
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => exportAnalysisPdf(property, analysis)}
-                    >
-                      <Download className="h-3.5 w-3.5" />
-                    </Button>
+                    <PdfExportDialog onExport={(sections) => exportAnalysisPdf(property, analysis, sections)}>
+                      <Button size="sm" variant="ghost">
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                    </PdfExportDialog>
 
                   {canDeleteAnalysis && (
                     <AlertDialog>

@@ -3,12 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
 import { exportAnalysisPdf } from '../utils/pdfExports';
+import PdfExportDialog from '../components/PdfExportDialog';
 import ScoreGauge from '../components/ScoreGauge';
 import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
 import PerformanceCharts from '../components/PerformanceCharts';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Download, MapPin, Landmark } from 'lucide-react';
+import { Loader2, ArrowLeft, MapPin, Landmark } from 'lucide-react';
 import moment from 'moment';
 
 export default function ViewAnalysis() {
@@ -65,15 +66,7 @@ export default function ViewAnalysis() {
           )}
         </div>
 
-        <Button
-          size="sm"
-          variant="outline"
-          className="gap-2"
-          onClick={() => exportAnalysisPdf(property, analysis)}
-        >
-          <Download className="h-3.5 w-3.5" />
-          PDF
-        </Button>
+        <PdfExportDialog onExport={(sections) => exportAnalysisPdf(property, analysis, sections)} />
       </div>
 
       <div className="bg-card rounded-xl border border-border p-6">
