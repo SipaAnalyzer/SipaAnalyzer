@@ -82,9 +82,9 @@ function FitMapToProperties({ properties }) {
   return null;
 }
 
-function KpiTile({ icon: Icon, label, value, detail }) {
+function KpiTile({ icon: Icon, label, value, detail, clickable }) {
   return (
-    <div className="bg-card rounded-lg border border-border p-4 min-h-[104px]">
+    <div className={`bg-card rounded-lg border border-border p-4 min-h-[104px] ${clickable ? 'hover:border-primary/50 transition-colors cursor-pointer' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs text-muted-foreground">{label}</p>
@@ -256,12 +256,24 @@ export default function Presentation() {
           value={formatPercent(summary.avgNetEquityYield)}
           detail={`Brut moyen ${formatPercent(summary.avgGrossYield)}`}
         />
-        <KpiTile
-          icon={Trophy}
-          label="Meilleur dossier"
-          value={summary.best?.analysis ? `${summary.best.analysis.score_global}/100` : '-'}
-          detail={summary.best?.nom_bien || 'Aucune analyse disponible'}
-        />
+        {summary.best ? (
+          <a href={`/property/${summary.best.id}`} target="_blank" rel="noopener noreferrer" className="block">
+            <KpiTile
+              icon={Trophy}
+              label="Meilleur dossier"
+              value={summary.best?.analysis ? `${summary.best.analysis.score_global}/100` : '-'}
+              detail={summary.best?.nom_bien || 'Aucune analyse disponible'}
+              clickable
+            />
+          </a>
+        ) : (
+          <KpiTile
+            icon={Trophy}
+            label="Meilleur dossier"
+            value="-"
+            detail="Aucune analyse disponible"
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)] gap-5">
