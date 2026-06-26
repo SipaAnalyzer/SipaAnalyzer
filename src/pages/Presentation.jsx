@@ -155,6 +155,14 @@ export default function Presentation() {
     });
   }, [enCours]);
 
+  const rankedValides = useMemo(() => {
+    return [...valides].sort((a, b) => {
+      const scoreDiff = safeNumber(b.analysis?.score_global) - safeNumber(a.analysis?.score_global);
+      if (scoreDiff !== 0) return scoreDiff;
+      return safeNumber(b.analysis?.rendement_net_fonds_propres) - safeNumber(a.analysis?.rendement_net_fonds_propres);
+    });
+  }, [valides]);
+
   const hasValidCoords = (property) => {
     const lat = Number(property.latitude);
     const lng = Number(property.longitude);
@@ -205,7 +213,7 @@ export default function Presentation() {
     const withAnalysis = enCours.filter((property) => property.analysis);
     const totalValue = withAnalysis.reduce((sum, property) => sum + safeNumber(property.analysis?.prix_total), 0);
     const totalEquity = withAnalysis.reduce((sum, property) => sum + safeNumber(property.analysis?.fonds_propres), 0);
-    const best = ranked.find((property) => property.analysis);
+    const best = rankedValides.find((property) => property.analysis);
 
     return {
       totalValue,
@@ -215,7 +223,7 @@ export default function Presentation() {
       best,
       withAnalysis: withAnalysis.length,
     };
-  }, [ranked, enCours]);
+  }, [rankedValides, enCours]);
 
   if (lp || la) {
     return (
