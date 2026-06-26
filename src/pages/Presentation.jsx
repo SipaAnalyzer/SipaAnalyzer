@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -109,6 +109,7 @@ function Metric({ label, value, highlight = false }) {
 }
 
 export default function Presentation() {
+  const queryClient = useQueryClient();
   const { data: properties = [], isLoading: lp } = useQuery({
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list('-created_date', 200),
@@ -197,10 +198,11 @@ export default function Presentation() {
       for (const { id, latitude, longitude } of results) {
         try {
           await base44.entities.Property.update(id, { latitude, longitude });
-        } catch {
-          /* silencieux */
+        } catch (err) {
+          console.error('Failed to save coordinates for', id, err);
         }
       }
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
       setGeocoding(false);
     });
   }, [allWithAnalysis]);
