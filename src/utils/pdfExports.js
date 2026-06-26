@@ -195,35 +195,25 @@ function propertyRows(property) {
 }
 
 function analysisRows(analysis) {
-  const amortissement5Ans = (analysis?.amortissements || 0) * 5;
-  const versementInitialSpv = (analysis?.prix_total || 0) * 0.02;
-  const prixTotalInvestisseur =
-    (analysis?.prix_total || 0) + amortissement5Ans + versementInitialSpv;
-  const fondsPropresPrixOriginal =
-    (analysis?.fonds_propres || 0) - (analysis?.prix_total || 0);
-
   return [
-    { label: 'Prix du bien original', value: formatCHF(analysis?.prix_bien) },
-    { label: 'Honoraires transaction', value: formatCHF(analysis?.honoraires_sipa) },
-    { label: 'Marge beneficiaire', value: formatCHF(analysis?.versement_copropriete) },
-    { label: 'Total Revenus SIPA', value: formatCHF(analysis?.prix_total), highlight: true },
+    { label: 'Prix du bien', value: formatCHF(analysis?.prix_bien) },
+    { label: 'Versement initial copropriete', value: formatCHF(analysis?.versement_initial) },
+    { label: 'Amortissement sur 5 ans', value: formatCHF(analysis?.amortissement_5_ans) },
+    { label: 'Honoraires Sipa Immobilier SA', value: formatCHF(analysis?.honoraires_sipa) },
+    { label: 'Frais de dossier bancaire', value: formatCHF(analysis?.frais_dossier_bancaire) },
+    { label: 'Prix total', value: formatCHF(analysis?.prix_total), highlight: true },
+    { label: 'Fonds propres', value: formatCHF(analysis?.fonds_propres) },
     { label: 'Hypotheque', value: formatCHF(analysis?.hypotheque) },
-    { label: 'Interets annuels', value: formatCHF(analysis?.interets_hypothecaires) },
-    { label: 'Prix total investisseur', value: formatCHF(prixTotalInvestisseur), highlight: true },
-    { label: 'Fonds propres prix total', value: formatCHF(analysis?.fonds_propres), highlight: true },
-    { label: 'Fonds propres prix original', value: formatCHF(fondsPropresPrixOriginal) },
-    { label: 'Versement initial SPV', value: formatCHF(versementInitialSpv) },
     { label: 'Revenus locatifs annuels', value: formatCHF(analysis?.revenus_locatifs) },
     { label: 'Charges operationnelles', value: formatCHF(analysis?.charges_operationnelles) },
-    { label: 'Amortissement sur 5 ans', value: formatCHF(amortissement5Ans) },
-    { label: 'Commission broker / autres', value: formatCHF(analysis?.autres_couts) },
-    { label: 'Frais de gestion', value: formatCHF(analysis?.gestion) },
-    { label: 'Impots', value: formatCHF(analysis?.impot) },
+    { label: 'Interet hypothecaire', value: formatCHF(analysis?.interets_hypothecaires) },
+    { label: 'Honoraires de gestion', value: formatCHF(analysis?.gestion) },
     { label: 'Revenu net', value: formatCHF(analysis?.revenu_net), highlight: true },
+    { label: 'Impot', value: formatCHF(analysis?.impot) },
     { label: 'Revenu distribue', value: formatCHF(analysis?.revenu_distribue), highlight: true },
     { label: 'Rdt. brut', value: formatPercent(analysis?.rendement_brut) },
-    { label: 'Rdt. net/FP', value: formatPercent(analysis?.rendement_net_fonds_propres), highlight: true },
-    { label: 'Rdt. distribue/FP', value: formatPercent(analysis?.revenu_distribue_fonds_propres), highlight: true },
+    { label: 'Rdt. net / FP', value: formatPercent(analysis?.rendement_net_fonds_propres), highlight: true },
+    { label: 'Rdt. dist. / FP', value: formatPercent(analysis?.revenu_distribue_fonds_propres), highlight: true },
     { label: 'Score', value: `${Math.round(analysis?.score_global || 0)}/100 (${analysis?.note || 'N/A'})`, highlight: true },
   ];
 }

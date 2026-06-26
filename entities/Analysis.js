@@ -10,15 +10,15 @@
       "type": "number",
       "title": "Prix du bien"
     },
-    "versement_copropriete": {
+    "versement_initial": {
       "type": "number",
-      "title": "Versement copropri\u00e9t\u00e9",
+      "title": "Versement initial",
       "default": 0
     },
-    "amortization_years": {
+    "amortissement_5_ans": {
       "type": "number",
-      "title": "Ann\u00e9es d'amortissement",
-      "default": 15
+      "title": "Amortissement sur 5 ans",
+      "default": 0
     },
     "honoraires_sipa": {
       "type": "number",
@@ -60,14 +60,9 @@
       "title": "Gestion",
       "default": 0
     },
-    "amortissements": {
+    "frais_dossier_bancaire": {
       "type": "number",
-      "title": "Amortissements",
-      "default": 0
-    },
-    "autres_couts": {
-      "type": "number",
-      "title": "Autres co\u00fbts",
+      "title": "Frais de dossier bancaire",
       "default": 0
     },
     "revenu_net": {
