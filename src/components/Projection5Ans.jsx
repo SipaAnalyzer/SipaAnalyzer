@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatCHF, solveRateFromAmort } from '../utils/calculations';
+import { formatCHF } from '../utils/calculations';
 import { fetchSaronRate } from '../utils/saronRate';
 import { Loader2 } from 'lucide-react';
 
@@ -24,45 +24,15 @@ function BankInputs({ name, color, state, setState, hypo, prixBien, saronRate, s
   }, [rateType, tauxSaisi, marge, saronRate]);
 
   const handleTaux = (v) => {
-    setState((prev) => {
-      const next = { ...prev, taux: v };
-      if (v != null && v > 0 && prev.duree != null && prev.duree > 0) {
-        const rate = v / 100;
-        const n = prev.duree;
-        const pmt = hypo * rate * Math.pow(1 + rate, n) / (Math.pow(1 + rate, n) - 1);
-        const year1Interest = hypo * rate;
-        next.amort = Math.round(Math.max(0, pmt - year1Interest));
-      }
-      return next;
-    });
+    setState((prev) => ({ ...prev, taux: v }));
   };
 
   const handleAmort = (v) => {
-    setState((prev) => {
-      const next = { ...prev, amort: v };
-      if (v != null && v > 0) {
-        next.duree = Math.round(hypo / v);
-        if (prev.taux == null && prev.duree != null && prev.duree > 0) {
-          const solved = solveRateFromAmort(v, hypo, prev.duree);
-          if (solved != null) next.taux = Math.round(solved * 10000) / 100;
-        }
-      }
-      return next;
-    });
+    setState((prev) => ({ ...prev, amort: v }));
   };
 
   const handleDuree = (v) => {
-    setState((prev) => {
-      const next = { ...prev, duree: v };
-      if (v != null && v > 0) {
-        next.amort = Math.round(hypo / v);
-        if (prev.taux == null && prev.amort != null && prev.amort > 0) {
-          const solved = solveRateFromAmort(prev.amort, hypo, v);
-          if (solved != null) next.taux = Math.round(solved * 10000) / 100;
-        }
-      }
-      return next;
-    });
+    setState((prev) => ({ ...prev, duree: v }));
   };
 
   const handleEvalPct = (v) => {
@@ -285,6 +255,11 @@ export default function Projection5Ans({ analysis }) {
   const hypo = Number(analysis?.hypotheque || 0);
   const prixBien = Number(analysis?.prix_bien || 0);
   const defaultDuree = 20;
+  const defaultRateA = analysis?.banque_a_taux_hypothecaire
+    ?? (analysis?.interets_hypothecaires && hypo > 0 ? Math.round((analysis.interets_hypothecaires / hypo) * 10000) / 100 : null);
+  const defaultRateB = analysis?.banque_b_taux_hypothecaire
+    ?? (analysis?.interets_hypothecaires && hypo > 0 ? Math.round((analysis.interets_hypothecaires / hypo) * 10000) / 100 : null);
+  const defaultAmort = hypo > 0 ? Math.round(hypo / defaultDuree) : 0;
   const [saronRate, setSaronRate] = useState(null);
   const [saronLoading, setSaronLoading] = useState(true);
 
@@ -300,31 +275,25 @@ export default function Projection5Ans({ analysis }) {
     return () => { cancelled = true; };
   }, []);
 
-  const [bankA, setBankA] = useState(() => {
-    const a = analysis?.banque_a_amortissement_annuel;
-    return {
-      rateType: 'fixe',
-      taux: analysis?.banque_a_taux_hypothecaire ?? null,
-      marge: 0.5,
-      duree: a && a > 0 ? Math.round(hypo / a) : defaultDuree,
-      amort: a ?? null,
-      evalPct: null,
-      evalMontant: null,
-    };
-  });
+  const [bankA, setBankA] = useState(() => ({
+    rateType: 'fixe',
+    taux: defaultRateA,
+    marge: 0.5,
+    duree: defaultDuree,
+    amort: analysis?.banque_a_amortissement_annuel ?? defaultAmort,
+    evalPct: null,
+    evalMontant: null,
+  }));
 
-  const [bankB, setBankB] = useState(() => {
-    const a = analysis?.banque_b_amortissement_annuel;
-    return {
-      rateType: 'fixe',
-      taux: analysis?.banque_b_taux_hypothecaire ?? null,
-      marge: 0.5,
-      duree: a && a > 0 ? Math.round(hypo / a) : defaultDuree,
-      amort: a ?? null,
-      evalPct: null,
-      evalMontant: null,
-    };
-  });
+  const [bankB, setBankB] = useState(() => ({
+    rateType: 'fixe',
+    taux: defaultRateB,
+    marge: 0.5,
+    duree: defaultDuree,
+    amort: analysis?.banque_b_amortissement_annuel ?? defaultAmort,
+    evalPct: null,
+    evalMontant: null,
+  }));
 
   const getEffective = (bank) => {
     if (bank.rateType === 'fixe') return bank.taux;
