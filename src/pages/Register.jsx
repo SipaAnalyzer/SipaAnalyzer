@@ -78,7 +78,7 @@ const ROLE_LABELS = {
 export default function Register() {
   const urlParams = new URLSearchParams(window.location.search);
   const rawRole = urlParams.get("role");
-  const inviteRole = rawRole === "admin" ? null : rawRole;
+  const inviteRole = (rawRole === "admin" || rawRole === "super_admin") ? null : rawRole;
   const inviteEmail = urlParams.get("email") || "";
 
   const [email, setEmail] = useState(inviteEmail);

@@ -27,7 +27,7 @@ as $$
     select 1
     from public.user_permissions
     where user_id = auth.uid()
-      and role in ('admin', 'direction')
+      and role in ('super_admin', 'admin', 'direction')
   );
 $$;
 

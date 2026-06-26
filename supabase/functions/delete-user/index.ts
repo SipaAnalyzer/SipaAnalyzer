@@ -7,6 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const ROLE_LEVEL = { super_admin: 200, admin: 100, direction: 80, staff: 60, membre: 40, en_attente: 20 };
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -33,31 +35,31 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "user_id est requis." }, 400);
   }
 
-  // Vérifier que l'appelant est admin
-  const caller = await supabaseAdmin.auth.getUser(authHeader.replace("Bearer ", ""));
+  const caller = await supabaseAdmin.auth.getUser(authHeader.replace("Bearer", ""));
   if (caller.error || !caller.data.user) {
     return jsonResponse({ error: "Token invalide." }, 401);
   }
 
-  const { data: callerPerm, error: callerPermError } = await supabaseAdmin
+  const { data: callerPerm } = await supabaseAdmin
     .from("user_permissions")
     .select("role")
     .eq("user_id", caller.data.user.id)
     .single();
 
-  if (callerPermError || callerPerm?.role !== "admin") {
+  const callerLevel = ROLE_LEVEL[callerPerm?.role];
+  if (!callerLevel || callerLevel < 100) {
     return jsonResponse({ error: "Seuls les administrateurs peuvent supprimer des utilisateurs." }, 403);
   }
 
-  // Vérifier que la cible n'est pas un admin
-  const { data: targetPerm, error: targetPermError } = await supabaseAdmin
+  const { data: targetPerm } = await supabaseAdmin
     .from("user_permissions")
     .select("role")
     .eq("user_id", user_id)
     .single();
 
-  if (!targetPermError && targetPerm?.role === "admin") {
-    return jsonResponse({ error: "Impossible de supprimer un administrateur." }, 403);
+  const targetLevel = ROLE_LEVEL[targetPerm?.role] ?? 0;
+  if (targetLevel >= callerLevel) {
+    return jsonResponse({ error: "Impossible de supprimer un utilisateur avec un rôle égal ou supérieur au vôtre." }, 403);
   }
 
   const { error: permissionsError } = await supabaseAdmin
