@@ -15,16 +15,32 @@ export function calculateAnalysis(data) {
   const revenuDistribue = revenuNet - impotCalcule;
   const revenuDistribueFP = fondsPropres > 0 ? (revenuDistribue / fondsPropres) * 100 : 0;
 
-  const s1 = Math.min(Math.max(rendementNetFP, 0) / 15 * 100, 100) * 0.35;
-  const s2 = Math.min(Math.max(revenuDistribueFP, 0) / 10 * 100, 100) * 0.25;
-  const s3 = Math.min(Math.max(rendementBrut, 0) / 10 * 100, 100) * 0.20;
-  const ltv = fondsPropres > 0 ? hypotheque / (hypotheque + fondsPropres) : 1;
-  const s4 = Math.max(0, (1 - ltv / 0.8) * 100) * 0.10;
-  const currentYear = new Date().getFullYear();
-  const age = currentYear - (data.annee_construction || currentYear - 20);
-  const s5 = Math.max(0, Math.min(100, 100 - age * 1.5)) * 0.10;
-  const score = Math.round(Math.max(0, Math.min(100, s1 + s2 + s3 + s4 + s5)));
-  const note = score >= 90 ? 'A' : score >= 75 ? 'B' : score >= 60 ? 'C' : score >= 40 ? 'D' : 'E';
+  const NOTE_ORDER = ['C', 'B', 'A', 'S'];
+
+  function getBaseNote(rb) {
+    if (rb >= 5) return 'S';
+    if (rb >= 4) return 'A';
+    if (rb >= 3.5) return 'B';
+    return 'C';
+  }
+
+  function adjustNote(base, emplacement, etat) {
+    let bonus = 0;
+    const pos = ['Excellent', 'Très bon'];
+    const neg = ['Mauvais'];
+    if (pos.includes(emplacement)) bonus++;
+    else if (neg.includes(emplacement)) bonus--;
+    if (pos.includes(etat)) bonus++;
+    else if (neg.includes(etat)) bonus--;
+    bonus = Math.max(-1, Math.min(1, bonus >= 1 ? 1 : (bonus <= -1 ? -1 : 0)));
+    const idx = Math.max(0, Math.min(NOTE_ORDER.length - 1, NOTE_ORDER.indexOf(base) + bonus));
+    return NOTE_ORDER[idx];
+  }
+
+  const baseNote = getBaseNote(rendementBrut);
+  const adjustedNote = adjustNote(baseNote, data.emplacement_bien, data.etat_batiment);
+
+  const SCORE_MAP = { C: 50, B: 67, A: 82, S: 95 };
 
   return {
     prix_total: Math.round(prixBien + Number(data.versement_initial || 0) + Number(data.amortissement_5_ans || 0) + Number(data.honoraires_sipa || 0) + Number(data.frais_dossier_bancaire || 0)),
@@ -33,8 +49,8 @@ export function calculateAnalysis(data) {
     rendement_net_fonds_propres: round2(rendementNetFP),
     revenu_distribue: Math.round(revenuDistribue),
     revenu_distribue_fonds_propres: round2(revenuDistribueFP),
-    score_global: score,
-    note,
+    score_global: SCORE_MAP[adjustedNote],
+    note: adjustedNote,
   };
 }
 
@@ -90,9 +106,8 @@ export function solveRateFromAmort(amort, pv, n) {
 }
 
 export const NOTE_CONFIG = {
+  S: { class: 'bg-violet-500/20 text-violet-400 border-violet-500/30' },
   A: { class: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
   B: { class: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
   C: { class: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-  D: { class: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
-  E: { class: 'bg-red-500/20 text-red-400 border-red-500/30' },
 };
