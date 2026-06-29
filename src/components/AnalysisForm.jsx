@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent } from '../utils/calculations';
+import { extractAnalysisFieldsFromExcel } from '../utils/excelImport';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -175,6 +176,11 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const selectedProperty = properties.find((p) => p.id === form.property_id);
 
   const [activeTab, setActiveTab] = useState('financial');
+  const [excelImportState, setExcelImportState] = useState({
+    loading: false,
+    message: '',
+    error: '',
+  });
 
   const calc = useMemo(() => calculateAnalysis({
     ...form,
@@ -224,6 +230,42 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       score_global: calc.score_global,
       note: calc.note,
     });
+  };
+
+  const handleExcelImport = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setExcelImportState({ loading: true, message: '', error: '' });
+
+    try {
+      const result = await extractAnalysisFieldsFromExcel(file);
+
+      if (!result.importedCount) {
+        setExcelImportState({
+          loading: false,
+          message: '',
+          error: "Aucune donnée financière reconnue dans ce fichier Excel.",
+        });
+        return;
+      }
+
+      setForm((prev) => ({ ...prev, ...result.fields }));
+      setExcelImportState({
+        loading: false,
+        message: `${result.importedCount} champ${result.importedCount > 1 ? 's' : ''} importé${result.importedCount > 1 ? 's' : ''} depuis ${file.name}.`,
+        error: '',
+      });
+      setActiveTab('financial');
+    } catch (error) {
+      setExcelImportState({
+        loading: false,
+        message: '',
+        error: error?.message || "Impossible de lire ce fichier Excel.",
+      });
+    } finally {
+      event.target.value = '';
+    }
   };
 
   return (
@@ -442,8 +484,38 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
               <FileSpreadsheet className="h-12 w-12 text-muted-foreground/40 mb-4" />
               <h3 className="font-heading font-semibold mb-2">Import Excel</h3>
               <p className="text-sm text-muted-foreground max-w-md">
-                Pas fonctionnel pour l'instant. Cette fonctionnalité permettra d'importer un fichier Excel pour remplir automatiquement le tableau financier.
+                Importez le tableau financier SIPA au format Excel pour remplir automatiquement les champs de l'analyse.
               </p>
+              <input
+                type="file"
+                accept=".xlsx,.xlsm"
+                className="mt-6 block w-full max-w-sm rounded-lg border border-border bg-background px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary/90"
+                onChange={handleExcelImport}
+                disabled={excelImportState.loading}
+              />
+              {excelImportState.loading && (
+                <p className="mt-4 text-sm text-muted-foreground">Import en cours...</p>
+              )}
+              {excelImportState.message && (
+                <p className="mt-4 text-sm text-emerald-500">{excelImportState.message}</p>
+              )}
+              {excelImportState.error && (
+                <p className="mt-4 text-sm text-red-500">{excelImportState.error}</p>
+              )}
+              <div className="mt-8 grid w-full max-w-3xl grid-cols-1 sm:grid-cols-3 gap-4 border-t border-border pt-5 text-left">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Prix et SIPA</p>
+                  <p className="mt-1 text-sm">Prix, versement, amortissement, honoraires, frais bancaires.</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Financement</p>
+                  <p className="mt-1 text-sm">Fonds propres, hypothèque, taux, intérêts annuels.</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Exploitation</p>
+                  <p className="mt-1 text-sm">Loyers, charges, gestion, impôt, revenu distribué.</p>
+                </div>
+              </div>
             </div>
           </section>
         </TabsContent>
