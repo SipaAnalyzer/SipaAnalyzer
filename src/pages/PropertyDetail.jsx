@@ -166,6 +166,7 @@ export default function PropertyDetail() {
           <TabsTrigger value="presentation">Présentation du bien</TabsTrigger>
           <TabsTrigger value="analyse">Analyse</TabsTrigger>
           <TabsTrigger value="infos">Infos supplémentaires</TabsTrigger>
+          <TabsTrigger value="notes">Infos complémentaires</TabsTrigger>
         </TabsList>
 
         <TabsContent value="presentation" className="mt-5">
@@ -176,6 +177,7 @@ export default function PropertyDetail() {
           {selected ? (
             <>
               <AnalysisSummary selected={selected} selectedAnalysisId={selectedAnalysisId} />
+              <FinancialTable analysis={selected} />
               {selected.sipa_data && selected.sipa_data.length > 0 && (
                 <section className="bg-card rounded-xl border border-border p-6">
                   <div className="flex items-center gap-2 mb-4">
@@ -208,24 +210,7 @@ export default function PropertyDetail() {
                   </div>
                 </section>
               )}
-
-              {selected.notes && (
-                <section className="bg-card rounded-xl border border-border p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <StickyNote className="h-4 w-4 text-primary" />
-                    <h3 className="font-heading font-semibold">Informations complémentaires</h3>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {parseNotesToRows(selected.notes).map((row, i) => (
-                      <div key={i} className="border border-border rounded-lg p-3 bg-background/40">
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{row.key || 'Info'}</p>
-                        <p className="text-sm font-semibold mt-1 break-words">{row.value}</p>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-              <FinancialTable analysis={selected} />
+              
               <Projection5Ans analysis={selected} />
               <AnalysisHistory
                 property={property}
@@ -239,6 +224,23 @@ export default function PropertyDetail() {
             </>
           ) : (
             <EmptyAnalysis canCreateAnalysis={canCreateAnalysis} propertyId={propertyId} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="notes" className="mt-5 space-y-6">
+          {selected?.notes ? (
+            <section className="bg-card rounded-xl border border-border p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {parseNotesToRows(selected.notes).map((row, i) => (
+                  <div key={i} className="border border-border rounded-lg p-3 bg-background/40">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{row.key || 'Info'}</p>
+                    <p className="text-sm font-semibold mt-1 break-words">{row.value}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <p className="text-muted-foreground text-sm text-center py-8">Aucune information complémentaire.</p>
           )}
         </TabsContent>
 
