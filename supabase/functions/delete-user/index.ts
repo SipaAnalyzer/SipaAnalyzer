@@ -35,7 +35,8 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "user_id est requis." }, 400);
   }
 
-  const caller = await supabaseAdmin.auth.getUser(authHeader.replace("Bearer", ""));
+  const jwt = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : authHeader;
+  const caller = await supabaseAdmin.auth.getUser(jwt);
   if (caller.error || !caller.data.user) {
     return jsonResponse({ error: "Token invalide." }, 401);
   }
