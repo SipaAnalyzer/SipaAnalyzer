@@ -16,6 +16,7 @@ import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
 import ChatBot from '../components/ChatBot';
 import { formatCHF, formatPercent, normalizeAnalyses } from '../utils/calculations';
+import { parseNotesToRows } from '../utils/excelImport';
 import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
 import { listAuditLogs } from '../utils/auditLogs';
@@ -177,12 +178,27 @@ export default function PropertyDetail() {
               <AnalysisSummary selected={selected} selectedAnalysisId={selectedAnalysisId} />
               {selected.notes && (
                 <section className="bg-card rounded-xl border border-border p-6">
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-2 mb-4">
                     <StickyNote className="h-4 w-4 text-primary" />
                     <h3 className="font-heading font-semibold">Informations complémentaires</h3>
                   </div>
-                  <div className="bg-background/40 rounded-lg p-4 text-sm whitespace-pre-wrap">
-                    {selected.notes}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-2 pr-4 font-medium text-muted-foreground w-1/3">Information</th>
+                          <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeur</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/50">
+                        {parseNotesToRows(selected.notes).map((row, i) => (
+                          <tr key={i}>
+                            <td className="py-2.5 pr-4 text-sm font-medium">{row.key}</td>
+                            <td className="py-2.5 pl-4 text-sm">{row.value}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </section>
               )}

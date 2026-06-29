@@ -1,5 +1,20 @@
 import JSZip from 'jszip';
 
+export function parseNotesToRows(notes) {
+  if (!notes) return [];
+  return notes
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const idx = line.indexOf(':');
+      if (idx > 0) {
+        return { key: line.slice(0, idx).trim(), value: line.slice(idx + 1).trim() };
+      }
+      return { key: '', value: line };
+    });
+}
+
 const FIELD_DEFINITIONS = [
   { key: 'prix_bien', labels: ['prix du bien original', 'prix du bien', 'prix investor'], kind: 'amount' },
   { key: 'versement_initial', labels: ['versement initial sur le compte de la copropriete', 'versement initial sur le compte de la spv'], kind: 'amount' },

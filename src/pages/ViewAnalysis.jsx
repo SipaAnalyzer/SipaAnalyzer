@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
+import { parseNotesToRows } from '../utils/excelImport';
 import { exportAnalysisPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
 import ScoreGauge from '../components/ScoreGauge';
@@ -110,12 +111,27 @@ export default function ViewAnalysis() {
 
       {analysis.notes && (
         <section className="bg-card rounded-xl border border-border p-6">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-4">
             <FileText className="h-4 w-4 text-primary" />
             <h3 className="font-heading font-semibold">Informations complémentaires</h3>
           </div>
-          <div className="bg-background/40 rounded-lg p-4 text-sm whitespace-pre-wrap">
-            {analysis.notes}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 pr-4 font-medium text-muted-foreground w-1/3">Information</th>
+                  <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeur</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {parseNotesToRows(analysis.notes).map((row, i) => (
+                  <tr key={i}>
+                    <td className="py-2.5 pr-4 text-sm font-medium">{row.key}</td>
+                    <td className="py-2.5 pl-4 text-sm">{row.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
       )}

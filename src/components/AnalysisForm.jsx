@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent } from '../utils/calculations';
-import { extractAnalysisFieldsFromExcel } from '../utils/excelImport';
+import { extractAnalysisFieldsFromExcel, parseNotesToRows } from '../utils/excelImport';
 import { fetchSaronRate } from '../utils/saronRate';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -576,9 +576,33 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         <textarea
           value={form.notes || ''}
           onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
-          className="w-full bg-background border border-border rounded-lg p-3 text-sm min-h-[100px]"
-          placeholder="Saisissez ici les informations complémentaires extraites de l'Excel ou saisies manuellement..."
+          className="w-full bg-background border border-border rounded-lg p-3 text-sm min-h-[100px] font-mono"
+          placeholder="Exemple :
+Banque : Migros
+CECB enveloppe : F
+Construction : 1961
+Courtier : UBS, Valérie Zuber"
         />
+        {form.notes && (
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 pr-4 font-medium text-muted-foreground w-1/3">Information</th>
+                  <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeur</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {parseNotesToRows(form.notes).map((row, i) => (
+                  <tr key={i}>
+                    <td className="py-2 pr-4 text-sm font-medium">{row.key}</td>
+                    <td className="py-2 pl-4 text-sm">{row.value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <section className="bg-card rounded-xl border border-primary/30 p-6">
