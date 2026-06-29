@@ -167,7 +167,7 @@ export default function PropertyDetail() {
         </TabsList>
 
         <TabsContent value="presentation" className="mt-5">
-          <PropertyPresentation property={property} latest={latest} />
+          <PropertyPresentation property={property} latest={latest} comments={comments} />
         </TabsContent>
 
         <TabsContent value="analyse" className="mt-5 space-y-6">
@@ -208,7 +208,7 @@ export default function PropertyDetail() {
   );
 }
 
-function PropertyPresentation({ property, latest }) {
+function PropertyPresentation({ property, latest, comments }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
       <section className="bg-card rounded-xl border border-border p-6">
@@ -276,6 +276,10 @@ function PropertyPresentation({ property, latest }) {
               {latest.emplacement_bien && latest.etat_batiment && (
                 <MetricCard label="Emplacement / État" value={`${latest.emplacement_bien} / ${latest.etat_batiment}`} />
               )}
+            </div>
+
+            <div className="mt-6 pt-5 border-t border-border">
+              <CommentSection propertyId={property.id} initialComments={comments} />
             </div>
           </div>
         ) : (
