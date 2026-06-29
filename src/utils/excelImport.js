@@ -77,13 +77,23 @@ const METADATA_PATTERNS = [
 
 function extractMetadataNotes(rows) {
   const matched = [];
+  const seen = new Set();
 
   for (const row of rows) {
     if (!row) continue;
     for (const cell of row) {
       if (!cell || typeof cell !== 'string') continue;
-      const text = normalizeText(cell);
+      const raw = cell.trim();
+      if (!raw || raw.length > 120) continue;
+
+      const text = raw
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
       if (!text) continue;
+
+      let found = false;
 
       for (const { regex, template } of METADATA_PATTERNS) {
         const match = text.match(regex);
@@ -92,8 +102,25 @@ function extractMetadataNotes(rows) {
           for (let i = 1; i < match.length; i++) {
             line = line.replace(`$${i}`, (match[i] || '').trim());
           }
-          matched.push(line);
+          if (!seen.has(line)) {
+            seen.add(line);
+            matched.push(line);
+          }
+          found = true;
           break;
+        }
+      }
+
+      if (found) continue;
+
+      if (/^[a-z][^:]*\s*:/.test(text) && !/\d/.test(text.split(':')[1] || '')) {
+        const parts = raw.split(/:(.+)/);
+        if (parts.length >= 2 && parts[1].trim()) {
+          const line = `${parts[0].trim()} : ${parts[1].trim()}`.replace(/\s+:/, ':');
+          if (!seen.has(line)) {
+            seen.add(line);
+            matched.push(line);
+          }
         }
       }
     }
