@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { supabase } from "@/api/supabaseClient";
@@ -77,17 +77,34 @@ const ROLE_LABELS = {
 
 export default function Register() {
   const urlParams = new URLSearchParams(window.location.search);
-  const rawRole = urlParams.get("role");
-  const inviteRole = (rawRole === "admin" || rawRole === "super_admin") ? null : rawRole;
-  const inviteEmail = urlParams.get("email") || "";
+  const tokenParam = urlParams.get("token");
 
-  const [email, setEmail] = useState(inviteEmail);
+  const [invitation, setInvitation] = useState(null);
+  const [tokenChecked, setTokenChecked] = useState(false);
+  const [tokenError, setTokenError] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [accountCreated, setAccountCreated] = useState(false);
   const [assignedRole, setAssignedRole] = useState("");
+
+  useEffect(() => {
+    if (tokenParam) {
+      supabase.rpc("verify_invitation_token", { token_text: tokenParam }).then(({ data, error }) => {
+        if (error || !data?.length || !data[0].valid) {
+          setTokenError("Lien d'invitation invalide ou expiré.");
+        } else {
+          setInvitation({ role: data[0].role, email: data[0].email || "" });
+          setEmail(data[0].email || "");
+        }
+        setTokenChecked(true);
+      });
+    } else {
+      setTokenChecked(true);
+    }
+  }, [tokenParam]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -103,17 +120,19 @@ export default function Register() {
     try {
       const result = await base44.auth.register({ email, password });
 
-      if (inviteRole && ROLE_PRESETS[inviteRole]) {
+      const role = invitation?.role;
+      if (role && ROLE_PRESETS[role]) {
         const userId = result?.user?.id;
         if (userId) {
-          const preset = ROLE_PRESETS[inviteRole];
+          const preset = ROLE_PRESETS[role];
           const { error: permError } = await supabase
             .from("user_permissions")
             .upsert({ user_id: userId, ...preset }, { onConflict: "user_id" });
           if (permError) {
             console.error("[Register] role assignment error:", permError);
           } else {
-            setAssignedRole(ROLE_LABELS[inviteRole] || inviteRole);
+            await supabase.rpc("consume_invitation_token", { token_text: tokenParam });
+            setAssignedRole(ROLE_LABELS[role] || role);
           }
         }
       }
@@ -155,8 +174,8 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title={inviteEmail ? "Vous êtes invité" : "Créer un compte"}
-      subtitle={inviteEmail ? "Choisissez votre mot de passe pour finaliser votre inscription" : "Créez votre accès SIPA Analyzer"}
+      title={invitation?.email ? "Vous êtes invité" : "Créer un compte"}
+      subtitle={invitation?.email ? "Choisissez votre mot de passe pour finaliser votre inscription" : "Créez votre accès SIPA Analyzer"}
       footer={
         <>
           Vous avez déjà un compte ?{" "}
@@ -166,9 +185,14 @@ export default function Register() {
         </>
       }
     >
-      {inviteRole && ROLE_LABELS[inviteRole] && (
+      {tokenError && (
+        <div className="mb-6 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive text-center">
+          {tokenError}
+        </div>
+      )}
+      {!tokenError && invitation?.role && (
         <div className="mb-6 p-3 rounded-lg bg-primary/10 border border-primary/20 text-sm text-center">
-          Rôle attribué : <strong>{ROLE_LABELS[inviteRole]}</strong>
+          Rôle attribué : <strong>{ROLE_LABELS[invitation.role] || invitation.role}</strong>
         </div>
       )}
 
@@ -205,12 +229,12 @@ export default function Register() {
               id="email"
               type="email"
               autoComplete="email"
-              autoFocus={!inviteEmail}
+              autoFocus={!invitation?.email}
               placeholder="vous@example.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="pl-10 h-12"
-              disabled={!!inviteEmail}
+              disabled={!!invitation?.email}
               required
             />
           </div>
@@ -224,7 +248,7 @@ export default function Register() {
               id="password"
               type="password"
               autoComplete="new-password"
-              autoFocus={!!inviteEmail}
+              autoFocus={!!invitation?.email}
               placeholder="••••••••"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -251,7 +275,7 @@ export default function Register() {
           </div>
         </div>
 
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+        <Button type="submit" className="w-full h-12 font-medium" disabled={loading || !!tokenError}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
