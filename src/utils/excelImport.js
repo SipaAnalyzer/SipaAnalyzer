@@ -24,18 +24,6 @@ const LABEL_TO_FIELD = [
   ['banque b amortissement', 'banque_b_amortissement_annuel'],
   ['banque b évaluation', 'banque_b_evaluation'],
   ['banque b evaluation', 'banque_b_evaluation'],
-  ['prix total', null],
-  ['revenu net', null],
-  ['rendement brut', null],
-  ['rendement net', null],
-  ['revenu distribu', null],
-  ['taxe', 'impot'],
-  ['taux', null],
-  ['note', null],
-  ['score', null],
-  ['etat', null],
-  ['emplacement', null],
-  ['statut', null],
 ];
 
 function findField(label) {
@@ -44,6 +32,12 @@ function findField(label) {
     if (cleaned.includes(keyword)) return field;
   }
   return null;
+}
+
+function tryParseNum(v) {
+  if (v == null || v === '') return NaN;
+  const s = String(v).replace(/['\u2019\s]/g, '').replace(',', '.').replace(/[^0-9.\-]/g, '');
+  return parseFloat(s);
 }
 
 export function parseAnalysisExcel(file) {
@@ -56,39 +50,61 @@ export function parseAnalysisExcel(file) {
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-        console.log('[ExcelImport] rows:', rows.length, rows.slice(0, 3));
-        const result = {};
-        let labelCol = -1, valCol = -1;
+        console.log('[ExcelImport] rows:', rows.length, rows.slice(0, 5));
+
+        // Phase 1: detect label column and value column
+        // Look for a header row with "rubrique"/"montant" keywords
+        let labelCol = 0;
+        let valCol = -1;
 
         for (const row of rows) {
-          if (!row || row.length < 2) continue;
-          const vals = row.map((c) => String(c ?? '').trim());
-          if (labelCol === -1) {
-            const labelLower = vals.map((v) => v.toLowerCase());
-            if (labelLower.some((v) => /rubrique|désignation|libellé|libelle|poste/i.test(v))) {
-              const li = labelLower.findIndex((v) => /rubrique|désignation|libellé|libelle|poste/i.test(v));
-              const mi = labelLower.findIndex((v) => /montant|valeur|chf|prix|taux|evaluation|évaluation/i.test(v));
-              if (li !== -1 && mi !== -1) { labelCol = li; valCol = mi; }
-              continue;
+          if (!row) continue;
+          const labels = row.map((c) => String(c ?? '').toLowerCase().trim());
+          const hasLabelHeader = labels.some((v) => /^rubrique|^désignation|^libellé|^libelle|^poste/.test(v));
+          const hasValHeader  = labels.some((v) => /^montant|^valeur|chf/.test(v));
+          if (hasLabelHeader && hasValHeader) {
+            labelCol = labels.findIndex((v) => /^rubrique|^désignation|^libellé|^libelle|^poste/.test(v));
+            valCol  = labels.findIndex((v) => /^montant|^valeur|chf/.test(v));
+            break;
+          }
+        }
+
+        // If no header found, auto-detect: sum absolute numeric values per column
+        if (valCol === -1) {
+          const scores = {};
+          let maxScore = 0;
+          for (const row of rows) {
+            if (!row) continue;
+            for (let ci = 1; ci < row.length && ci < 20; ci++) {
+              const n = tryParseNum(row[ci]);
+              if (!isNaN(n) && Math.abs(n) > 1) {
+                scores[ci] = (scores[ci] || 0) + Math.abs(n);
+                if (scores[ci] > maxScore) {
+                  maxScore = scores[ci];
+                  valCol = ci;
+                }
+              }
             }
           }
-          if (labelCol === -1) {
-            labelCol = 0; valCol = vals.length - 1;
-          }
-          const label = vals[labelCol];
-          const rawVal = vals[valCol];
-          if (!label) continue;
+        }
 
+        if (valCol === -1) valCol = 1;
+
+        // Phase 2: extract values
+        const result = {};
+        for (const row of rows) {
+          if (!row) continue;
+          const label = String(row[labelCol] ?? '').trim();
+          if (!label) continue;
           const field = findField(label);
           if (!field) continue;
 
-          if (!rawVal) continue;
-          const num = parseFloat(rawVal.replace(/['\u2019\s]/g, '').replace(',', '.').replace(/[^0-9.\-]/g, ''));
+          const raw = row[valCol];
+          const num = tryParseNum(raw);
           if (!isNaN(num)) result[field] = num;
-          else result[field] = rawVal;
         }
 
-        console.log('[ExcelImport] extracted:', result);
+        console.log('[ExcelImport] labelCol:', labelCol, 'valCol:', valCol, 'extracted:', result);
         resolve(result);
       } catch (err) {
         reject(err);
