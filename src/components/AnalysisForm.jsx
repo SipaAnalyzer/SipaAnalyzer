@@ -2,13 +2,14 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent } from '../utils/calculations';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ScoreGauge from './ScoreGauge';
 import ScoreBadge from './ScoreBadge';
-import { Calculator, Save } from 'lucide-react';
+import { Calculator, FileSpreadsheet, Landmark, Save, Table } from 'lucide-react';
 
 function InputField({ value, onChange, prefix, className }) {
   return (
@@ -173,6 +174,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
 
   const selectedProperty = properties.find((p) => p.id === form.property_id);
 
+  const [activeTab, setActiveTab] = useState('financial');
+
   const calc = useMemo(() => calculateAnalysis({
     ...form,
     annee_construction: selectedProperty?.annee_construction,
@@ -278,8 +281,25 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         </div>
       </section>
 
-      <section className="bg-card rounded-xl border border-border p-6">
-        <h3 className="font-heading font-semibold mb-5">TABLEAU FINANCIER</h3>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full justify-start gap-1 bg-background border border-border rounded-xl p-1">
+          <TabsTrigger value="financial" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Table className="h-4 w-4" />
+            Tableau financier
+          </TabsTrigger>
+          <TabsTrigger value="import" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <FileSpreadsheet className="h-4 w-4" />
+            Import Excel
+          </TabsTrigger>
+          <TabsTrigger value="simulation" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Landmark className="h-4 w-4" />
+            Simulation via taux bancaire
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="financial" className="mt-4">
+          <section className="bg-card rounded-xl border border-border p-6">
+            <h3 className="font-heading font-semibold mb-5">TABLEAU FINANCIER</h3>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -413,15 +433,31 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
             </tbody>
           </table>
         </div>
-      </section>
+          </section>
+        </TabsContent>
 
-      <section className="bg-card rounded-xl border border-border p-6">
-        <h3 className="font-heading font-semibold mb-4">Scénarios bancaires</h3>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-          <BankScenario title="Banque A" form={form} set={set} prefix="banque_a" />
-          <BankScenario title="Banque B" form={form} set={set} prefix="banque_b" />
-        </div>
-      </section>
+        <TabsContent value="import" className="mt-4">
+          <section className="bg-card rounded-xl border border-border p-6">
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <FileSpreadsheet className="h-12 w-12 text-muted-foreground/40 mb-4" />
+              <h3 className="font-heading font-semibold mb-2">Import Excel</h3>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Pas fonctionnel pour l'instant. Cette fonctionnalité permettra d'importer un fichier Excel pour remplir automatiquement le tableau financier.
+              </p>
+            </div>
+          </section>
+        </TabsContent>
+
+        <TabsContent value="simulation" className="mt-4">
+          <section className="bg-card rounded-xl border border-border p-6">
+            <h3 className="font-heading font-semibold mb-4">Scénarios bancaires</h3>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+              <BankScenario title="Banque A" form={form} set={set} prefix="banque_a" />
+              <BankScenario title="Banque B" form={form} set={set} prefix="banque_b" />
+            </div>
+          </section>
+        </TabsContent>
+      </Tabs>
 
       <section className="bg-card rounded-xl border border-primary/30 p-6">
         <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
