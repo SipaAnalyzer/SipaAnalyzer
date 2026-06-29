@@ -13,10 +13,12 @@ import {
 import { Building2, Download, Loader2, Plus, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import ScoreBadge from '../components/ScoreBadge';
 import ScoreGauge from '../components/ScoreGauge';
 import ChatBot from '../components/ChatBot';
-import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
+import { calculateAnalysis, formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
 import { exportComparisonPdf } from '../utils/pdfExports';
 
 const COLORS = ['#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'];
@@ -84,6 +86,23 @@ export default function Comparator() {
   const selected = enriched.filter((property) => selectedIds.includes(property.id));
   const available = enriched.filter((property) => !selectedIds.includes(property.id));
 
+  const [overrides, setOverrides] = useState({});
+
+  const overrideField = (propertyId, field, value) => {
+    setOverrides((prev) => ({
+      ...prev,
+      [propertyId]: { ...(prev[propertyId] || {}), [field]: value },
+    }));
+  };
+
+  const getEffectiveAnalysis = (property) => {
+    const base = property.analysis ? { ...property.analysis } : {};
+    const ovr = overrides[property.id];
+    if (!ovr) return base;
+    const merged = { ...base, ...ovr };
+    return { ...merged, ...calculateAnalysis(merged) };
+  };
+
   const addProperty = (id) => {
     setSelectedIds((current) => {
       if (current.includes(id)) return current;
@@ -111,7 +130,7 @@ export default function Comparator() {
     ];
 
     return metrics.map((metric) => {
-      const rawValues = selected.map((property) => property.analysis?.[metric.key] || 0);
+      const rawValues = selected.map((property) => getEffectiveAnalysis(property)?.[metric.key] || 0);
       const max = Math.max(...rawValues.map((value) => Math.abs(value)), 1);
       const row = { metric: metric.label };
 
@@ -302,7 +321,9 @@ export default function Comparator() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
-                {selected.map((property, index) => (
+                {selected.map((property, index) => {
+                  const effective = getEffectiveAnalysis(property);
+                  return (
                   <div key={property.id} className="rounded-lg border border-border bg-background/50 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
@@ -314,25 +335,26 @@ export default function Comparator() {
                           {property.ville || 'Ville inconnue'}
                         </p>
                       </div>
-                      {property.analysis && <ScoreBadge note={property.analysis.note} />}
+                      {effective && <ScoreBadge note={effective.note} />}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mt-4">
                       <div>
                         <p className="text-[10px] text-muted-foreground">Score</p>
                         <p className="text-lg font-semibold">
-                          {Math.round(property.analysis?.score_global || 0)}/100
+                          {Math.round(effective?.score_global || 0)}/100
                         </p>
                       </div>
                       <div>
                         <p className="text-[10px] text-muted-foreground">Net/FP</p>
                         <p className="text-lg font-semibold text-primary">
-                          {formatPercent(property.analysis?.rendement_net_fonds_propres || 0)}
+                          {formatPercent(effective?.rendement_net_fonds_propres || 0)}
                         </p>
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -360,32 +382,57 @@ export default function Comparator() {
                 {[
                   {
                     label: 'Score',
-                    fn: (analysis) =>
-                      analysis ? (
-                        <div className="flex items-center justify-end gap-2">
-                          <ScoreGauge score={analysis.score_global || 0} size={40} />
-                          <ScoreBadge note={analysis.note} />
-                        </div>
-                      ) : (
-                        'N/A'
-                      ),
+                    fn: (a) => (
+                      <div className="flex items-center justify-end gap-2">
+                        <ScoreGauge score={a?.score_global || 0} size={40} />
+                        <ScoreBadge note={a?.note} />
+                      </div>
+                    ),
+                    editable: false,
                   },
-                  { label: 'Prix total', fn: (a) => (a ? formatCHF(a.prix_total) : 'N/A') },
-                  { label: 'Rendement brut', fn: (a) => (a ? formatPercent(a.rendement_brut) : 'N/A') },
-                  { label: 'Rendement net / FP', fn: (a) => (a ? formatPercent(a.rendement_net_fonds_propres) : 'N/A') },
-                  { label: 'Revenu net', fn: (a) => (a ? formatCHF(a.revenu_net) : 'N/A') },
-                  { label: 'Revenu distribué', fn: (a) => (a ? formatCHF(a.revenu_distribue) : 'N/A') },
-                  { label: 'Fonds propres', fn: (a) => (a ? formatCHF(a.fonds_propres) : 'N/A') },
-                  { label: 'Hypothèque', fn: (a) => (a ? formatCHF(a.hypotheque) : 'N/A') },
+
+                  { label: 'Prix du bien', field: 'prix_bien', editable: true },
+                  { label: 'Fonds propres', field: 'fonds_propres', editable: true },
+                  { label: 'Hypothèque', field: 'hypotheque', editable: true },
+                  { label: 'Prix total', fn: (a) => formatCHF(a?.prix_total), editable: false },
+
+                  { label: 'Revenus locatifs', field: 'revenus_locatifs', editable: true },
+                  { label: 'Charges opérationnelles', field: 'charges_operationnelles', editable: true },
+                  { label: 'Intérêt hypothécaire', field: 'interets_hypothecaires', editable: true },
+                  { label: 'Gestion', field: 'gestion', editable: true },
+
+                  { label: 'Rendement brut', fn: (a) => (a ? formatPercent(a.rendement_brut) : 'N/A'), editable: false },
+                  { label: 'Revenu net', fn: (a) => (a ? formatCHF(a.revenu_net) : 'N/A'), editable: false },
+                  { label: 'Rendement net / FP', fn: (a) => (a ? formatPercent(a.rendement_net_fonds_propres) : 'N/A'), editable: false },
+                  { label: 'Revenu distribué', fn: (a) => (a ? formatCHF(a.revenu_distribue) : 'N/A'), editable: false },
+                  { label: 'Rdt. distribué / FP', fn: (a) => (a ? formatPercent(a.revenu_distribue_fonds_propres) : 'N/A'), editable: false },
                 ].map((row) => (
                   <tr key={row.label} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
                     <td className="px-5 py-3 text-xs text-muted-foreground">{row.label}</td>
 
-                    {selected.map((property) => (
-                      <td key={property.id} className="px-5 py-3 text-right font-mono text-xs">
-                        {row.fn(property.analysis)}
-                      </td>
-                    ))}
+                    {selected.map((property) => {
+                      const effective = getEffectiveAnalysis(property);
+                      return (
+                        <td key={property.id} className="px-5 py-3 text-right">
+                          {row.editable ? (
+                            <div className="flex items-center justify-end gap-1">
+                              <span className="text-[10px] text-muted-foreground mr-1">CHF</span>
+                              <Input
+                                type="number"
+                                value={overrides[property.id]?.[row.field] ?? effective?.[row.field] ?? ''}
+                                onChange={(e) => {
+                                  const v = e.target.value === '' ? null : parseFloat(e.target.value) || 0;
+                                  overrideField(property.id, row.field, v);
+                                }}
+                                className="w-28 h-8 text-xs text-right bg-background border-border"
+                              />
+                            </div>
+                          ) : (
+                            <span className="font-mono text-xs">{row.fn(effective)}</span>
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
