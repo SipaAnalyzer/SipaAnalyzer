@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ScoreGauge from './ScoreGauge';
 import ScoreBadge from './ScoreBadge';
 import ExcelProjectionTables, { createEmptyExcelProjections } from './ExcelProjectionTables';
-import { Calculator, FileSpreadsheet, Landmark, Save, Table } from 'lucide-react';
+import { Calculator, FileSpreadsheet, FileText, Landmark, Save, Table } from 'lucide-react';
 
 function InputField({ value, onChange, prefix, className }) {
   return (
@@ -84,6 +84,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     gestion_pct: null,
     impot: null,
     impot_pct: null,
+    notes: '',
     banque_a_taux_hypothecaire: null,
     banque_a_type_taux: 'fixe',
     banque_a_marge_saron: 0.5,
@@ -230,6 +231,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       interets_hypothecaires: form.interets_hypothecaires,
       gestion: form.gestion,
       impot: form.impot,
+      notes: form.notes || null,
       banque_a_taux_hypothecaire: form.banque_a_taux_hypothecaire,
       banque_a_type_taux: form.banque_a_type_taux,
       banque_a_marge_saron: form.banque_a_marge_saron,
@@ -562,6 +564,22 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
           </section>
         </TabsContent>
       </Tabs>
+
+      <section className="bg-card rounded-xl border border-border p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="h-4 w-4 text-primary" />
+          <h3 className="font-heading font-semibold">Informations complémentaires</h3>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3">
+          Banque, CECB, chauffage, courtier, type de vente, rénovations, etc.
+        </p>
+        <textarea
+          value={form.notes || ''}
+          onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+          className="w-full bg-background border border-border rounded-lg p-3 text-sm min-h-[100px]"
+          placeholder="Saisissez ici les informations complémentaires extraites de l'Excel ou saisies manuellement..."
+        />
+      </section>
 
       <section className="bg-card rounded-xl border border-primary/30 p-6">
         <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">

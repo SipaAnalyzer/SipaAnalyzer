@@ -38,21 +38,68 @@ export async function extractAnalysisFieldsFromExcel(file) {
 
   const fields = {};
   const seenLabels = [];
+  const allRows = [];
 
   for (const path of worksheetPaths) {
     const xml = await readText(zip, path);
     const rows = parseWorksheet(xml, sharedStrings);
+    allRows.push(...rows);
     extractRows(rows, fields, seenLabels);
     extractProjectionTables(rows, fields);
   }
 
   applyDerivedPercentages(fields);
 
+  const notes = extractMetadataNotes(allRows);
+  if (notes) fields.notes = notes;
+
   return {
     fields,
     importedCount: Object.keys(fields).length,
     seenLabels,
   };
+}
+
+const METADATA_PATTERNS = [
+  { regex: /^banque\s+(.+)/i, template: 'Banque : $1' },
+  { regex: /cecb\s*(?:enveloppe)?\s*:?\s*([a-f])/i, template: 'CECB enveloppe : $1' },
+  { regex: /construction\s+(\d{4})/i, template: 'Construction $1' },
+  { regex: /^(residentiel|commercial|mixte|industriel)/i, template: '$1' },
+  { regex: /(\d+)\s*app(?:artements?)?,?\s*(\d+)?\s*(?:pp\s*)?(?:ext?)?/i, template: '$1 app, $2 pp ext' },
+  { regex: /chaudiere\s+(.+?)(?:\s+\d{4})?$/i, template: 'Chaudière $1' },
+  { regex: /chaudiere\s+(.+)/i, template: 'Chaudière $1' },
+  { regex: /(\d+[.,]\d+)\s*%\s*vacance/i, template: '$1% vacance' },
+  { regex: /renov(?:ation)?\s+(.+)/i, template: 'Rénov $1' },
+  { regex: /courtier\s*:?\s*(.+)/i, template: 'Courtier : $1' },
+  { regex: /vente\s+(.+)/i, template: 'Vente $1' },
+  { regex: /offre\s+indicative\s+(.+)/i, template: 'Offre indicative $1' },
+];
+
+function extractMetadataNotes(rows) {
+  const matched = [];
+
+  for (const row of rows) {
+    if (!row) continue;
+    for (const cell of row) {
+      if (!cell || typeof cell !== 'string') continue;
+      const text = normalizeText(cell);
+      if (!text) continue;
+
+      for (const { regex, template } of METADATA_PATTERNS) {
+        const match = text.match(regex);
+        if (match) {
+          let line = template;
+          for (let i = 1; i < match.length; i++) {
+            line = line.replace(`$${i}`, (match[i] || '').trim());
+          }
+          matched.push(line);
+          break;
+        }
+      }
+    }
+  }
+
+  return matched.length ? matched.join('\n') : null;
 }
 
 function extractProjectionTables(rows, fields) {

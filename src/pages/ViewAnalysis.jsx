@@ -9,7 +9,7 @@ import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
 import FinancialTable from '../components/FinancialTable';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, MapPin, Landmark } from 'lucide-react';
+import { Loader2, ArrowLeft, MapPin, Landmark, FileText } from 'lucide-react';
 import moment from 'moment';
 
 export default function ViewAnalysis() {
@@ -107,6 +107,18 @@ export default function ViewAnalysis() {
       </div>
 
       <FinancialTable analysis={analysis} />
+
+      {analysis.notes && (
+        <section className="bg-card rounded-xl border border-border p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <FileText className="h-4 w-4 text-primary" />
+            <h3 className="font-heading font-semibold">Informations complémentaires</h3>
+          </div>
+          <div className="bg-background/40 rounded-lg p-4 text-sm whitespace-pre-wrap">
+            {analysis.notes}
+          </div>
+        </section>
+      )}
 
       <div className="bg-card rounded-xl border border-border p-6">
         <div className="flex items-center gap-2 mb-4">

@@ -36,6 +36,7 @@ import {
   Eye,
   Building2,
   FileText,
+  StickyNote,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -174,6 +175,17 @@ export default function PropertyDetail() {
           {selected ? (
             <>
               <AnalysisSummary selected={selected} selectedAnalysisId={selectedAnalysisId} />
+              {selected.notes && (
+                <section className="bg-card rounded-xl border border-border p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <StickyNote className="h-4 w-4 text-primary" />
+                    <h3 className="font-heading font-semibold">Informations complémentaires</h3>
+                  </div>
+                  <div className="bg-background/40 rounded-lg p-4 text-sm whitespace-pre-wrap">
+                    {selected.notes}
+                  </div>
+                </section>
+              )}
               <FinancialTable analysis={selected} />
               <Projection5Ans analysis={selected} />
               <AnalysisHistory

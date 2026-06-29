@@ -111,6 +111,10 @@
       ],
       "title": "Note"
     },
+    "notes": {
+      "type": "string",
+      "title": "Notes / Informations complémentaires"
+    },
     "statut": {
       "type": "string",
       "enum": [
