@@ -115,23 +115,13 @@ export default function ViewAnalysis() {
             <FileText className="h-4 w-4 text-primary" />
             <h3 className="font-heading font-semibold">Informations complémentaires</h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-2 pr-4 font-medium text-muted-foreground w-1/3">Information</th>
-                  <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeur</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
-                {parseNotesToRows(analysis.notes).map((row, i) => (
-                  <tr key={i}>
-                    <td className="py-2.5 pr-4 text-sm font-medium">{row.key}</td>
-                    <td className="py-2.5 pl-4 text-sm">{row.value}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {parseNotesToRows(analysis.notes).map((row, i) => (
+              <div key={i} className="border border-border rounded-lg p-3 bg-background/40">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{row.key || 'Info'}</p>
+                <p className="text-sm font-semibold mt-1 break-words">{row.value}</p>
+              </div>
+            ))}
           </div>
         </section>
       )}
