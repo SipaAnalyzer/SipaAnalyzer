@@ -40,13 +40,18 @@ $$;
 
 create or replace function public.consume_invitation_token(token_text text)
 returns boolean
-language sql
+language plpgsql
 security definer
 as $$
+declare
+  updated integer;
+begin
   update public.invitation_tokens
   set used_at = now()
   where token = token_text
     and expires_at > now()
     and used_at is null;
-  return found;
+  get diagnostics updated = row_count;
+  return updated > 0;
+end;
 $$;
