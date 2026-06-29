@@ -271,7 +271,11 @@ function PropertyPresentation({ property, latest }) {
               <MetricCard label="Prix total" value={formatCHF(latest.prix_total)} />
               <MetricCard label="Rdt. brut" value={formatPercent(latest.rendement_brut)} />
               <MetricCard label="Revenu net" value={formatCHF(latest.revenu_net)} />
+              <MetricCard label="Revenu distribué" value={formatCHF(latest.revenu_distribue)} />
               <MetricCard label="Rdt. net / FP" value={formatPercent(latest.rendement_net_fonds_propres)} highlight />
+              {latest.emplacement_bien && latest.etat_batiment && (
+                <MetricCard label="Emplacement / État" value={`${latest.emplacement_bien} / ${latest.etat_batiment}`} />
+              )}
             </div>
           </div>
         ) : (
