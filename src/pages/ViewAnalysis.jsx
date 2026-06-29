@@ -118,6 +118,8 @@ export default function ViewAnalysis() {
           <BankScenarioCard
             title="Banque A"
             color="amber"
+            typeTaux={analysis.banque_a_type_taux}
+            margeSaron={analysis.banque_a_marge_saron}
             taux={analysis.banque_a_taux_hypothecaire}
             amortissement={analysis.banque_a_amortissement_annuel}
             evaluation={analysis.banque_a_evaluation}
@@ -125,6 +127,8 @@ export default function ViewAnalysis() {
           <BankScenarioCard
             title="Banque B"
             color="emerald"
+            typeTaux={analysis.banque_b_type_taux}
+            margeSaron={analysis.banque_b_marge_saron}
             taux={analysis.banque_b_taux_hypothecaire}
             amortissement={analysis.banque_b_amortissement_annuel}
             evaluation={analysis.banque_b_evaluation}
@@ -145,14 +149,20 @@ function MetricCard({ label, value, highlight }) {
   );
 }
 
-function BankScenarioCard({ title, color, taux, amortissement, evaluation }) {
+function BankScenarioCard({ title, color, typeTaux, margeSaron, taux, amortissement, evaluation }) {
+  const rateLabel = typeTaux === 'saron'
+    ? `Full SARON + ${Number(margeSaron ?? 0.5).toFixed(2)}%`
+    : typeTaux === 'mixte'
+      ? `Base ${Number(taux || 0).toFixed(2)}% + SARON`
+      : `${taux || '—'}%`;
+
   return (
     <div className="p-4 rounded-lg border border-border space-y-3">
       <h4 className="font-medium text-sm">{title}</h4>
       <div className="grid grid-cols-3 gap-3 text-center">
         <div>
           <p className="text-xs text-muted-foreground">Taux</p>
-          <p className={`text-lg font-semibold text-${color}-500`}>{taux || '\u2014'}</p>
+          <p className={`text-lg font-semibold text-${color}-500`}>{rateLabel}</p>
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Amort.</p>

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent } from '../utils/calculations';
 import { extractAnalysisFieldsFromExcel } from '../utils/excelImport';
+import { fetchSaronRate } from '../utils/saronRate';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -84,9 +85,13 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     impot: null,
     impot_pct: null,
     banque_a_taux_hypothecaire: null,
+    banque_a_type_taux: 'fixe',
+    banque_a_marge_saron: 0.5,
     banque_a_amortissement_annuel: null,
     banque_a_evaluation: '',
     banque_b_taux_hypothecaire: null,
+    banque_b_type_taux: 'fixe',
+    banque_b_marge_saron: 0.5,
     banque_b_amortissement_annuel: null,
     banque_b_evaluation: '',
     etat_batiment: '',
@@ -184,6 +189,15 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     message: '',
     error: '',
   });
+  const [saronRate, setSaronRate] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSaronRate().then((rate) => {
+      if (!cancelled) setSaronRate(rate);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const calc = useMemo(() => calculateAnalysis({
     ...form,
@@ -217,9 +231,13 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       gestion: form.gestion,
       impot: form.impot,
       banque_a_taux_hypothecaire: form.banque_a_taux_hypothecaire,
+      banque_a_type_taux: form.banque_a_type_taux,
+      banque_a_marge_saron: form.banque_a_marge_saron,
       banque_a_amortissement_annuel: form.banque_a_amortissement_annuel,
       banque_a_evaluation: form.banque_a_evaluation,
       banque_b_taux_hypothecaire: form.banque_b_taux_hypothecaire,
+      banque_b_type_taux: form.banque_b_type_taux,
+      banque_b_marge_saron: form.banque_b_marge_saron,
       banque_b_amortissement_annuel: form.banque_b_amortissement_annuel,
       banque_b_evaluation: form.banque_b_evaluation,
       operating_projection: form.operating_projection,
@@ -538,8 +556,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
           <section className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-heading font-semibold mb-4">Scénarios bancaires</h3>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-              <BankScenario title="Banque A" form={form} set={set} prefix="banque_a" />
-              <BankScenario title="Banque B" form={form} set={set} prefix="banque_b" />
+              <BankScenario title="Banque A" form={form} set={set} prefix="banque_a" saronRate={saronRate} />
+              <BankScenario title="Banque B" form={form} set={set} prefix="banque_b" saronRate={saronRate} />
             </div>
           </section>
         </TabsContent>
@@ -582,15 +600,48 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   );
 }
 
-function BankScenario({ title, form, set, prefix }) {
+function BankScenario({ title, form, set, prefix, saronRate }) {
+  const typeTaux = form[`${prefix}_type_taux`] || 'fixe';
+  const tauxBase = Number(form[`${prefix}_taux_hypothecaire`] || 0);
+  const margeSaron = Number(form[`${prefix}_marge_saron`] ?? 0.5);
+  const effectiveRate = getEffectiveMortgageRate({ typeTaux, tauxBase, margeSaron, saronRate });
+
   return (
     <div className="bg-background/40 rounded-xl border border-border p-5 space-y-4">
       <h4 className="font-heading font-semibold text-sm">{title}</h4>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
+          <Label className="text-xs text-muted-foreground mb-1.5 block">Type de taux</Label>
+          <Select value={typeTaux} onValueChange={set(`${prefix}_type_taux`)}>
+            <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fixe">Fixe</SelectItem>
+              <SelectItem value="saron">Variable full SARON</SelectItem>
+              <SelectItem value="mixte">Variable base fixe + SARON</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
           <Label className="text-xs text-muted-foreground mb-1.5 block">Taux hypothécaire</Label>
           <InputField value={form[`${prefix}_taux_hypothecaire`]} onChange={set(`${prefix}_taux_hypothecaire`)} />
         </div>
+        {typeTaux === 'saron' && (
+          <div>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Marge SARON</Label>
+            <InputField value={form[`${prefix}_marge_saron`]} onChange={set(`${prefix}_marge_saron`)} />
+          </div>
+        )}
+        {(typeTaux === 'saron' || typeTaux === 'mixte') && (
+          <div>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Taux effectif automatique</Label>
+            <div className="rounded-lg border border-border bg-background px-3 py-2 text-right font-mono text-sm font-semibold text-primary">
+              {effectiveRate == null ? 'SARON...' : `${effectiveRate.toFixed(3)}%`}
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              SARON actuel {saronRate == null ? 'en chargement' : `${saronRate.toFixed(3)}%`}
+            </p>
+          </div>
+        )}
         <div>
           <Label className="text-xs text-muted-foreground mb-1.5 block">Amortissement annuel</Label>
           <InputField value={form[`${prefix}_amortissement_annuel`]} onChange={set(`${prefix}_amortissement_annuel`)} prefix="CHF" />
@@ -607,6 +658,14 @@ function BankScenario({ title, form, set, prefix }) {
       </div>
     </div>
   );
+}
+
+function getEffectiveMortgageRate({ typeTaux, tauxBase, margeSaron, saronRate }) {
+  if (typeTaux === 'fixe') return tauxBase;
+  if (saronRate == null) return null;
+  if (typeTaux === 'saron') return saronRate + margeSaron;
+  if (typeTaux === 'mixte') return tauxBase + saronRate;
+  return tauxBase;
 }
 
 function Metric({ label, value, highlight }) {

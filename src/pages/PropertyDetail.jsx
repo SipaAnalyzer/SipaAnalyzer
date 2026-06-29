@@ -212,6 +212,12 @@ function PropertyPresentation({ property, latest }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
       <section className="bg-card rounded-xl border border-border p-6">
+        {property.image_url && (
+          <div className="mb-5 overflow-hidden rounded-lg">
+            <img src={property.image_url} alt={property.nom_bien} className="w-full h-56 object-cover" />
+          </div>
+        )}
+
         <div className="flex items-center gap-2 mb-5">
           <Building2 className="h-4 w-4 text-primary" />
           <h2 className="font-heading font-semibold">Présentation du bien</h2>

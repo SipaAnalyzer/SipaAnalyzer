@@ -31,6 +31,7 @@ export default function EditProperty() {
 
   const [form, setForm] = useState({});
   const [uploading, setUploading] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -65,13 +66,48 @@ export default function EditProperty() {
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 20 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('L\'image ne doit pas dépasser 20 Mo');
+      return;
+    }
+
+    setImageUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { data, error } = await supabase.storage
+        .from('property-files')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('property-files')
+        .getPublicUrl(fileName);
+
+      setForm(prev => ({ ...prev, image_url: publicUrl }));
+      toast.success('Image uploadée');
+    } catch (err) {
+      console.error('[ImageUpload]', err);
+      toast.error("Erreur lors de l'upload de l'image");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
   useEffect(() => {
     if (property) setForm({
       nom_bien: property.nom_bien || '', adresse: property.adresse || '', ville: property.ville || '',
       canton: property.canton || '', pays: property.pays || 'Suisse',
       annee_construction: property.annee_construction ?? '', surface: property.surface ?? '',
       nombre_logements: property.nombre_logements ?? '', statut: property.statut || 'brouillon',
-      lien_annonce: property.lien_annonce || '', lien_piece_jointe: property.lien_piece_jointe || '', latitude: property.latitude ?? '', longitude: property.longitude ?? '',
+      lien_annonce: property.lien_annonce || '', lien_piece_jointe: property.lien_piece_jointe || '',
+      image_url: property.image_url || '', latitude: property.latitude ?? '', longitude: property.longitude ?? '',
     });
   }, [property]);
 
@@ -122,6 +158,45 @@ export default function EditProperty() {
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Année de construction</Label><Input type="number" value={form.annee_construction || ''} onChange={set('annee_construction')} className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Surface (m²)</Label><Input type="number" value={form.surface || ''} onChange={set('surface')} className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Nombre de logements</Label><Input type="number" value={form.nombre_logements || ''} onChange={set('nombre_logements')} className="bg-background border-border" /></div>
+          <div className="sm:col-span-2">
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Photo du bien</Label>
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={imageUploading}
+                onClick={() => document.getElementById('edit-image-upload')?.click()}
+              >
+                {imageUploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
+                {imageUploading ? 'Upload...' : 'Choisir une image'}
+              </Button>
+              <input
+                id="edit-image-upload"
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+              {form.image_url && (
+                <div className="flex items-center gap-2">
+                  <img src={form.image_url} alt="Aperçu" className="h-10 w-10 rounded object-cover border border-border" />
+                  <button
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, image_url: '' }))}
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
           <div className="sm:col-span-2"><Label className="text-xs text-muted-foreground mb-1.5 block">Lien de l'annonce</Label><Input value={form.lien_annonce || ''} onChange={set('lien_annonce')} placeholder="https://..." className="bg-background border-border" /></div>
           <div className="sm:col-span-2">
             <Label className="text-xs text-muted-foreground mb-1.5 block">Pièce jointe (PDF, Word, PowerPoint)</Label>

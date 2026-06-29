@@ -284,9 +284,9 @@ export default function Projection5Ans({ analysis }) {
   }, []);
 
   const [bankA, setBankA] = useState(() => ({
-    rateType: 'fixe',
+    rateType: analysis?.banque_a_type_taux || 'fixe',
     taux: defaultRateA,
-    marge: 0.5,
+    marge: analysis?.banque_a_marge_saron ?? 0.5,
     duree: defaultDuree,
     amort: analysis?.banque_a_amortissement_annuel ?? defaultAmort,
     evalPct: null,
@@ -294,9 +294,9 @@ export default function Projection5Ans({ analysis }) {
   }));
 
   const [bankB, setBankB] = useState(() => ({
-    rateType: 'fixe',
+    rateType: analysis?.banque_b_type_taux || 'fixe',
     taux: defaultRateB,
-    marge: 0.5,
+    marge: analysis?.banque_b_marge_saron ?? 0.5,
     duree: defaultDuree,
     amort: analysis?.banque_b_amortissement_annuel ?? defaultAmort,
     evalPct: null,
