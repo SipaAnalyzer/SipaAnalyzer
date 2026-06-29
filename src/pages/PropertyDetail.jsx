@@ -37,7 +37,7 @@ import {
   Eye,
   Building2,
   FileText,
-  StickyNote, TrendingUp,
+  TrendingUp,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -166,7 +166,6 @@ export default function PropertyDetail() {
           <TabsTrigger value="presentation">Présentation du bien</TabsTrigger>
           <TabsTrigger value="analyse">Analyse</TabsTrigger>
           <TabsTrigger value="infos">Infos supplémentaires</TabsTrigger>
-          <TabsTrigger value="notes">Infos complémentaires</TabsTrigger>
         </TabsList>
 
         <TabsContent value="presentation" className="mt-5">
@@ -227,9 +226,19 @@ export default function PropertyDetail() {
           )}
         </TabsContent>
 
-        <TabsContent value="notes" className="mt-5 space-y-6">
-          {selected?.notes ? (
+        <TabsContent value="infos" className="mt-5 space-y-6">
+          <TraceabilityPanel
+            property={property}
+            analyses={normalizedAnalyses}
+            comments={comments}
+            userName={user?.full_name || user?.email}
+          />
+          {selected?.notes && (
             <section className="bg-card rounded-xl border border-border p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <FileText className="h-4 w-4 text-primary" />
+                <h3 className="font-heading font-semibold">Informations complémentaires</h3>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {parseNotesToRows(selected.notes).map((row, i) => (
                   <div key={i} className="border border-border rounded-lg p-3 bg-background/40">
@@ -239,18 +248,7 @@ export default function PropertyDetail() {
                 ))}
               </div>
             </section>
-          ) : (
-            <p className="text-muted-foreground text-sm text-center py-8">Aucune information complémentaire.</p>
           )}
-        </TabsContent>
-
-        <TabsContent value="infos" className="mt-5 space-y-6">
-          <TraceabilityPanel
-            property={property}
-            analyses={normalizedAnalyses}
-            comments={comments}
-            userName={user?.full_name || user?.email}
-          />
           <ActivityFeed propertyId={propertyId} />
           <CommentSection propertyId={propertyId} initialComments={comments} />
         </TabsContent>
