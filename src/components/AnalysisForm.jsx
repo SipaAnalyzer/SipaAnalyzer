@@ -364,6 +364,10 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
             <Landmark className="h-4 w-4" />
             Simulation via taux bancaire
           </TabsTrigger>
+          <TabsTrigger value="notes" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <FileText className="h-4 w-4" />
+            Informations complémentaires
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="financial" className="mt-4">
@@ -512,6 +516,71 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
               />
             </div>
           </section>
+
+          {form.sipa_data && form.sipa_data.length > 0 && (
+            <section className="bg-card rounded-xl border border-border p-6 mt-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Landmark className="h-4 w-4 text-primary" />
+                <h3 className="font-heading font-semibold">Investissement SIPA</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
+                      <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeurs</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/50">
+                    {form.sipa_data.map((entry, i) => (
+                      <tr key={i}>
+                        <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">{entry.label}</td>
+                        <td className="py-2 pl-4 text-sm">
+                          <div className="flex flex-wrap gap-2">
+                            {entry.values.map((v, j) => (
+                              <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+        </TabsContent>
+
+        <TabsContent value="notes" className="mt-4">
+          <section className="bg-card rounded-xl border border-border p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="h-4 w-4 text-primary" />
+              <h3 className="font-heading font-semibold">Informations complémentaires</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              Banque, CECB, chauffage, courtier, type de vente, rénovations, etc.
+            </p>
+            <textarea
+              value={form.notes || ''}
+              onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+              className="w-full bg-background border border-border rounded-lg p-3 text-sm min-h-[150px] font-mono"
+              placeholder="Exemple :
+Banque : Migros
+CECB enveloppe : F
+Construction : 1961
+Courtier : UBS, Valérie Zuber"
+            />
+            {form.notes && (
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {parseNotesToRows(form.notes).map((row, i) => (
+                  <div key={i} className="border border-border rounded-lg p-3 bg-background/40">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{row.key || 'Info'}</p>
+                    <p className="text-sm font-semibold mt-1 break-words">{row.value}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </TabsContent>
 
         <TabsContent value="import" className="mt-4">
@@ -593,69 +662,6 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
           </div>
         </div>
       </section>
-
-      <section className="bg-card rounded-xl border border-border p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="h-4 w-4 text-primary" />
-          <h3 className="font-heading font-semibold">Informations complémentaires</h3>
-        </div>
-        <p className="text-xs text-muted-foreground mb-3">
-          Banque, CECB, chauffage, courtier, type de vente, rénovations, etc.
-        </p>
-        <textarea
-          value={form.notes || ''}
-          onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
-          className="w-full bg-background border border-border rounded-lg p-3 text-sm min-h-[100px] font-mono"
-          placeholder="Exemple :
-Banque : Migros
-CECB enveloppe : F
-Construction : 1961
-Courtier : UBS, Valérie Zuber"
-        />
-        {form.notes && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {parseNotesToRows(form.notes).map((row, i) => (
-              <div key={i} className="border border-border rounded-lg p-3 bg-background/40">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{row.key || 'Info'}</p>
-                <p className="text-sm font-semibold mt-1 break-words">{row.value}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {form.sipa_data && form.sipa_data.length > 0 && (
-        <section className="bg-card rounded-xl border border-border p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Landmark className="h-4 w-4 text-primary" />
-            <h3 className="font-heading font-semibold">Investissement SIPA</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
-                  <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeurs</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
-                {form.sipa_data.map((entry, i) => (
-                  <tr key={i}>
-                    <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">{entry.label}</td>
-                    <td className="py-2 pl-4 text-sm">
-                      <div className="flex flex-wrap gap-2">
-                        {entry.values.map((v, j) => (
-                          <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
 
       <div className="flex justify-end">
         <Button onClick={handleSubmit} disabled={!form.property_id || isSubmitting} className="gap-2">
