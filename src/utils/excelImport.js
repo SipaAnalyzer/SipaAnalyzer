@@ -43,6 +43,7 @@ export async function extractAnalysisFieldsFromExcel(file) {
     const xml = await readText(zip, path);
     const rows = parseWorksheet(xml, sharedStrings);
     extractRows(rows, fields, seenLabels);
+    extractProjectionTables(rows, fields);
   }
 
   applyDerivedPercentages(fields);
@@ -52,6 +53,189 @@ export async function extractAnalysisFieldsFromExcel(file) {
     importedCount: Object.keys(fields).length,
     seenLabels,
   };
+}
+
+function extractProjectionTables(rows, fields) {
+  const operating = buildOperatingProjection(rows);
+  const capital = buildCapitalProjection(rows);
+
+  if (operating) fields.operating_projection = operating;
+  if (capital) fields.capital_projection = capital;
+}
+
+function buildOperatingProjection(rows) {
+  const definitions = [
+    { key: 'income', label: 'Income', aliases: ['income'], type: 'amount' },
+    { key: 'costs', label: 'Costs', aliases: ['costs'], type: 'amount' },
+    { key: 'interest_rate', label: 'Interest rate', aliases: ['interest rate'], type: 'percent' },
+    { key: 'interest_paid', label: 'Interest paid', aliases: ['interest paid'], type: 'amount' },
+    { key: 'ebt', label: 'EBT', aliases: ['ebt'], type: 'amount' },
+    { key: 'tax', label: 'Tax', aliases: ['tax'], type: 'amount' },
+    { key: 'dividend', label: 'Dividend', aliases: ['dividend'], type: 'amount' },
+  ];
+
+  const projectionRows = definitions.map((definition) => {
+    const found = findLabelCell(rows, definition.aliases);
+    return {
+      key: definition.key,
+      label: definition.label,
+      type: definition.type,
+      values: found ? readRightValues(rows[found.row], found.col, 5, definition.type) : Array(5).fill(null),
+    };
+  });
+
+  if (!projectionRows.some((row) => row.values.some(hasValue))) return null;
+
+  return {
+    columns: ['1', '2', '3', '4', '5'],
+    rows: projectionRows,
+  };
+}
+
+function buildCapitalProjection(rows) {
+  const definitions = [
+    { key: 'amortization', label: 'Amortissement dette', aliases: ['amortissement dette'], type: 'amount' },
+    { key: 'debt', label: 'Debt', aliases: ['debt'], type: 'amount' },
+    { key: 'value', label: 'Value', aliases: ['value'], type: 'amount' },
+    { key: 'cashflow', label: 'IRR cash-flow', aliases: ['irr'], type: 'amount' },
+    { key: 'dividend_yield', label: 'Dividend Yield', aliases: ['dividend yield'], type: 'percent' },
+  ];
+
+  const debtCell = findLabelCell(rows, ['debt']);
+  const amortization = debtCell ? inferDebtAmortization(rows[debtCell.row], debtCell.col) : Array(6).fill(null);
+
+  const projectionRows = definitions.map((definition) => {
+    if (definition.key === 'amortization') {
+      return { ...definition, values: amortization };
+    }
+
+    const found = findLabelCell(rows, definition.aliases);
+    if (definition.key === 'cashflow') {
+      return {
+        ...definition,
+        values: found ? readRightValues(rows[found.row], found.col, 7, definition.type).slice(1, 7) : Array(6).fill(null),
+      };
+    }
+    if (definition.key === 'dividend_yield') {
+      return {
+        ...definition,
+        values: found ? normalizeDividendYieldValues(readRightValues(rows[found.row], found.col, 7, definition.type)) : Array(6).fill(null),
+      };
+    }
+
+    return {
+      key: definition.key,
+      label: definition.label,
+      type: definition.type,
+      values: found ? readRightValues(rows[found.row], found.col, 6, definition.type) : Array(6).fill(null),
+    };
+  });
+
+  const priceIncrease = readFirstRightValue(rows, ['price increase'], 'percent');
+  const salesPrice = readFirstRightValue(rows, ['sales price'], 'amount');
+  const exitDebt = readFirstRightValue(rows, ['debt'], 'amount', { fromEnd: true });
+  const net = readFirstRightValue(rows, ['net'], 'amount');
+  const irr = readFirstRightValue(rows, ['irr'], 'percent');
+  const averageDividendYield = readFirstRightValue(rows, ['dividend yield'], 'percent');
+
+  const assumptions = {
+    price_increase: priceIncrease,
+    sales_price: salesPrice,
+    exit_debt: exitDebt,
+    net,
+    irr,
+    average_dividend_yield: averageDividendYield,
+  };
+
+  const hasRows = projectionRows.some((row) => row.values.some(hasValue));
+  const hasAssumptions = Object.values(assumptions).some(hasValue);
+  if (!hasRows && !hasAssumptions) return null;
+
+  return {
+    columns: ['0', '1', '2', '3', '4', '5'],
+    rows: projectionRows,
+    assumptions,
+  };
+}
+
+function findLabelCell(rows, aliases) {
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+    const row = rows[rowIndex];
+    if (!row) continue;
+
+    for (let colIndex = 0; colIndex < row.length; colIndex += 1) {
+      const normalized = normalizeText(row[colIndex]);
+      if (!normalized) continue;
+      if (aliases.some((alias) => normalized === normalizeText(alias))) {
+        return { row: rowIndex, col: colIndex };
+      }
+    }
+  }
+
+  return null;
+}
+
+function readRightValues(row = [], colIndex, count, type) {
+  const values = [];
+
+  for (let col = colIndex + 1; col < row.length && values.length < count; col += 1) {
+    const parsed = parseProjectionValue(row[col], type);
+    if (parsed != null) values.push(parsed);
+  }
+
+  while (values.length < count) values.push(null);
+  return values;
+}
+
+function readFirstRightValue(rows, aliases, type, options = {}) {
+  const found = options.fromEnd ? findLastLabelCell(rows, aliases) : findLabelCell(rows, aliases);
+  if (!found) return null;
+
+  const values = readRightValues(rows[found.row], found.col, 8, type).filter(hasValue);
+  return options.fromEnd ? values[values.length - 1] ?? null : values[0] ?? null;
+}
+
+function findLastLabelCell(rows, aliases) {
+  let latest = null;
+
+  rows.forEach((row, rowIndex) => {
+    row?.forEach((cell, colIndex) => {
+      const normalized = normalizeText(cell);
+      if (aliases.some((alias) => normalized === normalizeText(alias))) {
+        latest = { row: rowIndex, col: colIndex };
+      }
+    });
+  });
+
+  return latest;
+}
+
+function inferDebtAmortization(row = [], debtCol) {
+  const debt = readRightValues(row, debtCol, 6, 'amount');
+  if (!debt.some(hasValue)) return Array(6).fill(null);
+
+  return debt.map((value, index) => {
+    if (index === 0 || !hasValue(value) || !hasValue(debt[index - 1])) return null;
+    return Math.round(Number(debt[index - 1]) - Number(value));
+  });
+}
+
+function normalizeDividendYieldValues(values) {
+  const withoutAverage = values.slice(1);
+  if (withoutAverage.length >= 6) return withoutAverage.slice(0, 6);
+  return [null, ...withoutAverage].slice(0, 6);
+}
+
+function parseProjectionValue(value, type) {
+  const parsed = parseNumber(value);
+  if (parsed == null) return null;
+  if (type === 'percent' && Math.abs(parsed) <= 1) return round2(parsed * 100);
+  if (type === 'percent') return round2(parsed);
+  return Math.round(parsed * 100) / 100;
+}
+
+function hasValue(value) {
+  return value !== null && value !== undefined && value !== '';
 }
 
 async function readText(zip, path) {

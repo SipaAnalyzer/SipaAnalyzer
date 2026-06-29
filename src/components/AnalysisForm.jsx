@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ScoreGauge from './ScoreGauge';
 import ScoreBadge from './ScoreBadge';
+import ExcelProjectionTables, { createEmptyExcelProjections } from './ExcelProjectionTables';
 import { Calculator, FileSpreadsheet, Landmark, Save, Table } from 'lucide-react';
 
 function InputField({ value, onChange, prefix, className }) {
@@ -90,6 +91,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     banque_b_evaluation: '',
     etat_batiment: '',
     emplacement_bien: '',
+    operating_projection: createEmptyExcelProjections().operating_projection,
+    capital_projection: createEmptyExcelProjections().capital_projection,
   });
 
   useEffect(() => {
@@ -219,6 +222,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       banque_b_taux_hypothecaire: form.banque_b_taux_hypothecaire,
       banque_b_amortissement_annuel: form.banque_b_amortissement_annuel,
       banque_b_evaluation: form.banque_b_evaluation,
+      operating_projection: form.operating_projection,
+      capital_projection: form.capital_projection,
       ...(form.etat_batiment ? { etat_batiment: form.etat_batiment } : {}),
       ...(form.emplacement_bien ? { emplacement_bien: form.emplacement_bien } : {}),
       prix_total: prixTotal,
@@ -475,6 +480,15 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
             </tbody>
           </table>
         </div>
+            <div className="mt-6">
+              <ExcelProjectionTables
+                operatingProjection={form.operating_projection}
+                capitalProjection={form.capital_projection}
+                onOperatingChange={set('operating_projection')}
+                onCapitalChange={set('capital_projection')}
+                editable
+              />
+            </div>
           </section>
         </TabsContent>
 
