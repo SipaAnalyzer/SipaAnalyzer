@@ -10,6 +10,7 @@ import ScoreGauge from '../components/ScoreGauge';
 import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
 import Projection5Ans from '../components/Projection5Ans';
+import FinancialTable from '../components/FinancialTable';
 import CommentSection from '../components/CommentSection';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
@@ -173,6 +174,7 @@ export default function PropertyDetail() {
           {selected ? (
             <>
               <AnalysisSummary selected={selected} selectedAnalysisId={selectedAnalysisId} />
+              <FinancialTable analysis={selected} />
               <Projection5Ans analysis={selected} />
               <AnalysisHistory
                 property={property}
