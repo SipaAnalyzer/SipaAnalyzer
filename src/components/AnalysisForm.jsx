@@ -1,16 +1,14 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent } from '../utils/calculations';
-import { parseAnalysisExcel } from '../utils/excelImport';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ScoreGauge from './ScoreGauge';
 import ScoreBadge from './ScoreBadge';
-import { Calculator, FileSpreadsheet, Save } from 'lucide-react';
+import { Calculator, Save } from 'lucide-react';
 
 function InputField({ value, onChange, prefix, className }) {
   return (
@@ -173,46 +171,6 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const fileInputRef = useRef(null);
-  const [importing, setImporting] = useState(false);
-
-  const handleExcelImport = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImporting(true);
-    try {
-      const data = await parseAnalysisExcel(file);
-      const keys = Object.keys(data);
-      if (keys.length === 0) {
-        toast.error("Aucun champ reconnu. Vérifie que les colonnes du fichier sont 'Rubrique' et 'Montant'.");
-        return;
-      }
-      setForm((prev) => {
-        const merged = { ...prev };
-        for (const [key, value] of Object.entries(data)) {
-          if (key in prev) merged[key] = value;
-        }
-        const prixTotal = Number(merged.prix_bien || 0) + Number(merged.versement_initial || 0) + Number(merged.amortissement_5_ans || 0) + Number(merged.honoraires_sipa || 0) + Number(merged.frais_dossier_bancaire || 0);
-        if (Number(merged.prix_bien) > 0 && merged.honoraires_sipa != null) merged.honoraires_sipa_pct = Math.round((merged.honoraires_sipa / merged.prix_bien) * 10000) / 100;
-        if (prixTotal > 0 && merged.hypotheque != null) merged.hypotheque_pct = Math.round((merged.hypotheque / prixTotal) * 10000) / 100;
-        if (Number(merged.hypotheque) > 0 && merged.interets_hypothecaires != null) merged.interets_hypothecaires_pct = Math.round((merged.interets_hypothecaires / merged.hypotheque) * 10000) / 100;
-        if (Number(merged.revenus_locatifs) > 0 && merged.gestion != null) merged.gestion_pct = Math.round((merged.gestion / merged.revenus_locatifs) * 10000) / 100;
-        const rev = Number(merged.revenus_locatifs || 0) - Number(merged.charges_operationnelles || 0) - Number(merged.interets_hypothecaires || 0) - Number(merged.gestion || 0);
-        if (rev > 0 && merged.impot != null) merged.impot_pct = Math.round((merged.impot / rev) * 10000) / 100;
-        return merged;
-      });
-      const count = keys.length;
-      const summary = keys.slice(0, 5).map(k => `${k}: ${data[k]}`).join(', ');
-      toast.success(`${count} champs importés : ${summary}${keys.length > 5 ? `... (+${keys.length - 5})` : ''}`);
-    } catch (err) {
-      console.error('[ExcelImport]', err);
-      toast.error(`Erreur d'import : ${err.message}`);
-    } finally {
-      setImporting(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
   const selectedProperty = properties.find((p) => p.id === form.property_id);
 
   const calc = useMemo(() => calculateAnalysis({
@@ -318,35 +276,6 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
             </Select>
           </div>
         </div>
-      </section>
-
-      <section className="bg-card rounded-xl border border-border p-6">
-        <div className="flex items-center justify-between">
-          <h3 className="font-heading font-semibold">Import Excel</h3>
-          <div className="flex items-center gap-3">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleExcelImport}
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={importing}
-              onClick={() => fileInputRef.current?.click()}
-              className="gap-2"
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-              {importing ? 'Import...' : 'Importer Excel'}
-            </Button>
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          Importez un fichier Excel (.xlsx) avec les colonnes "Rubrique" et "Montant" pour remplir automatiquement le tableau financier.
-        </p>
       </section>
 
       <section className="bg-card rounded-xl border border-border p-6">
