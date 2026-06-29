@@ -182,6 +182,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     setImporting(true);
     try {
       const data = await parseAnalysisExcel(file);
+      console.log('[AnalysisForm] import data:', data);
       setForm((prev) => {
         const merged = { ...prev };
         for (const [key, value] of Object.entries(data)) {

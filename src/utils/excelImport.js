@@ -56,6 +56,7 @@ export function parseAnalysisExcel(file) {
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
+        console.log('[ExcelImport] rows:', rows.length, rows.slice(0, 3));
         const result = {};
         let labelCol = -1, valCol = -1;
 
@@ -87,6 +88,7 @@ export function parseAnalysisExcel(file) {
           else result[field] = rawVal;
         }
 
+        console.log('[ExcelImport] extracted:', result);
         resolve(result);
       } catch (err) {
         reject(err);
