@@ -167,7 +167,7 @@ export default function PropertyDetail() {
         </TabsList>
 
         <TabsContent value="presentation" className="mt-5">
-          <PropertyPresentation property={property} latest={latest} />
+          <PropertyPresentation property={property} latest={latest} comments={comments} />
         </TabsContent>
 
         <TabsContent value="analyse" className="mt-5 space-y-6">
@@ -208,7 +208,7 @@ export default function PropertyDetail() {
   );
 }
 
-function PropertyPresentation({ property, latest }) {
+function PropertyPresentation({ property, latest, comments }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
       <section className="bg-card rounded-xl border border-border p-6">
@@ -331,8 +331,12 @@ function AnalysisSummary({ selected, selectedAnalysisId }) {
             <p className="text-xs text-muted-foreground">
               {selectedAnalysisId ? 'Analyse sélectionnée' : 'Dernière analyse'}
             </p>
+            </div>
+
+            <div className="mt-6 pt-5 border-t border-border">
+              <CommentSection propertyId={property.id} initialComments={comments} />
+            </div>
           </div>
-        </div>
 
         <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
           <MetricCard label="Prix total" value={formatCHF(selected.prix_total)} />
