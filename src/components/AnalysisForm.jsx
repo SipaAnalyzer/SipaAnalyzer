@@ -567,6 +567,33 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         </TabsContent>
       </Tabs>
 
+      <section className="bg-card rounded-xl border border-primary/30 p-6">
+        <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+          <Calculator className="h-4 w-4 text-primary" />
+          Résumé
+        </h3>
+        <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
+          <div className="flex items-center gap-4">
+            <ScoreGauge score={calc.score_global} size={100} />
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm text-muted-foreground">Note</span>
+                <ScoreBadge note={calc.note} />
+              </div>
+              <p className="text-xs text-muted-foreground">Score global</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 flex-1 min-w-0">
+            <Metric label="Revenu net" value={formatCHF(calc.revenu_net)} />
+            <Metric label="Rdt. net / FP" value={formatPercent(calc.rendement_net_fonds_propres)} highlight />
+            <Metric label="Revenu distribué" value={formatCHF(calc.revenu_distribue)} />
+            <Metric label="Rdt. distribué / FP" value={formatPercent(calc.revenu_distribue_fonds_propres)} highlight />
+            <Metric label="Rendement brut" value={formatPercent(calc.rendement_brut)} />
+            <Metric label="Score" value={`${calc.score_global}/100`} />
+          </div>
+        </div>
+      </section>
+
       <section className="bg-card rounded-xl border border-border p-6">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="h-4 w-4 text-primary" />
@@ -629,33 +656,6 @@ Courtier : UBS, Valérie Zuber"
           </div>
         </section>
       )}
-
-      <section className="bg-card rounded-xl border border-primary/30 p-6">
-        <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
-          <Calculator className="h-4 w-4 text-primary" />
-          Résumé
-        </h3>
-        <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
-          <div className="flex items-center gap-4">
-            <ScoreGauge score={calc.score_global} size={100} />
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm text-muted-foreground">Note</span>
-                <ScoreBadge note={calc.note} />
-              </div>
-              <p className="text-xs text-muted-foreground">Score global</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4 flex-1 min-w-0">
-            <Metric label="Revenu net" value={formatCHF(calc.revenu_net)} />
-            <Metric label="Rdt. net / FP" value={formatPercent(calc.rendement_net_fonds_propres)} highlight />
-            <Metric label="Revenu distribué" value={formatCHF(calc.revenu_distribue)} />
-            <Metric label="Rdt. distribué / FP" value={formatPercent(calc.revenu_distribue_fonds_propres)} highlight />
-            <Metric label="Rendement brut" value={formatPercent(calc.rendement_brut)} />
-            <Metric label="Score" value={`${calc.score_global}/100`} />
-          </div>
-        </div>
-      </section>
 
       <div className="flex justify-end">
         <Button onClick={handleSubmit} disabled={!form.property_id || isSubmitting} className="gap-2">
