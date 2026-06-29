@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent } from '../utils/calculations';
-import { extractAnalysisFieldsFromExcel, parseNotesToRows } from '../utils/excelImport';
+import { extractAnalysisFieldsFromExcel, parseNotesToRows, formatSipaValue } from '../utils/excelImport';
 import { fetchSaronRate } from '../utils/saronRate';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -85,6 +85,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     impot: null,
     impot_pct: null,
     notes: '',
+    sipa_data: null,
     banque_a_taux_hypothecaire: null,
     banque_a_type_taux: 'fixe',
     banque_a_marge_saron: 0.5,
@@ -232,6 +233,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       gestion: form.gestion,
       impot: form.impot,
       notes: form.notes || null,
+      sipa_data: form.sipa_data || null,
       banque_a_taux_hypothecaire: form.banque_a_taux_hypothecaire,
       banque_a_type_taux: form.banque_a_type_taux,
       banque_a_marge_saron: form.banque_a_marge_saron,
@@ -594,6 +596,39 @@ Courtier : UBS, Valérie Zuber"
           </div>
         )}
       </section>
+
+      {form.sipa_data && form.sipa_data.length > 0 && (
+        <section className="bg-card rounded-xl border border-border p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Landmark className="h-4 w-4 text-primary" />
+            <h3 className="font-heading font-semibold">Investissement SIPA</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
+                  <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeurs</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {form.sipa_data.map((entry, i) => (
+                  <tr key={i}>
+                    <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">{entry.label}</td>
+                    <td className="py-2 pl-4 text-sm">
+                      <div className="flex flex-wrap gap-2">
+                        {entry.values.map((v, j) => (
+                          <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       <section className="bg-card rounded-xl border border-primary/30 p-6">
         <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">

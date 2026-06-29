@@ -111,6 +111,10 @@
       ],
       "title": "Note"
     },
+    "sipa_data": {
+      "type": "object",
+      "title": "Données SIPA"
+    },
     "notes": {
       "type": "string",
       "title": "Notes / Informations complémentaires"

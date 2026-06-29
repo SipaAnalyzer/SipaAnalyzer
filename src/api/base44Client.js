@@ -131,6 +131,7 @@ const AUDIT_FIELDS = {
     banque_b_marge_saron: "Banque B - marge SARON",
     banque_b_amortissement_annuel: "Banque B - amortissement",
     banque_b_evaluation: "Banque B - évaluation",
+    sipa_data: "Données SIPA",
     notes: "Notes / Informations complémentaires",
     statut: "Statut",
   },

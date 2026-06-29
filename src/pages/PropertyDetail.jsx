@@ -16,7 +16,7 @@ import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
 import ChatBot from '../components/ChatBot';
 import { formatCHF, formatPercent, normalizeAnalyses } from '../utils/calculations';
-import { parseNotesToRows } from '../utils/excelImport';
+import { parseNotesToRows, formatSipaValue } from '../utils/excelImport';
 import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
 import { listAuditLogs } from '../utils/auditLogs';
@@ -37,7 +37,7 @@ import {
   Eye,
   Building2,
   FileText,
-  StickyNote,
+  StickyNote, TrendingUp,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -176,6 +176,39 @@ export default function PropertyDetail() {
           {selected ? (
             <>
               <AnalysisSummary selected={selected} selectedAnalysisId={selectedAnalysisId} />
+              {selected.sipa_data && selected.sipa_data.length > 0 && (
+                <section className="bg-card rounded-xl border border-border p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <h3 className="font-heading font-semibold">Investissement SIPA</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
+                          <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeurs</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/50">
+                        {selected.sipa_data.map((entry, i) => (
+                          <tr key={i}>
+                            <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">{entry.label}</td>
+                            <td className="py-2.5 pl-4 text-sm">
+                              <div className="flex flex-wrap gap-2">
+                                {entry.values.map((v, j) => (
+                                  <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              )}
+
               {selected.notes && (
                 <section className="bg-card rounded-xl border border-border p-6">
                   <div className="flex items-center gap-2 mb-4">

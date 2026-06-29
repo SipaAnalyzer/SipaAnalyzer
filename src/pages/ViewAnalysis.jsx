@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
-import { parseNotesToRows } from '../utils/excelImport';
+import { parseNotesToRows, formatSipaValue } from '../utils/excelImport';
 import { exportAnalysisPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
 import ScoreGauge from '../components/ScoreGauge';
@@ -10,7 +10,7 @@ import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
 import FinancialTable from '../components/FinancialTable';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, MapPin, Landmark, FileText } from 'lucide-react';
+import { Loader2, ArrowLeft, MapPin, Landmark, FileText, TrendingUp } from 'lucide-react';
 import moment from 'moment';
 
 export default function ViewAnalysis() {
@@ -108,6 +108,39 @@ export default function ViewAnalysis() {
       </div>
 
       <FinancialTable analysis={analysis} />
+
+      {analysis.sipa_data && analysis.sipa_data.length > 0 && (
+        <section className="bg-card rounded-xl border border-border p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <h3 className="font-heading font-semibold">Investissement SIPA</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
+                  <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeurs</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {analysis.sipa_data.map((entry, i) => (
+                  <tr key={i}>
+                    <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">{entry.label}</td>
+                    <td className="py-2.5 pl-4 text-sm">
+                      <div className="flex flex-wrap gap-2">
+                        {entry.values.map((v, j) => (
+                          <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {analysis.notes && (
         <section className="bg-card rounded-xl border border-border p-6">

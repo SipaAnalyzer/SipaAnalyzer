@@ -1,5 +1,12 @@
 import JSZip from 'jszip';
 
+export function formatSipaValue(v) {
+  if (!v) return '—';
+  if (v.type === 'pct') return `${v.value}%`;
+  if (v.type === 'amount') return new Intl.NumberFormat('fr-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 }).format(v.value);
+  return v.value;
+}
+
 export function parseNotesToRows(notes) {
   if (!notes) return [];
   return notes
@@ -68,6 +75,9 @@ export async function extractAnalysisFieldsFromExcel(file) {
   const notes = extractMetadataNotes(allRows);
   if (notes) fields.notes = notes;
 
+  const sipaData = extractSipaData(allRows);
+  if (sipaData) fields.sipa_data = sipaData;
+
   return {
     fields,
     importedCount: Object.keys(fields).length,
@@ -89,6 +99,56 @@ const METADATA_PATTERNS = [
   { regex: /vente\s+(.+)/i, template: 'Vente $1' },
   { regex: /offre\s+indicative\s+(.+)/i, template: 'Offre indicative $1' },
 ];
+
+const SIPA_LABELS = [
+  'prix du bien', 'frais de transaction', 'construction', 'prix total',
+  'fonds propres', 'hypotheque', 'valuation banque',
+  'target benefice sipa', 'prix investor',
+  'sipa total', 'sipa of fonds prop',
+  'net yield', 'bank loan to net income',
+  'sipa trading', 'sipa immo',
+  'usb model', 'of 1st mortgage', 'of 2nd mortgage', 'charge on rent',
+  'alt max mortgage',
+];
+
+function extractSipaData(rows) {
+  const entries = [];
+
+  for (const row of rows) {
+    if (!row) continue;
+    for (let col = 0; col < row.length; col++) {
+      const cell = row[col];
+      if (!cell || typeof cell !== 'string') continue;
+      const text = cell
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+      if (!text) continue;
+
+      const matched = SIPA_LABELS.some((label) => text.includes(label));
+      if (!matched) continue;
+
+      const values = [];
+      for (let c = col + 1; c < Math.min(col + 6, row.length); c++) {
+        const v = row[c];
+        if (v == null || v === '') continue;
+        const n = parseNumber(v);
+        if (n != null) {
+          values.push({ type: n <= 1 ? 'pct' : 'amount', value: Math.abs(n) <= 1 && n !== 0 ? round2(n * 100) : (n > 100 ? Math.round(n) : round2(n)) });
+        } else if (typeof v === 'string' && v.trim()) {
+          values.push({ type: 'text', value: v.trim() });
+        }
+      }
+
+      if (values.length) {
+        entries.push({ label: cell.trim(), values });
+      }
+    }
+  }
+
+  return entries.length ? entries : null;
+}
 
 function extractMetadataNotes(rows) {
   const matched = [];
