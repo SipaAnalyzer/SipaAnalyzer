@@ -9,6 +9,7 @@ const LABEL_TO_FIELD = [
   ['frais de dossier', 'frais_dossier_bancaire'],
   ['fonds propres', 'fonds_propres'],
   ['hypothèque', 'hypotheque'],
+  ['hypotheque', 'hypotheque'],
   ['revenus locatifs', 'revenus_locatifs'],
   ['charges opérationnelles', 'charges_operationnelles'],
   ['intérêt hypothécaire', 'interets_hypothecaires'],
@@ -34,8 +35,14 @@ function findField(label) {
   return null;
 }
 
-function tryParseNum(v) {
-  if (v == null || v === '') return NaN;
+function isNumeric(v) {
+  if (v == null || v === '') return false;
+  const s = String(v).replace(/['\u2019\s]/g, '').replace(',', '.').replace(/[^0-9.\-]/g, '');
+  const n = parseFloat(s);
+  return !isNaN(n) && isFinite(n);
+}
+
+function parseNum(v) {
   const s = String(v).replace(/['\u2019\s]/g, '').replace(',', '.').replace(/[^0-9.\-]/g, '');
   return parseFloat(s);
 }
@@ -52,59 +59,55 @@ export function parseAnalysisExcel(file) {
 
         console.log('[ExcelImport] rows:', rows.length, rows.slice(0, 5));
 
-        // Phase 1: detect label column and value column
-        // Look for a header row with "rubrique"/"montant" keywords
-        let labelCol = 0;
-        let valCol = -1;
+        // Phase 1: find rows with known labels and find which column has the value
+        const colVotes = {};
+        const labelRows = [];
 
         for (const row of rows) {
-          if (!row) continue;
-          const labels = row.map((c) => String(c ?? '').toLowerCase().trim());
-          const hasLabelHeader = labels.some((v) => /^rubrique|^désignation|^libellé|^libelle|^poste/.test(v));
-          const hasValHeader  = labels.some((v) => /^montant|^valeur|chf/.test(v));
-          if (hasLabelHeader && hasValHeader) {
-            labelCol = labels.findIndex((v) => /^rubrique|^désignation|^libellé|^libelle|^poste/.test(v));
-            valCol  = labels.findIndex((v) => /^montant|^valeur|chf/.test(v));
-            break;
-          }
-        }
+          if (!row || row.length < 2) continue;
+          const label = String(row[0] ?? '').trim();
+          if (!label) continue;
+          const field = findField(label);
+          if (!field) continue;
+          labelRows.push(row);
 
-        // If no header found, auto-detect: sum absolute numeric values per column
-        if (valCol === -1) {
-          const scores = {};
-          let maxScore = 0;
-          for (const row of rows) {
-            if (!row) continue;
-            for (let ci = 1; ci < row.length && ci < 20; ci++) {
-              const n = tryParseNum(row[ci]);
-              if (!isNaN(n) && Math.abs(n) > 1) {
-                scores[ci] = (scores[ci] || 0) + Math.abs(n);
-                if (scores[ci] > maxScore) {
-                  maxScore = scores[ci];
-                  valCol = ci;
-                }
-              }
+          // For this row, find columns that have numeric values
+          for (let ci = 1; ci < row.length && ci < 15; ci++) {
+            if (isNumeric(row[ci])) {
+              colVotes[ci] = (colVotes[ci] || 0) + 1;
             }
           }
         }
 
-        if (valCol === -1) valCol = 1;
+        // Find which column has the most matches across known-label rows
+        let valCol = -1;
+        let maxVotes = 0;
+        for (const [ci, count] of Object.entries(colVotes)) {
+          if (count > maxVotes) {
+            maxVotes = count;
+            valCol = parseInt(ci);
+          }
+        }
 
-        // Phase 2: extract values
+        if (valCol === -1) {
+          console.log('[ExcelImport] no value column detected');
+          resolve({});
+          return;
+        }
+
+        // Phase 2: extract using the detected column
         const result = {};
-        for (const row of rows) {
-          if (!row) continue;
-          const label = String(row[labelCol] ?? '').trim();
-          if (!label) continue;
+        for (const row of labelRows) {
+          const label = String(row[0] ?? '').trim();
           const field = findField(label);
           if (!field) continue;
 
           const raw = row[valCol];
-          const num = tryParseNum(raw);
-          if (!isNaN(num)) result[field] = num;
+          if (!isNumeric(raw)) continue;
+          result[field] = parseNum(raw);
         }
 
-        console.log('[ExcelImport] labelCol:', labelCol, 'valCol:', valCol, 'extracted:', result);
+        console.log('[ExcelImport] valCol:', valCol, 'votes:', colVotes, 'extracted:', result);
         resolve(result);
       } catch (err) {
         reject(err);
