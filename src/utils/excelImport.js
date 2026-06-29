@@ -4,33 +4,38 @@ const LABEL_TO_FIELD = [
   ['prix du bien', 'prix_bien'],
   ['versement initial', 'versement_initial'],
   ['amortissement', 'amortissement_5_ans'],
+  ['amortization', 'amortissement_5_ans'],
   ['honoraires transaction', 'honoraires_sipa'],
   ['honoraires sipa', 'honoraires_sipa'],
   ['frais de dossier', 'frais_dossier_bancaire'],
   ['fonds propres', 'fonds_propres'],
-  ['hypothèque', 'hypotheque'],
   ['hypotheque', 'hypotheque'],
+  ['hypothèque', 'hypotheque'],
   ['revenus locatifs', 'revenus_locatifs'],
-  ['charges opérationnelles', 'charges_operationnelles'],
+  ['charges operation', 'charges_operationnelles'],
+  ['charges opération', 'charges_operationnelles'],
   ['intérêt hypothécaire', 'interets_hypothecaires'],
   ['intérêt hypothecaire', 'interets_hypothecaires'],
+  ['interet hypothecaire', 'interets_hypothecaires'],
   ['honoraires de gestion', 'gestion'],
   ['impôt', 'impot'],
   ['impot', 'impot'],
   ['banque a taux', 'banque_a_taux_hypothecaire'],
   ['banque a amortissement', 'banque_a_amortissement_annuel'],
-  ['banque a évaluation', 'banque_a_evaluation'],
   ['banque a evaluation', 'banque_a_evaluation'],
   ['banque b taux', 'banque_b_taux_hypothecaire'],
   ['banque b amortissement', 'banque_b_amortissement_annuel'],
-  ['banque b évaluation', 'banque_b_evaluation'],
   ['banque b evaluation', 'banque_b_evaluation'],
 ];
 
+function norm(s) {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, '').trim();
+}
+
 function findField(label) {
-  const cleaned = label.toLowerCase().trim().replace(/[^a-z0-9éèêëàâäùûüôöîïç\s]/g, '');
+  const n = norm(label);
   for (const [keyword, field] of LABEL_TO_FIELD) {
-    if (cleaned.includes(keyword)) return field;
+    if (n.includes(norm(keyword))) return field;
   }
   return null;
 }
@@ -57,9 +62,6 @@ export function parseAnalysisExcel(file) {
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-        console.log('[ExcelImport] rows:', rows.length, rows.slice(0, 5));
-
-        // Phase 1: find rows with known labels and find which column has the value
         const colVotes = {};
         const labelRows = [];
 
@@ -69,9 +71,8 @@ export function parseAnalysisExcel(file) {
           if (!label) continue;
           const field = findField(label);
           if (!field) continue;
-          labelRows.push(row);
+          labelRows.push({ row, label, field });
 
-          // For this row, find columns that have numeric values
           for (let ci = 1; ci < row.length && ci < 15; ci++) {
             if (isNumeric(row[ci])) {
               colVotes[ci] = (colVotes[ci] || 0) + 1;
@@ -79,7 +80,6 @@ export function parseAnalysisExcel(file) {
           }
         }
 
-        // Find which column has the most matches across known-label rows
         let valCol = -1;
         let maxVotes = 0;
         for (const [ci, count] of Object.entries(colVotes)) {
@@ -90,24 +90,17 @@ export function parseAnalysisExcel(file) {
         }
 
         if (valCol === -1) {
-          console.log('[ExcelImport] no value column detected');
           resolve({});
           return;
         }
 
-        // Phase 2: extract using the detected column
         const result = {};
-        for (const row of labelRows) {
-          const label = String(row[0] ?? '').trim();
-          const field = findField(label);
-          if (!field) continue;
-
-          const raw = row[valCol];
+        for (const { label, field } of labelRows) {
+          const raw = rows.find(r => String(r?.[0] ?? '').trim() === label)?.[valCol];
           if (!isNumeric(raw)) continue;
           result[field] = parseNum(raw);
         }
 
-        console.log('[ExcelImport] valCol:', valCol, 'votes:', colVotes, 'extracted:', result);
         resolve(result);
       } catch (err) {
         reject(err);

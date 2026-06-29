@@ -182,7 +182,11 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     setImporting(true);
     try {
       const data = await parseAnalysisExcel(file);
-      console.log('[AnalysisForm] import data:', data);
+      const keys = Object.keys(data);
+      if (keys.length === 0) {
+        toast.error("Aucun champ reconnu. Vérifie que les colonnes du fichier sont 'Rubrique' et 'Montant'.");
+        return;
+      }
       setForm((prev) => {
         const merged = { ...prev };
         for (const [key, value] of Object.entries(data)) {
@@ -197,8 +201,9 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         if (rev > 0 && merged.impot != null) merged.impot_pct = Math.round((merged.impot / rev) * 10000) / 100;
         return merged;
       });
-      const count = Object.keys(data).length;
-      toast.success(`${count} champs importés depuis Excel`);
+      const count = keys.length;
+      const summary = keys.slice(0, 5).map(k => `${k}: ${data[k]}`).join(', ');
+      toast.success(`${count} champs importés : ${summary}${keys.length > 5 ? `... (+${keys.length - 5})` : ''}`);
     } catch (err) {
       console.error('[ExcelImport]', err);
       toast.error(`Erreur d'import : ${err.message}`);
