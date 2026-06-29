@@ -624,7 +624,6 @@ export default function Admin() {
         role: inviteRole,
         email: inviteLinkEmail || null,
         created_by_id: user?.id,
-        created_by_email: user?.email || null,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       };
       const { error } = await supabase.from("invitation_tokens").insert(payload);
