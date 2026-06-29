@@ -81,10 +81,10 @@ export function parseAnalysisExcel(file) {
           const field = findField(label);
           if (!field) continue;
 
+          if (!rawVal) continue;
           const num = parseFloat(rawVal.replace(/['\u2019\s]/g, '').replace(',', '.').replace(/[^0-9.\-]/g, ''));
           if (!isNaN(num)) result[field] = num;
-          else if (!isNaN(Number(rawVal))) result[field] = Number(rawVal);
-          else if (rawVal) result[field] = rawVal;
+          else result[field] = rawVal;
         }
 
         resolve(result);
