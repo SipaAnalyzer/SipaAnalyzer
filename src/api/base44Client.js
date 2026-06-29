@@ -50,6 +50,8 @@ const normalizeRecords = (records) => {
   return records.map(normalizeRecord);
 };
 
+const supportsSoftDelete = (table) => table === TABLES.Property || table === TABLES.Analysis;
+
 const cleanDataBeforeSave = (data = {}) => {
   const cleaned = { ...data };
 
@@ -199,11 +201,15 @@ const createEntity = (table) => ({
   async list(sort = "-created_date", limit = 100) {
     const { column, ascending } = mapSort(sort);
 
-    const { data, error } = await supabase
+    let query = supabase
       .from(table)
       .select("*")
       .order(column, { ascending })
       .limit(limit);
+
+    if (supportsSoftDelete(table)) query = query.is("deleted_at", null);
+
+    const { data, error } = await query;
 
     if (error) {
       console.error(`[Supabase] list error on ${table}:`, error);
@@ -236,6 +242,8 @@ const createEntity = (table) => ({
       .select("*")
       .order(column, { ascending })
       .limit(limit);
+
+    if (supportsSoftDelete(table)) query = query.is("deleted_at", null);
 
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -325,10 +333,26 @@ const createEntity = (table) => ({
   },
 
   async delete(id) {
-    const { error } = await supabase
-      .from(table)
-      .delete()
-      .eq("id", id);
+    let error = null;
+
+    if (supportsSoftDelete(table)) {
+      const userId = await getCurrentUserId();
+      const result = await supabase
+        .from(table)
+        .update({
+          deleted_at: new Date().toISOString(),
+          deleted_by_id: userId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from(table)
+        .delete()
+        .eq("id", id);
+      error = result.error;
+    }
 
     if (error) {
       console.error(`[Supabase] delete error on ${table}:`, error);
@@ -336,6 +360,46 @@ const createEntity = (table) => ({
     }
 
     return true;
+  },
+
+  async listDeleted(limit = 100) {
+    if (!supportsSoftDelete(table)) return [];
+
+    const { data, error } = await supabase
+      .from(table)
+      .select("*")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error(`[Supabase] listDeleted error on ${table}:`, error);
+      throw error;
+    }
+
+    return normalizeRecords(data);
+  },
+
+  async restore(id) {
+    if (!supportsSoftDelete(table)) return false;
+
+    const { data, error } = await supabase
+      .from(table)
+      .update({
+        deleted_at: null,
+        deleted_by_id: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(`[Supabase] restore error on ${table}:`, error);
+      throw error;
+    }
+
+    return normalizeRecord(data);
   },
 });
 

@@ -24,6 +24,7 @@ import { supabase } from '@/api/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { listAuditLogs } from '@/utils/auditLogs';
+import AdminSupervisionPanel from '@/components/AdminSupervisionPanel';
 
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -683,11 +684,14 @@ export default function Admin() {
       </div>
 
       <nav className="sticky top-0 z-20 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3 bg-background/90 backdrop-blur-sm border-b border-border flex flex-wrap gap-2 text-sm">
+        <a href="#section-supervision" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Supervision</a>
         <a href="#section-logs" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Logs</a>
         <a href="#section-user-activity" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Activité</a>
         <a href="#section-invite-link" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Lien d'invitation</a>
         <a href="#section-users" className="px-3 py-1.5 rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs font-medium">Utilisateurs</a>
       </nav>
+
+      <AdminSupervisionPanel />
 
       <div id="section-logs">
         <AuditLogsPanel />
