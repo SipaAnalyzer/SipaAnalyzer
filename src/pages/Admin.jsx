@@ -619,17 +619,19 @@ export default function Admin() {
   const handleCopyInviteLink = async () => {
     try {
       const token = self.crypto.randomUUID?.() || Array.from({ length: 36 }, (_, i) => "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx"[i]).join("");
-      const { error } = await supabase.from("invitation_tokens").insert({
+      const payload = {
         token,
         role: inviteRole,
-        email: inviteLinkEmail,
+        email: inviteLinkEmail || null,
         created_by_id: user?.id,
-        created_by_email: user?.email,
+        created_by_email: user?.email || null,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      });
+      };
+      const { error } = await supabase.from("invitation_tokens").insert(payload);
 
       if (error) {
-        toast.error(`Erreur lors de la création du lien : ${error.message}`);
+        console.error("[Invite] insert error:", error);
+        toast.error(`Erreur : ${error.message}`);
         return;
       }
 
@@ -639,7 +641,7 @@ export default function Admin() {
       toast.success("Lien copié (valable 7 jours)");
       setTimeout(() => setInviteLinkCopied(false), 3000);
     } catch (err) {
-      toast.error(`Impossible de copier le lien : ${err?.message || err}`);
+      toast.error(`Erreur : ${err?.message || err}`);
     }
   };
 
