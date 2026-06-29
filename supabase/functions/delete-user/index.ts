@@ -71,15 +71,6 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: permissionsError.message }, 500);
   }
 
-  const { error: profileError } = await supabaseAdmin
-    .from("profiles")
-    .delete()
-    .eq("id", user_id);
-
-  if (profileError) {
-    return jsonResponse({ error: profileError.message }, 500);
-  }
-
   const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(user_id);
 
   if (authError) {
