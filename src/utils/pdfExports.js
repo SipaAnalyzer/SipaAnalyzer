@@ -43,12 +43,13 @@ function formatDate(value) {
 
 function drawHoneycombBackground(doc) {
   try {
-    const r = 2.5;
+    const r = 20;
     const h = r * Math.sqrt(3);
     const cols = Math.ceil(PAGE.width / (r * 3)) + 1;
     const rows = Math.ceil(PAGE.height / h) + 1;
 
     doc.setDrawColor(255, 200, 160);
+    doc.setLineWidth(0.5);
 
     for (let row = 0; row < rows; row++) {
       const offsetX = row % 2 === 0 ? 0 : r * 1.5;
