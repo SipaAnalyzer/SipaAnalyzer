@@ -150,44 +150,6 @@
   }
 }
 
-.animated-background-sm {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-
-  background-color: #0b0b0b;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cg stroke='%23F6B31A' stroke-width='12' fill='none' stroke-linecap='round'%3E%3Cpath d='M55 85V55H85'/%3E%3Cpath d='M85 55H125V85'/%3E%3Cpath d='M55 95V125H85'/%3E%3Cpath d='M85 125H125V95'/%3E%3Cpath d='M275 305V275H305'/%3E%3Cpath d='M305 275H345V305'/%3E%3Cpath d='M275 315V345H305'/%3E%3Cpath d='M305 345H345V315'/%3E%3C/g%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 400px 400px;
-
-  opacity: 0.12;
-
-  transform: rotate(3deg) scale(1.1);
-
-  mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255,255,255,.1) 20%,
-    white 50%,
-    rgba(255,255,255,.1) 80%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255,255,255,.1) 20%,
-    white 50%,
-    rgba(255,255,255,.1) 80%,
-    transparent 100%
-  );
-
-  mask-size: 300% 100%;
-  -webkit-mask-size: 300% 100%;
-
-  animation: scan 12s linear infinite;
-}
-
 /* Honeycomb orange pattern on cards */
 .honeycomb-card .bg-card {
   position: relative;
