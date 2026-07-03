@@ -148,6 +148,16 @@ function extractSipaData(rows) {
   return entries.length ? entries : null;
 }
 
+const KNOWN_FINANCIAL_LABELS = FIELD_DEFINITIONS
+  .flatMap((f) => f.labels)
+  .concat(Array.from(PCT_LABELS.values()).flat())
+  .map((l) => l
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+  );
+
 function extractMetadataNotes(rows) {
   const matched = [];
   const seen = new Set();
@@ -157,7 +167,7 @@ function extractMetadataNotes(rows) {
     for (const cell of row) {
       if (!cell || typeof cell !== 'string') continue;
       const raw = cell.trim();
-      if (!raw || raw.length > 120) continue;
+      if (!raw || raw.length > 150 || raw.length < 3) continue;
 
       const text = raw
         .normalize('NFD')
@@ -165,6 +175,10 @@ function extractMetadataNotes(rows) {
         .toLowerCase()
         .trim();
       if (!text) continue;
+
+      if (/^[\d.,'’+\-%\s]+$/.test(text)) continue;
+
+      if (KNOWN_FINANCIAL_LABELS.some((l) => text.includes(l) || l.includes(text))) continue;
 
       let found = false;
 
@@ -194,7 +208,14 @@ function extractMetadataNotes(rows) {
             seen.add(line);
             matched.push(line);
           }
+          continue;
         }
+      }
+
+      const line = raw.charAt(0).toUpperCase() + raw.slice(1);
+      if (!seen.has(line)) {
+        seen.add(line);
+        matched.push(line);
       }
     }
   }
