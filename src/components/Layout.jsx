@@ -155,7 +155,7 @@ export default function Layout() {
           <img src={logoSipa} alt="SIPA" className="h-10 w-auto object-contain" />
         </header>
 
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto honeycomb-card">
           <Outlet />
         </main>
       </div>
