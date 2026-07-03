@@ -39,7 +39,16 @@ const { data: properties = [], isLoading: lp } = useQuery({
   const valides = properties.filter(p => p.statut === 'valide').length;
   const abandonnes = properties.filter(p => p.statut === 'abandonne').length;
 
-  const enriched = analyses
+  const latestPerProperty = Object.values(
+    analyses.reduce((acc, a) => {
+      if (!acc[a.property_id] || new Date(a.created_date) > new Date(acc[a.property_id].created_date)) {
+        acc[a.property_id] = a;
+      }
+      return acc;
+    }, {})
+  );
+
+  const enriched = latestPerProperty
     .map(a => ({ ...normalizeAnalysis(a), property: properties.find(p => p.id === a.property_id) }))
     .filter(a => a.property);
 
