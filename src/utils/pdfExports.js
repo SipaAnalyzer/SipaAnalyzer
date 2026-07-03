@@ -41,6 +41,30 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function drawHoneycombBackground(doc) {
+  const r = 2.5;
+  const h = r * Math.sqrt(3);
+  const cols = Math.ceil(PAGE.width / (r * 3)) + 1;
+  const rows = Math.ceil(PAGE.height / h) + 1;
+
+  doc.setDrawColor(255, 200, 160);
+
+  for (let row = 0; row < rows; row++) {
+    const offsetX = row % 2 === 0 ? 0 : r * 1.5;
+    for (let col = 0; col < cols; col++) {
+      const cx = col * r * 3 + r + offsetX;
+      const cy = row * h + r;
+      const pts = [];
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 6;
+        pts.push(cx + r * Math.cos(angle));
+        pts.push(cy + r * Math.sin(angle));
+      }
+      doc.lines(pts, 0, 0, [1, 1], null, 'S');
+    }
+  }
+}
+
 function createDoc(title, subtitle) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
@@ -49,6 +73,8 @@ function createDoc(title, subtitle) {
     subject: 'SIPA Analyzer',
     creator: 'SIPA Analyzer',
   });
+
+  drawHoneycombBackground(doc);
 
   doc.setFillColor(18, 18, 18);
   doc.rect(0, 0, PAGE.width, 30, 'F');
@@ -67,6 +93,7 @@ function createDoc(title, subtitle) {
 function ensureSpace(doc, state, needed = 20) {
   if (state.y + needed <= PAGE.height - PAGE.margin) return;
   doc.addPage();
+  drawHoneycombBackground(doc);
   state.y = PAGE.margin;
 }
 
