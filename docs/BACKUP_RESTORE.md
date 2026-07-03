@@ -15,7 +15,17 @@ Les biens et analyses supprimés sont masqués mais conservés :
 
 Restauration depuis Admin > Supervision > Corbeille.
 
-### 2. Export Supabase
+### 2. Backup applicatif JSON
+
+Depuis Admin > Supervision > Sauvegarde exportable :
+
+- exporter un backup JSON complet
+- conserver le fichier hors de l'application
+- importer ce JSON pour restaurer les biens, analyses, permissions et logs
+
+Le backup applicatif ne recrée pas les comptes Supabase Auth. Les utilisateurs doivent exister côté Supabase pour que les permissions restaurées s'appliquent.
+
+### 3. Export Supabase
 
 Depuis Supabase :
 
@@ -31,7 +41,7 @@ Tables prioritaires :
 - `user_permissions`
 - `audit_logs`
 
-### 3. Historique Git
+### 4. Historique Git
 
 Le code source est versionné sur GitHub. Chaque évolution doit passer par :
 
@@ -51,6 +61,15 @@ git push origin main
 3. Trouver le bien dans la corbeille.
 4. Cliquer sur Restaurer.
 5. Vérifier la fiche bien et ses analyses.
+
+## Procédure de restauration depuis JSON
+
+1. Aller dans Administration > Supervision.
+2. Dans Sauvegarde exportable, sélectionner le fichier JSON.
+3. Vérifier le résumé : nombre de biens, analyses, permissions et logs.
+4. Cliquer sur Restaurer ce backup.
+5. Vérifier les biens, analyses et permissions.
+6. Consulter les logs : l'action `backup_restore` doit être enregistrée en criticité `critical`.
 
 ## Procédure de restauration base
 
