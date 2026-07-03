@@ -19,6 +19,10 @@ export default function FinancialTable({ analysis }) {
   const revenuNet = Number(analysis.revenu_net || 0);
   const revenuDistribue = Number(analysis.revenu_distribue || 0);
 
+  const customFields = analysis.sipa_data
+    ? analysis.sipa_data.filter((e) => e._custom)
+    : [];
+
   return (
     <div className="space-y-6">
       <div className="bg-card rounded-xl border border-border p-6">
@@ -58,6 +62,16 @@ export default function FinancialTable({ analysis }) {
                 muted
                 footnote="Rendement estimatif basé sur un scénario projeté sur 5 ans"
               />
+              {customFields.length > 0 && (
+                <tr className="border-t-2 border-dashed border-border/40">
+                  <td colSpan={2} className="px-4 pt-3 pb-1 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+                    Lignes personnalisées
+                  </td>
+                </tr>
+              )}
+              {customFields.map((cf, i) => (
+                <Row key={i} label={cf.label} value={formatCHF(cf.values?.[0]?.value)} />
+              ))}
             </tbody>
           </table>
         </div>

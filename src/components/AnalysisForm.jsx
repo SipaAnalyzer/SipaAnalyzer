@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent } from '../utils/calculations';
-import { extractAnalysisFieldsFromExcel, parseNotesToRows, formatSipaValue } from '../utils/excelImport';
+import { extractAnalysisFieldsFromExcel, formatSipaValue } from '../utils/excelImport';
 import { fetchSaronRate } from '../utils/saronRate';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ScoreGauge from './ScoreGauge';
 import ScoreBadge from './ScoreBadge';
 import ExcelProjectionTables, { createEmptyExcelProjections } from './ExcelProjectionTables';
-import { Calculator, FileSpreadsheet, FileText, Landmark, Save, Table } from 'lucide-react';
+import { Calculator, FileSpreadsheet, FileText, Landmark, Plus, Save, Table, X } from 'lucide-react';
 
 function InputField({ value, onChange, prefix, className }) {
   return (
@@ -117,6 +117,20 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     });
   }, [initialData]);
 
+  useEffect(() => {
+    if (!initialData?.sipa_data) return;
+    const custom = initialData.sipa_data.filter((e) => e._custom);
+    if (custom.length > 0) {
+      setCustomFinancialFields(
+        custom.map((e) => ({
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          name: e.label,
+          amount: e.values?.[0]?.value || 0,
+        }))
+      );
+    }
+  }, [initialData]);
+
   const makeAmountHandler = useCallback((key, pctKey, getBase) => (value) => {
     setForm((prev) => {
       const base = getBase(prev);
@@ -192,6 +206,11 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     error: '',
   });
   const [saronRate, setSaronRate] = useState(null);
+  const [customLabels, setCustomLabels] = useState([]);
+  const [newLabel, setNewLabel] = useState('');
+  const [customFinancialFields, setCustomFinancialFields] = useState([]);
+  const [newCustomFieldName, setNewCustomFieldName] = useState('');
+  const [newCustomFieldAmount, setNewCustomFieldAmount] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -217,9 +236,22 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   [form]);
 
   const handleSubmit = () => {
+    const customSipaData = customFinancialFields.length > 0
+      ? customFinancialFields.map((cf) => ({
+          label: cf.name,
+          values: [{ type: 'amount', value: cf.amount }],
+          _custom: true,
+        }))
+      : [];
+
+    const mergedSipaData = form.sipa_data
+      ? [...form.sipa_data, ...customSipaData]
+      : customSipaData.length > 0 ? customSipaData : null;
+
     onSubmit({
       property_id: form.property_id,
       statut: form.statut,
+      sipa_data: mergedSipaData,
       prix_bien: form.prix_bien,
       versement_initial: form.versement_initial,
       amortissement_5_ans: form.amortissement_5_ans,
@@ -233,7 +265,6 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       gestion: form.gestion,
       impot: form.impot,
       notes: form.notes || null,
-      sipa_data: form.sipa_data || null,
       banque_a_taux_hypothecaire: form.banque_a_taux_hypothecaire,
       banque_a_type_taux: form.banque_a_type_taux,
       banque_a_marge_saron: form.banque_a_marge_saron,
@@ -266,9 +297,9 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     setExcelImportState({ loading: true, message: '', error: '' });
 
     try {
-      const result = await extractAnalysisFieldsFromExcel(file);
+      const result = await extractAnalysisFieldsFromExcel(file, customLabels);
 
-      if (!result.importedCount) {
+      if (!result.importedCount && !result.customFinancialFields?.length) {
         setExcelImportState({
           loading: false,
           message: '',
@@ -278,6 +309,19 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       }
 
       setForm((prev) => ({ ...prev, ...result.fields }));
+      if (result.customFinancialFields?.length > 0) {
+        setCustomFinancialFields((prev) => {
+          const existing = new Set(prev.map((f) => f.name));
+          const merged = [...prev];
+          for (const cf of result.customFinancialFields) {
+            if (!existing.has(cf.name)) {
+              merged.push({ ...cf, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) });
+              existing.add(cf.name);
+            }
+          }
+          return merged;
+        });
+      }
       setExcelImportState({
         loading: false,
         message: `${result.importedCount} champ${result.importedCount > 1 ? 's' : ''} importé${result.importedCount > 1 ? 's' : ''} depuis ${file.name}.`,
@@ -506,6 +550,89 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
             </tbody>
           </table>
         </div>
+
+            <div className="mt-6 border-t border-border pt-6">
+              <h4 className="font-heading font-semibold text-sm mb-1">Lignes personnalisées</h4>
+              <p className="text-xs text-muted-foreground mb-4">
+                Ajoutez des rubriques supplémentaires au TABLEAU FINANCIER (ex: frais de notaire, courtage, etc.).
+              </p>
+
+              <div className="space-y-2 mb-3">
+                {customFinancialFields.map((cf, i) => (
+                  <div key={cf.id} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={cf.name}
+                      onChange={(e) =>
+                        setCustomFinancialFields((prev) =>
+                          prev.map((f, j) => (j === i ? { ...f, name: e.target.value } : f))
+                        )
+                      }
+                      placeholder="Nom du frais"
+                      className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm"
+                    />
+                    <div className="relative w-40">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">CHF</span>
+                      <input
+                        type="number"
+                        value={cf.amount}
+                        onChange={(e) =>
+                          setCustomFinancialFields((prev) =>
+                            prev.map((f, j) => (j === i ? { ...f, amount: Number(e.target.value) || 0 } : f))
+                          )
+                        }
+                        placeholder="0"
+                        className="w-full bg-background border border-border rounded-lg pl-10 pr-3 py-2 text-sm text-right"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCustomFinancialFields((prev) => prev.filter((_, j) => j !== i))}
+                      className="text-muted-foreground hover:text-red-500 p-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newCustomFieldName}
+                  onChange={(e) => setNewCustomFieldName(e.target.value)}
+                  placeholder="Ex: Frais de notaire"
+                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm"
+                />
+                <div className="relative w-40">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">CHF</span>
+                  <input
+                    type="number"
+                    value={newCustomFieldAmount}
+                    onChange={(e) => setNewCustomFieldAmount(e.target.value)}
+                    placeholder="0"
+                    className="w-full bg-background border border-border rounded-lg pl-10 pr-3 py-2 text-sm text-right"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
+                      setCustomFinancialFields((prev) => [
+                        ...prev,
+                        { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount) },
+                      ]);
+                      setNewCustomFieldName('');
+                      setNewCustomFieldAmount('');
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  <Plus className="h-4 w-4" /> Ajouter
+                </button>
+              </div>
+            </div>
+
             <div className="mt-6">
               <ExcelProjectionTables
                 operatingProjection={form.operating_projection}
@@ -517,7 +644,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
             </div>
           </section>
 
-          {form.sipa_data && form.sipa_data.length > 0 && (
+          {form.sipa_data && form.sipa_data.filter((e) => !e._custom).length > 0 && (
             <section className="bg-card rounded-xl border border-border p-6 mt-6">
               <div className="flex items-center gap-2 mb-4">
                 <Landmark className="h-4 w-4 text-primary" />
@@ -532,7 +659,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {form.sipa_data.map((entry, i) => (
+                    {form.sipa_data.filter((e) => !e._custom).map((entry, i) => (
                       <tr key={i}>
                         <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">{entry.label}</td>
                         <td className="py-2 pl-4 text-sm">
@@ -570,22 +697,13 @@ CECB enveloppe : F
 Construction : 1961
 Courtier : UBS, Valérie Zuber"
             />
-            {form.notes && (
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {parseNotesToRows(form.notes).map((row, i) => (
-                  <div key={i} className="border border-border rounded-lg p-3 bg-background/40">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{row.key || 'Info'}</p>
-                    <p className="text-sm font-semibold mt-1 break-words">{row.value}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+
           </section>
         </TabsContent>
 
         <TabsContent value="import" className="mt-4">
           <section className="bg-card rounded-xl border border-border p-6">
-            <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="flex flex-col items-center justify-center text-center">
               <FileSpreadsheet className="h-12 w-12 text-muted-foreground/40 mb-4" />
               <h3 className="font-heading font-semibold mb-2">Import Excel</h3>
               <p className="text-sm text-muted-foreground max-w-md">
@@ -607,20 +725,61 @@ Courtier : UBS, Valérie Zuber"
               {excelImportState.error && (
                 <p className="mt-4 text-sm text-red-500">{excelImportState.error}</p>
               )}
-              <div className="mt-8 grid w-full max-w-3xl grid-cols-1 sm:grid-cols-3 gap-4 border-t border-border pt-5 text-left">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Prix et SIPA</p>
-                  <p className="mt-1 text-sm">Prix, versement, amortissement, honoraires, frais bancaires.</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Financement</p>
-                  <p className="mt-1 text-sm">Fonds propres, hypothèque, taux, intérêts annuels.</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Exploitation</p>
-                  <p className="mt-1 text-sm">Loyers, charges, gestion, impôt, revenu distribué.</p>
-                </div>
+            </div>
+
+            <div className="mt-8 border-t border-border pt-6">
+              <h4 className="font-heading font-semibold text-sm mb-1">Champs personnalisés</h4>
+              <p className="text-xs text-muted-foreground mb-4">
+                Ajoutez des lignes à extraire du fichier Excel pour les inscrire dans le TABLEAU FINANCIER (ex: "Frais de notaire"). Les valeurs trouvées apparaîtront comme lignes personnalisées.
+              </p>
+
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newLabel.trim()) {
+                      setCustomLabels((prev) => [...prev, newLabel.trim()]);
+                      setNewLabel('');
+                    }
+                  }}
+                  placeholder="Ex: Frais de courtage"
+                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newLabel.trim()) {
+                      setCustomLabels((prev) => [...prev, newLabel.trim()]);
+                      setNewLabel('');
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  <Plus className="h-4 w-4" /> Ajouter
+                </button>
               </div>
+
+              {customLabels.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {customLabels.map((label, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1 text-xs font-medium"
+                    >
+                      {label}
+                      <button
+                        type="button"
+                        onClick={() => setCustomLabels((prev) => prev.filter((_, j) => j !== i))}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
         </TabsContent>

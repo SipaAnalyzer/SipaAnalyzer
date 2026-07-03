@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
-import { parseNotesToRows, formatSipaValue } from '../utils/excelImport';
+import { formatSipaValue } from '../utils/excelImport';
 import { exportAnalysisPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
 import ScoreGauge from '../components/ScoreGauge';
@@ -109,7 +109,7 @@ export default function ViewAnalysis() {
 
       <FinancialTable analysis={analysis} />
 
-      {analysis.sipa_data && analysis.sipa_data.length > 0 && (
+      {analysis.sipa_data && analysis.sipa_data.filter((e) => !e._custom).length > 0 && (
         <section className="bg-card rounded-xl border border-border p-6">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="h-4 w-4 text-primary" />
@@ -124,7 +124,7 @@ export default function ViewAnalysis() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {analysis.sipa_data.map((entry, i) => (
+                {analysis.sipa_data.filter((e) => !e._custom).map((entry, i) => (
                   <tr key={i}>
                     <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">{entry.label}</td>
                     <td className="py-2.5 pl-4 text-sm">
@@ -176,14 +176,7 @@ export default function ViewAnalysis() {
             <FileText className="h-4 w-4 text-primary" />
             <h3 className="font-heading font-semibold">Informations complémentaires</h3>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {parseNotesToRows(analysis.notes).map((row, i) => (
-              <div key={i} className="border border-border rounded-lg p-3 bg-background/40">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{row.key || 'Info'}</p>
-                <p className="text-sm font-semibold mt-1 break-words">{row.value}</p>
-              </div>
-            ))}
-          </div>
+          <pre className="w-full bg-background border border-border rounded-lg p-3 text-sm font-mono whitespace-pre-wrap break-words">{analysis.notes}</pre>
         </section>
       )}
 
