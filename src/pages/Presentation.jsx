@@ -20,7 +20,6 @@ import {
   Wallet,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import AnimatedBackground from "@/components/AnimatedBackground";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -235,9 +234,7 @@ export default function Presentation() {
   }
 
   return (
-    <>
-      <AnimatedBackground className="animated-background-sm" />
-      <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold">Présentation</h1>
@@ -460,6 +457,5 @@ export default function Presentation() {
         </div>
       )}
     </div>
-    </>
   );
 }
