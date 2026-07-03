@@ -21,6 +21,38 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const damascusStyle = document.createElement('style');
+damascusStyle.textContent = `
+  .damascus-orange {
+    position: relative;
+    overflow: hidden;
+  }
+  .damascus-orange::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(255,140,0,0.07) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 50%, rgba(255,100,0,0.05) 0%, transparent 50%),
+      repeating-conic-gradient(
+        from 0deg,
+        transparent 0deg 15deg,
+        rgba(255,140,0,0.018) 15deg 20deg,
+        transparent 20deg 35deg,
+        rgba(255,120,0,0.012) 35deg 40deg,
+        transparent 40deg 60deg
+      );
+    pointer-events: none;
+    z-index: 0;
+    border-radius: inherit;
+  }
+  .damascus-orange > * {
+    position: relative;
+    z-index: 1;
+  }
+`;
+document.head.appendChild(damascusStyle);
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -84,7 +116,7 @@ function FitMapToProperties({ properties }) {
 
 function KpiTile({ icon: Icon, label, value, detail, clickable }) {
   return (
-    <div className={`bg-card rounded-lg border border-border p-4 min-h-[104px] ${clickable ? 'hover:border-primary/50 transition-colors cursor-pointer' : ''}`}>
+    <div className={`damascus-orange bg-card rounded-lg border border-border p-4 min-h-[104px] ${clickable ? 'hover:border-primary/50 transition-colors cursor-pointer' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs text-muted-foreground">{label}</p>
@@ -340,7 +372,7 @@ export default function Presentation() {
           )}
         </div>
 
-        <div className="bg-card rounded-lg border border-border p-5">
+        <div className="damascus-orange bg-card rounded-lg border border-border p-5">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
               <h2 className="font-heading font-semibold text-sm">Top opportunités</h2>
@@ -389,7 +421,7 @@ export default function Presentation() {
       </div>
 
       {withoutCoords.length > 0 && (
-        <div className="bg-card rounded-lg border border-border p-5">
+        <div className="damascus-orange bg-card rounded-lg border border-border p-5">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="h-4 w-4 text-amber-400" />
             <h2 className="font-heading font-semibold text-sm">Biens sans coordonnées GPS</h2>
@@ -421,7 +453,7 @@ export default function Presentation() {
       {valides.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {valides.map((property) => (
-            <div key={property.id} className="bg-card rounded-lg border border-border p-5 hover:border-primary/30 transition-all">
+            <div key={property.id} className="damascus-orange bg-card rounded-lg border border-border p-5 hover:border-primary/30 transition-all">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
                   <Link to={`/property/${property.id}`} className="font-heading font-semibold text-sm hover:text-primary transition-colors">
