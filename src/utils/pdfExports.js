@@ -118,7 +118,7 @@ function sectionTitle(doc, state, title) {
 
 function keyValueTable(doc, state, rows, options = {}) {
   const colWidth = (PAGE.width - PAGE.margin * 2) / (options.columns || 2);
-  const labelWidth = 36;
+  const labelWidth = 48;
   const rowHeight = 8;
 
   rows.forEach((row, index) => {
