@@ -8,7 +8,20 @@ import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import logoSipa from '@/assets/logo-sipa.png';
+const LogoSipaCrochet = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 120" className="h-14 w-auto object-contain">
+    <g stroke="currentColor" strokeWidth="16" fill="none" strokeLinecap="round">
+      <path d="M30 25V12H58" />
+      <path d="M88 12H116V25" />
+      <path d="M30 55V42H58" />
+      <path d="M88 42H116V55" />
+      <path d="M144 95V82H172" />
+      <path d="M202 82H230V95" />
+      <path d="M144 108V95H172" />
+      <path d="M202 95H230V108" />
+    </g>
+  </svg>
+);
 
 const navItems = [
   { path: '/', label: 'Tableau de bord', icon: LayoutDashboard },
@@ -32,7 +45,7 @@ function SidebarContent({ location, user, onNavigate }) {
     <div className="flex flex-col h-full">
       <div className="p-6 pb-4">
         <div className="flex items-center justify-center">
-          <img src={logoSipa} alt="SIPA" className="h-14 w-auto object-contain" />
+          <LogoSipaCrochet />
         </div>
       </div>
 
@@ -152,7 +165,7 @@ export default function Layout() {
             </SheetContent>
           </Sheet>
 
-          <img src={logoSipa} alt="SIPA" className="h-10 w-auto object-contain" />
+          <LogoSipaCrochet />
         </header>
 
         <main className="flex-1 overflow-auto honeycomb-card">

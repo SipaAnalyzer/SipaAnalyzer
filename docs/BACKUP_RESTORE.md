@@ -71,6 +71,25 @@ git push origin main
 5. Vérifier les biens, analyses et permissions.
 6. Consulter les logs : l'action `backup_restore` doit être enregistrée en criticité `critical`.
 
+## Test de restauration recommandé
+
+Ce test doit être fait sur l'environnement dev avant d'autoriser la procédure en production.
+
+1. Exporter un backup JSON depuis Admin > Supervision.
+2. Créer un bien de test.
+3. Modifier son adresse ou son prix.
+4. Importer le backup JSON précédent.
+5. Vérifier que les données sont revenues à l'état du backup.
+6. Vérifier les logs `backup_restore`.
+7. Supprimer le bien de test ou restaurer l'état initial.
+
+## Limites
+
+- Le backup JSON restaure les données applicatives.
+- Il ne recrée pas les comptes Supabase Auth.
+- Les permissions restaurées ne sont utiles que si les utilisateurs existent toujours dans Auth.
+- Pour un incident majeur, compléter avec un backup Supabase/PostgreSQL.
+
 ## Procédure de restauration base
 
 1. Identifier la table et la date d'incident.

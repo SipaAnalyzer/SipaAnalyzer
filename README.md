@@ -23,6 +23,7 @@ Centraliser les biens, analyses financières, exports PDF, commentaires, favoris
 - [Matrice des permissions](docs/PERMISSIONS_MATRIX.md)
 - [Sauvegarde et restauration](docs/BACKUP_RESTORE.md)
 - [Gestion d'incident](docs/INCIDENT_RESPONSE.md)
+- [Separation dev / prod](docs/ENVIRONMENTS.md)
 
 ## Commandes
 

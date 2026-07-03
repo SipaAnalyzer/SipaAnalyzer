@@ -64,3 +64,18 @@ Les données sont masquées dans l'application mais restaurables depuis l'admini
 - Fuite de secret : pas de secret dans le frontend.
 - Erreur d'accès : RLS + permissions applicatives.
 - Traçabilité insuffisante : logs et historique de modifications.
+
+## RLS renforcé
+
+La migration `20260703_harden_rls_permissions.sql` remplace les policies larges par des policies basées sur les permissions applicatives :
+
+- `can_view_properties`
+- `can_create_property`
+- `can_edit_property`
+- `can_delete_property`
+- `can_create_analysis`
+- `can_edit_analysis`
+- `can_delete_analysis`
+- `can_comment`
+
+Les logs d'audit sont consultables uniquement par les administrateurs.
