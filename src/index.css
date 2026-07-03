@@ -12,7 +12,7 @@
     --card-foreground: 0 0% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
-    --primary: 38 92% 50%;
+    --primary: 78 66% 53%;
     --primary-foreground: 0 0% 5%;
     --secondary: 0 0% 90%;
     --secondary-foreground: 0 0% 10%;
@@ -24,8 +24,8 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 85%;
     --input: 0 0% 85%;
-    --ring: 38 92% 50%;
-    --chart-1: 38 92% 50%;
+    --ring: 78 66% 53%;
+    --chart-1: 78 66% 53%;
     --chart-2: 160 84% 39%;
     --chart-3: 217 91% 60%;
     --chart-4: 280 65% 60%;
@@ -37,12 +37,12 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --sidebar-background: 0 0% 97%;
     --sidebar-foreground: 0 0% 30%;
-    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary: 78 66% 53%;
     --sidebar-primary-foreground: 0 0% 5%;
     --sidebar-accent: 0 0% 88%;
     --sidebar-accent-foreground: 0 0% 10%;
     --sidebar-border: 0 0% 82%;
-    --sidebar-ring: 38 92% 50%;
+    --sidebar-ring: 78 66% 53%;
     --size: 20px;
   }
 
@@ -53,7 +53,7 @@
     --card-foreground: 0 0% 93%;
     --popover: 0 0% 10.2%;
     --popover-foreground: 0 0% 93%;
-    --primary: 38 92% 50%;
+    --primary: 78 66% 53%;
     --primary-foreground: 0 0% 5%;
     --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 93%;
@@ -65,20 +65,20 @@
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 18%;
     --input: 0 0% 18%;
-    --ring: 38 92% 50%;
-    --chart-1: 38 92% 50%;
+    --ring: 78 66% 53%;
+    --chart-1: 78 66% 53%;
     --chart-2: 160 84% 39%;
     --chart-3: 217 91% 60%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
     --sidebar-background: 0 0% 7%;
     --sidebar-foreground: 0 0% 80%;
-    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary: 78 66% 53%;
     --sidebar-primary-foreground: 0 0% 5%;
     --sidebar-accent: 0 0% 12%;
     --sidebar-accent-foreground: 0 0% 93%;
     --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 38 92% 50%;
+    --sidebar-ring: 78 66% 53%;
     --size: 20px;
   }
 }
@@ -113,10 +113,10 @@
   background: conic-gradient(
     from 180deg at 50% 70%,
     hsla(0, 0%, 98%, 1) 0deg,
-    #eec32d 72deg,
-    #ec4b4b 144deg,
-    #e7b616 216deg,
-    #f69c1e 288deg,
+    #A5D63A 72deg,
+    #8BC34A 144deg,
+    #7CB342 216deg,
+    #9CCC65 288deg,
     hsla(0, 0%, 98%, 1) 1turn
   );
 
@@ -152,7 +152,7 @@
   pointer-events: none;
   z-index: -1;
   background-color: #0b0b0b;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cg stroke='%23F6B31A' stroke-width='21' fill='none' stroke-linecap='round'%3E%3Cpath d='M40 113V50H103'/%3E%3Cpath d='M157 50H220V113'/%3E%3Cpath d='M40 167V230H103'/%3E%3Cpath d='M157 230H220V167'/%3E%3Cpath d='M290 373V310H353'/%3E%3Cpath d='M407 310H470V373'/%3E%3Cpath d='M290 427V490H353'/%3E%3Cpath d='M407 490H470V427'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cg stroke='%23A5D63A' stroke-width='21' fill='none' stroke-linecap='round'%3E%3Cpath d='M40 113V50H103'/%3E%3Cpath d='M157 50H220V113'/%3E%3Cpath d='M40 167V230H103'/%3E%3Cpath d='M157 230H220V167'/%3E%3Cpath d='M290 373V310H353'/%3E%3Cpath d='M407 310H470V373'/%3E%3Cpath d='M290 427V490H353'/%3E%3Cpath d='M407 490H470V427'/%3E%3C/g%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 500px 500px;
   opacity: 0.12;
@@ -169,7 +169,7 @@
   to { mask-position: 300% 0%; -webkit-mask-position: 300% 0%; }
 }
 
-/* Honeycomb orange pattern on cards */
+/* Honeycomb green pattern on cards */
 .honeycomb-card .bg-card {
   position: relative;
   overflow: hidden;
@@ -179,18 +179,18 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(255,140,0,0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 50%, rgba(255,100,0,0.07) 0%, transparent 50%),
-    url("data:image/svg+xml,%3Csvg width='56' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='rgba(255,140,0,0.05)' stroke-width='1'/%3E%3Cpath d='M28 0L28 34L0 50L0 16L28 0' fill='none' stroke='rgba(255,120,0,0.035)' stroke-width='1'/%3E%3Cpath d='M56 16L56 50L28 66L28 34L56 16' fill='none' stroke='rgba(255,100,0,0.035)' stroke-width='1'/%3E%3C/svg%3E");
+    radial-gradient(ellipse at 20% 50%, rgba(165,214,58,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(165,214,58,0.07) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg width='56' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='rgba(165,214,58,0.05)' stroke-width='1'/%3E%3Cpath d='M28 0L28 34L0 50L0 16L28 0' fill='none' stroke='rgba(165,214,58,0.035)' stroke-width='1'/%3E%3Cpath d='M56 16L56 50L28 66L28 34L56 16' fill='none' stroke='rgba(165,214,58,0.035)' stroke-width='1'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 0;
   border-radius: inherit;
 }
 .dark .honeycomb-card .bg-card::before {
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(255,140,0,0.25) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 50%, rgba(255,100,0,0.15) 0%, transparent 50%),
-    url("data:image/svg+xml,%3Csvg width='56' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='rgba(255,140,0,0.10)' stroke-width='1'/%3E%3Cpath d='M28 0L28 34L0 50L0 16L28 0' fill='none' stroke='rgba(255,120,0,0.07)' stroke-width='1'/%3E%3Cpath d='M56 16L56 50L28 66L28 34L56 16' fill='none' stroke='rgba(255,100,0,0.07)' stroke-width='1'/%3E%3C/svg%3E");
+    radial-gradient(ellipse at 20% 50%, rgba(165,214,58,0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(165,214,58,0.15) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg width='56' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='rgba(165,214,58,0.10)' stroke-width='1'/%3E%3Cpath d='M28 0L28 34L0 50L0 16L28 0' fill='none' stroke='rgba(165,214,58,0.07)' stroke-width='1'/%3E%3Cpath d='M56 16L56 50L28 66L28 34L56 16' fill='none' stroke='rgba(165,214,58,0.07)' stroke-width='1'/%3E%3C/svg%3E");
 }
 .honeycomb-card .bg-card > * {
   position: relative;

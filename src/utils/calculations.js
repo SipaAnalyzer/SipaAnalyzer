@@ -109,5 +109,5 @@ export const NOTE_CONFIG = {
   S: { class: 'bg-violet-500/20 text-violet-400 border-violet-500/30' },
   A: { class: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
   B: { class: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-  C: { class: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
+  C: { class: 'bg-lime-500/20 text-lime-400 border-lime-500/30' },
 };
