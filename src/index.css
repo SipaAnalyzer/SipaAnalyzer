@@ -108,7 +108,7 @@
   z-index: -1;
 
   background-color: #0b0b0b;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cg stroke='%23F6B31A' stroke-width='21' fill='none' stroke-linecap='round'%3E%3Cpath d='M10 100V30H80'/%3E%3Cpath d='M140 30H210V100'/%3E%3Cpath d='M10 160V230H80'/%3E%3Cpath d='M140 230H210V160'/%3E%3Cpath d='M290 85V15H360'/%3E%3Cpath d='M420 15H490V85'/%3E%3Cpath d='M290 145V215H360'/%3E%3Cpath d='M420 215H490V145'/%3E%3Cpath d='M20 370V300H90'/%3E%3Cpath d='M150 300H220V370'/%3E%3Cpath d='M20 430V500H90'/%3E%3Cpath d='M150 500H220V430'/%3E%3Cpath d='M300 380V310H370'/%3E%3Cpath d='M430 310H500V380'/%3E%3Cpath d='M300 440V510H370'/%3E%3Cpath d='M430 510H500V440'/%3E%3Cpath d='M380 220V150H450'/%3E%3Cpath d='M510 150H580V220'/%3E%3Cpath d='M380 280V350H450'/%3E%3Cpath d='M510 350H580V280'/%3E%3Cpath d='M-70 230V160H-40'/%3E%3Cpath d='M60 160H130V230'/%3E%3Cpath d='M-70 290V360H-40'/%3E%3Cpath d='M60 360H130V290'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cg stroke='%23F6B31A' stroke-width='21' fill='none' stroke-linecap='round'%3E%3Cpath d='M50 100V30H120'/%3E%3Cpath d='M180 30H250V100'/%3E%3Cpath d='M50 160V230H120'/%3E%3Cpath d='M180 230H250V160'/%3E%3Cpath d='M280 370V300H350'/%3E%3Cpath d='M410 300H480V370'/%3E%3Cpath d='M280 430V500H350'/%3E%3Cpath d='M410 500H480V430'/%3E%3Cpath d='M380 30V-40H450'/%3E%3Cpath d='M510 -40H580V30'/%3E%3Cpath d='M380 90V160H450'/%3E%3Cpath d='M510 160H580V90'/%3E%3C/g%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 500px 500px;
 
