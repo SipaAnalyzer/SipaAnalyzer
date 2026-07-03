@@ -100,49 +100,23 @@
   }
 }
 
-/* Background animé - pattern CodePen adapté */
+/* Background animé - bracket pattern */
 .animated-background {
   position: fixed;
   inset: 0;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
   pointer-events: none;
-  opacity: 0.6;
-
-  background: conic-gradient(
-    from 180deg at 50% 70%,
-    hsla(0, 0%, 98%, 1) 0deg,
-    #A5D63A 72deg,
-    #8BC34A 144deg,
-    #7CB342 216deg,
-    #9CCC65 288deg,
-    hsla(0, 0%, 98%, 1) 1turn
-  );
-
-  -webkit-mask:
-    radial-gradient(circle at 50% 50%, rgb(226, 149, 7) 2px, transparent 2.5px)
-      50% 50% / var(--size) var(--size),
-    url("https://assets.codepen.io/605876/noise-mask.png")
-      256px 50% / 256px 256px;
-
-  mask:
-    radial-gradient(circle at 50% 50%, rgb(240, 188, 15) 2px, transparent 2.5px)
-      50% 50% / var(--size) var(--size),
-    url("https://assets.codepen.io/605876/noise-mask.png")
-      256px 50% / 256px 256px;
-
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
-
-  animation: flicker 60s infinite linear;
-}
-
-@keyframes flicker {
-  to {
-    -webkit-mask-position: 50% 50%, 0 50%;
-    mask-position: 50% 50%, 0 50%;
-  }
+  z-index: -1;
+  background-color: #0b0b0b;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cg stroke='%23A5D63A' stroke-width='21' fill='none' stroke-linecap='round'%3E%3Cpath d='M40 113V50H103'/%3E%3Cpath d='M157 50H220V113'/%3E%3Cpath d='M40 167V230H103'/%3E%3Cpath d='M157 230H220V167'/%3E%3Cpath d='M290 373V310H353'/%3E%3Cpath d='M407 310H470V373'/%3E%3Cpath d='M290 427V490H353'/%3E%3Cpath d='M407 490H470V427'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 500px 500px;
+  opacity: 0.12;
+  transform: rotate(3deg) scale(1.1);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.1) 20%, white 50%, rgba(255,255,255,.1) 80%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.1) 20%, white 50%, rgba(255,255,255,.1) 80%, transparent 100%);
+  mask-size: 300% 100%;
+  -webkit-mask-size: 300% 100%;
+  animation: scan 12s linear infinite;
 }
 
 /* Login page bracket pattern */
