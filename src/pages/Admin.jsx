@@ -40,6 +40,7 @@ const LOG_LABELS = {
 };
 
 function AuditLogsPanel() {
+  const [expanded, setExpanded] = useState(true);
   const {
     data: logs = [],
     isLoading,
@@ -54,15 +55,24 @@ function AuditLogsPanel() {
       <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-primary" />
-          <h2 className="font-semibold text-sm">Logs de connexion et d'export</h2>
+          <h2 className="font-semibold text-sm">Logs de connexion et d'export ({logs.length})</h2>
         </div>
 
-        <Button type="button" size="sm" variant="outline" onClick={() => refetch()}>
-          Rafraîchir
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={() => refetch()}>
+            Rafraîchir
+          </Button>
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
-      {isLoading ? (
+      {expanded && (isLoading ? (
         <div className="p-8 flex items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
         </div>
@@ -114,12 +124,13 @@ function AuditLogsPanel() {
             );
           })}
         </div>
-      )}
+      ))}
     </div>
   );
 }
 
 function UserActivityPanel({ allPerms }) {
+  const [expanded, setExpanded] = useState(true);
   const {
     data: logs = [],
     isLoading,
@@ -163,24 +174,33 @@ function UserActivityPanel({ allPerms }) {
       <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Eye className="h-4 w-4 text-primary" />
-          <h2 className="font-semibold text-sm">Activité par utilisateur</h2>
+          <h2 className="font-semibold text-sm">Activité par utilisateur ({userLogs.length})</h2>
         </div>
 
-        <select
-          value={selectedUserId || ''}
-          onChange={(e) => setSelectedUserId(e.target.value || null)}
-          className="text-xs bg-background border border-border rounded-lg px-2 py-1.5 text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary max-w-[200px]"
-        >
-          <option value="">Tous les utilisateurs</option>
-          {userOptions.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.name} ({ROLE_LABELS[u.role] || u.role})
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedUserId || ''}
+            onChange={(e) => setSelectedUserId(e.target.value || null)}
+            className="text-xs bg-background border border-border rounded-lg px-2 py-1.5 text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary max-w-[200px]"
+          >
+            <option value="">Tous les utilisateurs</option>
+            {userOptions.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name} ({ROLE_LABELS[u.role] || u.role})
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
-      {isLoading ? (
+      {expanded && (isLoading ? (
         <div className="p-8 flex items-center justify-center">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
         </div>
@@ -228,7 +248,7 @@ function UserActivityPanel({ allPerms }) {
             );
           })}
         </div>
-      )}
+      ))}
     </div>
   );
 }
