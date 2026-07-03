@@ -32,14 +32,14 @@ damascusStyle.textContent = `
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse at 20% 50%, rgba(255,140,0,0.15) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 50%, rgba(255,100,0,0.10) 0%, transparent 50%),
+      radial-gradient(ellipse at 20% 50%, rgba(255,140,0,0.30) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 50%, rgba(255,100,0,0.20) 0%, transparent 50%),
       repeating-conic-gradient(
         from 0deg,
         transparent 0deg 15deg,
-        rgba(255,140,0,0.05) 15deg 20deg,
+        rgba(255,140,0,0.12) 15deg 20deg,
         transparent 20deg 35deg,
-        rgba(255,120,0,0.035) 35deg 40deg,
+        rgba(255,120,0,0.08) 35deg 40deg,
         transparent 40deg 60deg
       );
     pointer-events: none;
