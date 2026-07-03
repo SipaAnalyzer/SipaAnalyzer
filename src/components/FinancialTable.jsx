@@ -69,9 +69,19 @@ export default function FinancialTable({ analysis }) {
                   </td>
                 </tr>
               )}
-              {customFields.map((cf, i) => (
-                <Row key={i} label={cf.label} value={formatCHF(cf.values?.[0]?.value)} />
-              ))}
+              {customFields.map((cf, i) => {
+                const amount = cf.values?.find((v) => v.type === 'amount');
+                const pct = cf.values?.find((v) => v.type === 'pct');
+                return (
+                  <tr key={i}>
+                    <Td>{cf.label}</Td>
+                    <Td className="text-right font-mono">
+                      {formatCHF(amount?.value)}
+                      {pct?.value != null && <span className="ml-2 text-xs text-muted-foreground">({pct.value.toFixed(2)}%)</span>}
+                    </Td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

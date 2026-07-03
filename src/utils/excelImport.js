@@ -82,7 +82,10 @@ export async function extractAnalysisFieldsFromExcel(file, customLabels = []) {
   if (customFinancialFields.length > 0) {
     const customSipaEntries = customFinancialFields.map((cf) => ({
       label: cf.name,
-      values: [{ type: 'amount', value: cf.amount }],
+      values: [
+        { type: 'amount', value: cf.amount },
+        ...(cf.pct != null ? [{ type: 'pct', value: cf.pct }] : []),
+      ],
       _custom: true,
     }));
     fields.sipa_data = [...(fields.sipa_data || []), ...customSipaEntries];
@@ -109,7 +112,12 @@ function extractCustomFields(rows, customLabels) {
 
     const value = findNearbyValue(rows, found.row, found.col, 'amount');
     if (value != null) {
-      matched.push({ name: trimmed, amount: Math.round(value) });
+      const isPct = Math.abs(value) <= 100;
+      matched.push({
+        name: trimmed,
+        amount: isPct ? 0 : Math.round(value),
+        pct: isPct ? value : null,
+      });
     }
   }
 

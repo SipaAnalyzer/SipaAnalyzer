@@ -122,11 +122,16 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     const custom = initialData.sipa_data.filter((e) => e._custom);
     if (custom.length > 0) {
       setCustomFinancialFields(
-        custom.map((e) => ({
-          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          name: e.label,
-          amount: e.values?.[0]?.value || 0,
-        }))
+        custom.map((e) => {
+          const amountVal = e.values?.find((v) => v.type === 'amount');
+          const pctVal = e.values?.find((v) => v.type === 'pct');
+          return {
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+            name: e.label,
+            amount: amountVal?.value || 0,
+            pct: pctVal?.value ?? null,
+          };
+        })
       );
     }
   }, [initialData]);
@@ -211,6 +216,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const [customFinancialFields, setCustomFinancialFields] = useState([]);
   const [newCustomFieldName, setNewCustomFieldName] = useState('');
   const [newCustomFieldAmount, setNewCustomFieldAmount] = useState('');
+  const [newCustomFieldPct, setNewCustomFieldPct] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -239,7 +245,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     const customSipaData = customFinancialFields.length > 0
       ? customFinancialFields.map((cf) => ({
           label: cf.name,
-          values: [{ type: 'amount', value: cf.amount }],
+          values: [{ type: 'amount', value: cf.amount }, ...(cf.pct != null ? [{ type: 'pct', value: cf.pct }] : [])],
           _custom: true,
         }))
       : [];
@@ -563,19 +569,35 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                     />
                   </td>
                   <td className="py-2 pl-4">
-                    <div className="flex items-center gap-1.5 justify-end">
-                      <span className="text-xs text-muted-foreground">CHF</span>
-                      <input
-                        type="number"
-                        value={cf.amount}
-                        onChange={(e) =>
-                          setCustomFinancialFields((prev) =>
-                            prev.map((f, j) => (j === i ? { ...f, amount: Number(e.target.value) || 0 } : f))
-                          )
-                        }
-                        placeholder="0"
-                        className="w-28 bg-transparent border-0 border-b border-dashed border-border/40 px-0 py-1 text-sm text-right font-mono focus:outline-none focus:border-primary"
-                      />
+                    <div className="flex items-center gap-2 justify-end">
+                      <div className="relative w-28">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">CHF</span>
+                        <input
+                          type="number"
+                          value={cf.amount}
+                          onChange={(e) =>
+                            setCustomFinancialFields((prev) =>
+                              prev.map((f, j) => (j === i ? { ...f, amount: Number(e.target.value) || 0 } : f))
+                            )
+                          }
+                          placeholder="0"
+                          className="w-full bg-transparent border-0 border-b border-dashed border-border/40 pl-8 pr-1 py-1 text-sm text-right font-mono focus:outline-none focus:border-primary"
+                        />
+                      </div>
+                      <div className="relative w-20">
+                        <input
+                          type="number"
+                          value={cf.pct ?? ''}
+                          onChange={(e) =>
+                            setCustomFinancialFields((prev) =>
+                              prev.map((f, j) => (j === i ? { ...f, pct: e.target.value === '' ? null : parseFloat(e.target.value) || 0 } : f))
+                            )
+                          }
+                          placeholder="0"
+                          className="w-full bg-transparent border-0 border-b border-dashed border-border/40 pr-5 py-1 text-sm text-right font-mono focus:outline-none focus:border-primary"
+                        />
+                        <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setCustomFinancialFields((prev) => prev.filter((_, j) => j !== i))}
@@ -597,10 +619,11 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                       if (e.key === 'Enter' && newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
                         setCustomFinancialFields((prev) => [
                           ...prev,
-                          { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount) },
+                          { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount), pct: newCustomFieldPct !== '' ? parseFloat(newCustomFieldPct) : null },
                         ]);
                         setNewCustomFieldName('');
                         setNewCustomFieldAmount('');
+                        setNewCustomFieldPct('');
                       }
                     }}
                     placeholder="Nouvelle ligne personnalisée..."
@@ -608,35 +631,59 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                   />
                 </td>
                 <td className="py-2 pl-4">
-                  <div className="flex items-center gap-1.5 justify-end">
-                    <span className="text-xs text-muted-foreground">CHF</span>
-                    <input
-                      type="number"
-                      value={newCustomFieldAmount}
-                      onChange={(e) => setNewCustomFieldAmount(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
-                          setCustomFinancialFields((prev) => [
-                            ...prev,
-                            { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount) },
-                          ]);
-                          setNewCustomFieldName('');
-                          setNewCustomFieldAmount('');
-                        }
-                      }}
-                      placeholder="0"
-                      className="w-20 bg-transparent border-0 px-0 py-1 text-sm text-right font-mono text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
-                    />
+                  <div className="flex items-center gap-2 justify-end">
+                    <div className="relative w-24">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">CHF</span>
+                      <input
+                        type="number"
+                        value={newCustomFieldAmount}
+                        onChange={(e) => setNewCustomFieldAmount(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
+                            setCustomFinancialFields((prev) => [
+                              ...prev,
+                              { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount), pct: newCustomFieldPct !== '' ? parseFloat(newCustomFieldPct) : null },
+                            ]);
+                            setNewCustomFieldName('');
+                            setNewCustomFieldAmount('');
+                            setNewCustomFieldPct('');
+                          }
+                        }}
+                        placeholder="0"
+                        className="w-full bg-transparent border-0 px-0 py-1 text-sm text-right font-mono text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+                      />
+                    </div>
+                    <div className="relative w-16">
+                      <input
+                        type="number"
+                        value={newCustomFieldPct}
+                        onChange={(e) => setNewCustomFieldPct(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
+                            setCustomFinancialFields((prev) => [
+                              ...prev,
+                              { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount), pct: newCustomFieldPct !== '' ? parseFloat(newCustomFieldPct) : null },
+                            ]);
+                            setNewCustomFieldName('');
+                            setNewCustomFieldAmount('');
+                            setNewCustomFieldPct('');
+                          }
+                        }}
+                        placeholder="%"
+                        className="w-full bg-transparent border-0 px-0 py-1 text-sm text-right font-mono text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
                         if (newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
                           setCustomFinancialFields((prev) => [
                             ...prev,
-                            { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount) },
+                            { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount), pct: newCustomFieldPct !== '' ? parseFloat(newCustomFieldPct) : null },
                           ]);
                           setNewCustomFieldName('');
                           setNewCustomFieldAmount('');
+                          setNewCustomFieldPct('');
                         }
                       }}
                       className="inline-flex items-center justify-center rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
