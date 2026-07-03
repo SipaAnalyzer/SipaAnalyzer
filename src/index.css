@@ -100,48 +100,51 @@
   }
 }
 
-/* Background animé - pattern CodePen adapté */
+/* Background animé - pattern SVG */
 .animated-background {
   position: fixed;
   inset: 0;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
   pointer-events: none;
-  opacity: 0.6;
+  z-index: -1;
 
-  background: conic-gradient(
-    from 180deg at 50% 70%,
-    hsla(0, 0%, 98%, 1) 0deg,
-    #eec32d 72deg,
-    #ec4b4b 144deg,
-    #e7b616 216deg,
-    #f69c1e 288deg,
-    hsla(0, 0%, 98%, 1) 1turn
+  background-color: #0b0b0b;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg stroke='%23F6B31A' stroke-width='10' fill='none' stroke-linecap='round'%3E%3Cpath d='M10 45V10H45'/%3E%3Cpath d='M75 10H110V45'/%3E%3Cpath d='M10 75V110H45'/%3E%3Cpath d='M75 110H110V75'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 120px 120px;
+
+  opacity: 0.12;
+
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,.1) 20%,
+    white 50%,
+    rgba(255,255,255,.1) 80%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,.1) 20%,
+    white 50%,
+    rgba(255,255,255,.1) 80%,
+    transparent 100%
   );
 
-  -webkit-mask:
-    radial-gradient(circle at 50% 50%, rgb(226, 149, 7) 2px, transparent 2.5px)
-      50% 50% / var(--size) var(--size),
-    url("https://assets.codepen.io/605876/noise-mask.png")
-      256px 50% / 256px 256px;
+  mask-size: 300% 100%;
+  -webkit-mask-size: 300% 100%;
 
-  mask:
-    radial-gradient(circle at 50% 50%, rgb(240, 188, 15) 2px, transparent 2.5px)
-      50% 50% / var(--size) var(--size),
-    url("https://assets.codepen.io/605876/noise-mask.png")
-      256px 50% / 256px 256px;
-
-  -webkit-mask-composite: source-in;
-  mask-composite: intersect;
-
-  animation: flicker 60s infinite linear;
+  animation: scan 6s linear infinite;
 }
 
-@keyframes flicker {
+@keyframes scan {
+  from {
+    mask-position: 0% 0%;
+    -webkit-mask-position: 0% 0%;
+  }
   to {
-    -webkit-mask-position: 50% 50%, 0 50%;
-    mask-position: 50% 50%, 0 50%;
+    mask-position: 300% 0%;
+    -webkit-mask-position: 300% 0%;
   }
 }
 
