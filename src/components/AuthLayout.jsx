@@ -2,7 +2,7 @@ import React from "react";
 
 export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
   return (<>
-    <div className="animated-background" />
+    <div className="login-background" />
     <div className="min-h-screen flex items-center justify-center bg-transparent px-4">
       <div className="w-full max-w-md honeycomb-card">
         <div className="text-center mb-10">
