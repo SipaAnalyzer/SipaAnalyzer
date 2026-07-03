@@ -547,19 +547,9 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                   {formatPercent(calc.revenu_distribue_fonds_propres)}
                 </td>
               </tr>
-            </tbody>
-          </table>
-        </div>
-
-            <div className="mt-6 border-t border-border pt-6">
-              <h4 className="font-heading font-semibold text-sm mb-1">Lignes personnalisées</h4>
-              <p className="text-xs text-muted-foreground mb-4">
-                Ajoutez des rubriques supplémentaires au TABLEAU FINANCIER (ex: frais de notaire, courtage, etc.).
-              </p>
-
-              <div className="space-y-2 mb-3">
-                {customFinancialFields.map((cf, i) => (
-                  <div key={cf.id} className="flex items-center gap-2">
+              {customFinancialFields.map((cf, i) => (
+                <tr key={cf.id} className="border-dashed border-border/40">
+                  <td className="py-2 pr-4">
                     <input
                       type="text"
                       value={cf.name}
@@ -569,10 +559,12 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         )
                       }
                       placeholder="Nom du frais"
-                      className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm"
+                      className="w-full bg-transparent border-0 border-b border-dashed border-border/40 px-0 py-1 text-sm focus:outline-none focus:border-primary"
                     />
-                    <div className="relative w-40">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">CHF</span>
+                  </td>
+                  <td className="py-2 pl-4">
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <span className="text-xs text-muted-foreground">CHF</span>
                       <input
                         type="number"
                         value={cf.amount}
@@ -582,56 +574,81 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           )
                         }
                         placeholder="0"
-                        className="w-full bg-background border border-border rounded-lg pl-10 pr-3 py-2 text-sm text-right"
+                        className="w-28 bg-transparent border-0 border-b border-dashed border-border/40 px-0 py-1 text-sm text-right font-mono focus:outline-none focus:border-primary"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setCustomFinancialFields((prev) => prev.filter((_, j) => j !== i))}
+                        className="text-muted-foreground hover:text-red-500 p-0.5"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
                     </div>
+                  </td>
+                </tr>
+              ))}
+              <tr className="border-t border-dashed border-border/30">
+                <td className="py-2 pr-4">
+                  <input
+                    type="text"
+                    value={newCustomFieldName}
+                    onChange={(e) => setNewCustomFieldName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
+                        setCustomFinancialFields((prev) => [
+                          ...prev,
+                          { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount) },
+                        ]);
+                        setNewCustomFieldName('');
+                        setNewCustomFieldAmount('');
+                      }
+                    }}
+                    placeholder="Nouvelle ligne personnalisée..."
+                    className="w-full bg-transparent border-0 px-0 py-1 text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+                  />
+                </td>
+                <td className="py-2 pl-4">
+                  <div className="flex items-center gap-1.5 justify-end">
+                    <span className="text-xs text-muted-foreground">CHF</span>
+                    <input
+                      type="number"
+                      value={newCustomFieldAmount}
+                      onChange={(e) => setNewCustomFieldAmount(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
+                          setCustomFinancialFields((prev) => [
+                            ...prev,
+                            { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount) },
+                          ]);
+                          setNewCustomFieldName('');
+                          setNewCustomFieldAmount('');
+                        }
+                      }}
+                      placeholder="0"
+                      className="w-20 bg-transparent border-0 px-0 py-1 text-sm text-right font-mono text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+                    />
                     <button
                       type="button"
-                      onClick={() => setCustomFinancialFields((prev) => prev.filter((_, j) => j !== i))}
-                      className="text-muted-foreground hover:text-red-500 p-1"
+                      onClick={() => {
+                        if (newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
+                          setCustomFinancialFields((prev) => [
+                            ...prev,
+                            { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount) },
+                          ]);
+                          setNewCustomFieldName('');
+                          setNewCustomFieldAmount('');
+                        }
+                      }}
+                      className="inline-flex items-center justify-center rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                     >
-                      <X className="h-4 w-4" />
+                      <Plus className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newCustomFieldName}
-                  onChange={(e) => setNewCustomFieldName(e.target.value)}
-                  placeholder="Ex: Frais de notaire"
-                  className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm"
-                />
-                <div className="relative w-40">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">CHF</span>
-                  <input
-                    type="number"
-                    value={newCustomFieldAmount}
-                    onChange={(e) => setNewCustomFieldAmount(e.target.value)}
-                    placeholder="0"
-                    className="w-full bg-background border border-border rounded-lg pl-10 pr-3 py-2 text-sm text-right"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
-                      setCustomFinancialFields((prev) => [
-                        ...prev,
-                        { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount) },
-                      ]);
-                      setNewCustomFieldName('');
-                      setNewCustomFieldAmount('');
-                    }
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                  <Plus className="h-4 w-4" /> Ajouter
-                </button>
-              </div>
-            </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
             <div className="mt-6">
               <ExcelProjectionTables
