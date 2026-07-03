@@ -230,9 +230,8 @@ export default function Presentation() {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
-    </div>
-    </>
-  );
+      </div>
+    );
   }
 
   return (
@@ -461,5 +460,6 @@ export default function Presentation() {
         </div>
       )}
     </div>
+    </>
   );
 }
