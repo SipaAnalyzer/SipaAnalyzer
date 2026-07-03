@@ -108,9 +108,9 @@
   z-index: -1;
 
   background-color: #0b0b0b;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cg stroke='%23F6B31A' stroke-width='10' fill='none' stroke-linecap='round'%3E%3Cpath d='M10 25V10H25'/%3E%3Cpath d='M95 10H110V25'/%3E%3Cpath d='M10 95V110H25'/%3E%3Cpath d='M95 110H110V95'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Cg stroke='%23F6B31A' stroke-width='10' fill='none' stroke-linecap='round'%3E%3Cpath d='M70 105V70H105'/%3E%3Cpath d='M135 70H170V105'/%3E%3Cpath d='M70 135V170H105'/%3E%3Cpath d='M135 170H170V135'/%3E%3C/g%3E%3C/svg%3E");
   background-repeat: repeat;
-  background-size: 580px 580px;
+  background-size: 500px 500px;
 
   opacity: 0.12;
 
