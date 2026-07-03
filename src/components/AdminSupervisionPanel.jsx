@@ -372,6 +372,8 @@ function FilteredLogsPanel() {
 
 function TrashPanel() {
   const queryClient = useQueryClient();
+  const [selected, setSelected] = useState(new Set());
+
   const { data: deletedProperties = [], isLoading: lp } = useQuery({
     queryKey: ['trash-properties'],
     queryFn: () => base44.entities.Property.listDeleted(100),
@@ -390,10 +392,56 @@ function TrashPanel() {
     onError: (error) => toast.error(error?.message || 'Restauration impossible'),
   });
 
+  const hardDelete = useMutation({
+    mutationFn: ({ type, id }) => type === 'property' ? base44.entities.Property.hardDelete(id) : base44.entities.Analysis.hardDelete(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries();
+      toast.success('Élément supprimé définitivement');
+    },
+    onError: (error) => toast.error(error?.message || 'Suppression impossible'),
+  });
+
   const items = [
     ...deletedProperties.map((item) => ({ ...item, trashType: 'property', label: item.nom_bien || 'Bien sans nom' })),
     ...deletedAnalyses.map((item) => ({ ...item, trashType: 'analysis', label: `Analyse #${item.id?.slice(0, 8)}` })),
   ].sort((a, b) => new Date(b.deleted_at || 0) - new Date(a.deleted_at || 0));
+
+  const toggleItem = (key) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (selected.size === items.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(items.map((item) => `${item.trashType}-${item.id}`)));
+    }
+  };
+
+  const batchRestore = () => {
+    if (selected.size === 0) return;
+    selected.forEach((key) => {
+      const [type, ...idParts] = key.split('-');
+      const id = idParts.join('-');
+      restore.mutate({ type, id });
+    });
+    setSelected(new Set());
+  };
+
+  const batchHardDelete = () => {
+    if (selected.size === 0) return;
+    if (!window.confirm(`Supprimer définitivement ${selected.size} élément${selected.size > 1 ? 's' : ''} ? Cette action est irréversible.`)) return;
+    selected.forEach((key) => {
+      const [type, ...idParts] = key.split('-');
+      const id = idParts.join('-');
+      hardDelete.mutate({ type, id });
+    });
+    setSelected(new Set());
+  };
 
   return (
     <section className="bg-card rounded-xl border border-border overflow-hidden">
@@ -408,22 +456,48 @@ function TrashPanel() {
       ) : items.length === 0 ? (
         <div className="p-8 text-center text-sm text-muted-foreground">La corbeille est vide.</div>
       ) : (
-        <div className="divide-y divide-border/50">
-          {items.map((item) => (
-            <div key={`${item.trashType}-${item.id}`} className="px-5 py-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{item.label}</p>
-                <p className="text-xs text-muted-foreground">
-                  {item.trashType === 'property' ? 'Bien' : 'Analyse'} supprimé le {moment(item.deleted_at).format('DD MMM YYYY, HH:mm')}
-                </p>
+        <>
+          {selected.size > 0 && (
+            <div className="px-5 py-3 bg-primary/5 border-b border-border flex items-center gap-2">
+              <span className="text-xs font-medium">{selected.size} sélectionné{selected.size > 1 ? 's' : ''}</span>
+              <div className="ml-auto flex gap-2">
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={batchRestore} disabled={restore.isPending || hardDelete.isPending}>
+                  <RotateCcw className="h-3.5 w-3.5" /> Restaurer
+                </Button>
+                <Button size="sm" variant="destructive" className="gap-1.5" onClick={batchHardDelete} disabled={restore.isPending || hardDelete.isPending}>
+                  <Trash2 className="h-3.5 w-3.5" /> Supprimer déf.
+                </Button>
               </div>
-              <Button size="sm" variant="outline" className="gap-2" disabled={restore.isPending} onClick={() => restore.mutate({ type: item.trashType, id: item.id })}>
-                <RotateCcw className="h-3.5 w-3.5" />
-                Restaurer
-              </Button>
             </div>
-          ))}
-        </div>
+          )}
+          <div className="divide-y divide-border/50">
+            {items.map((item) => {
+              const key = `${item.trashType}-${item.id}`;
+              return (
+                <div key={key} className={`px-5 py-3 flex items-center gap-3 cursor-pointer hover:bg-muted/30 transition-colors ${selected.has(key) ? 'bg-primary/5' : ''}`} onClick={() => toggleItem(key)}>
+                  <input
+                    type="checkbox"
+                    checked={selected.has(key)}
+                    onChange={() => toggleItem(key)}
+                    className="rounded border-border accent-primary shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{item.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.trashType === 'property' ? 'Bien' : 'Analyse'} supprimé le {moment(item.deleted_at).format('DD MMM YYYY, HH:mm')}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="px-5 py-2 border-t border-border flex items-center">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+              <input type="checkbox" checked={selected.size === items.length} onChange={selectAll} className="rounded border-border accent-primary" />
+              Tout {selected.size === items.length ? 'déselectionner' : 'sélectionner'}
+            </label>
+          </div>
+        </>
       )}
     </section>
   );

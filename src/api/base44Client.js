@@ -417,6 +417,29 @@ const createEntity = (table) => ({
 
     return normalizeRecord(data);
   },
+
+  async hardDelete(id) {
+    if (!supportsSoftDelete(table)) return false;
+
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error(`[Supabase] hardDelete error on ${table}:`, error);
+      throw error;
+    }
+
+    await recordAuditLog({
+      eventType: table === TABLES.Property ? "property_hard_deleted" : "analysis_hard_deleted",
+      severity: "error",
+      targetType: table,
+      targetId: id,
+    });
+
+    return true;
+  },
 });
 
 export const base44 = {
