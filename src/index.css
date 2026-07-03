@@ -177,3 +177,28 @@
   position: relative;
   z-index: 1;
 }
+
+/* Presentation bracket pattern */
+.presentation-pattern .bg-card {
+  position: relative;
+  overflow: hidden;
+}
+.presentation-pattern .bg-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cg stroke='%23F6B31A' stroke-width='13' fill='none' stroke-linecap='round'%3E%3Cpath d='M35 55V35H55'/%3E%3Cpath d='M85 35H105V55'/%3E%3Cpath d='M35 85V105H55'/%3E%3Cpath d='M85 105H105V85'/%3E%3Cpath d='M195 215V195H215'/%3E%3Cpath d='M245 195H265V215'/%3E%3Cpath d='M195 245V265H215'/%3E%3Cpath d='M245 265H265V245'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 300px 300px;
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+.dark .presentation-pattern .bg-card::before {
+  opacity: 0.10;
+}
+.presentation-pattern .bg-card > * {
+  position: relative;
+  z-index: 1;
+}
