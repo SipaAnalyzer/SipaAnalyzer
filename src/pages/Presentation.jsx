@@ -32,16 +32,9 @@ damascusStyle.textContent = `
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse at 20% 50%, rgba(255,140,0,0.30) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 50%, rgba(255,100,0,0.20) 0%, transparent 50%),
-      repeating-conic-gradient(
-        from 0deg,
-        transparent 0deg 15deg,
-        rgba(255,140,0,0.12) 15deg 20deg,
-        transparent 20deg 35deg,
-        rgba(255,120,0,0.08) 35deg 40deg,
-        transparent 40deg 60deg
-      );
+      radial-gradient(ellipse at 20% 50%, rgba(255,140,0,0.25) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 50%, rgba(255,100,0,0.15) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg width='56' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='rgba(255,140,0,0.10)' stroke-width='1'/%3E%3Cpath d='M28 0L28 34L0 50L0 16L28 0' fill='none' stroke='rgba(255,120,0,0.07)' stroke-width='1'/%3E%3Cpath d='M56 16L56 50L28 66L28 34L56 16' fill='none' stroke='rgba(255,100,0,0.07)' stroke-width='1'/%3E%3C/svg%3E");
     pointer-events: none;
     z-index: 0;
     border-radius: inherit;
