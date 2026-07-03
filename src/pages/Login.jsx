@@ -35,8 +35,8 @@ export default function Login() {
   return (
     <AuthLayout
       icon={LogIn}
-      title="Welcome back"
-      subtitle="Log in to your account"
+      title="SIPA Analyzer"
+      subtitle="Connectez-vous à votre compte"
       footer={
         <>
           Don't have an account?{" "}
