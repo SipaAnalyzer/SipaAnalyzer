@@ -150,6 +150,44 @@
   }
 }
 
+.animated-background-sm {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+
+  background-color: #0b0b0b;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cg stroke='%23F6B31A' stroke-width='12' fill='none' stroke-linecap='round'%3E%3Cpath d='M55 85V55H85'/%3E%3Cpath d='M85 55H125V85'/%3E%3Cpath d='M55 95V125H85'/%3E%3Cpath d='M85 125H125V95'/%3E%3Cpath d='M275 305V275H305'/%3E%3Cpath d='M305 275H345V305'/%3E%3Cpath d='M275 315V345H305'/%3E%3Cpath d='M305 345H345V315'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 400px 400px;
+
+  opacity: 0.12;
+
+  transform: rotate(3deg) scale(1.1);
+
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,.1) 20%,
+    white 50%,
+    rgba(255,255,255,.1) 80%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,.1) 20%,
+    white 50%,
+    rgba(255,255,255,.1) 80%,
+    transparent 100%
+  );
+
+  mask-size: 300% 100%;
+  -webkit-mask-size: 300% 100%;
+
+  animation: scan 12s linear infinite;
+}
+
 /* Honeycomb orange pattern on cards */
 .honeycomb-card .bg-card {
   position: relative;
@@ -174,29 +212,6 @@
     url("data:image/svg+xml,%3Csvg width='56' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='rgba(255,140,0,0.10)' stroke-width='1'/%3E%3Cpath d='M28 0L28 34L0 50L0 16L28 0' fill='none' stroke='rgba(255,120,0,0.07)' stroke-width='1'/%3E%3Cpath d='M56 16L56 50L28 66L28 34L56 16' fill='none' stroke='rgba(255,100,0,0.07)' stroke-width='1'/%3E%3C/svg%3E");
 }
 .honeycomb-card .bg-card > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* Presentation bracket pattern */
-.presentation-pattern .bg-card {
-  position: relative;
-  overflow: hidden;
-}
-.presentation-pattern .bg-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cg stroke='%23F6B31A' stroke-width='13' fill='none' stroke-linecap='round'%3E%3Cpath d='M35 55V35H55'/%3E%3Cpath d='M85 35H105V55'/%3E%3Cpath d='M35 85V105H55'/%3E%3Cpath d='M85 105H105V85'/%3E%3Cpath d='M195 215V195H215'/%3E%3Cpath d='M245 195H265V215'/%3E%3Cpath d='M195 245V265H215'/%3E%3Cpath d='M245 265H265V245'/%3E%3C/g%3E%3C/svg%3E") 0% 0% / 300px 300px repeat;
-  opacity: 0.12;
-  pointer-events: none;
-  z-index: 0;
-  border-radius: inherit;
-}
-.dark .presentation-pattern .bg-card::before {
-  opacity: 0.18;
-}
-.presentation-pattern .bg-card > * {
   position: relative;
   z-index: 1;
 }
