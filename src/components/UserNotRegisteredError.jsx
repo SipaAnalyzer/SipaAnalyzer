@@ -1,8 +1,23 @@
+import { useEffect } from 'react';
 import { AlertTriangle, LogOut, RefreshCw } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import { recordAuditLog } from '@/utils/auditLogs';
 
 export default function UserNotRegisteredError() {
+  useEffect(() => {
+    void recordAuditLog({
+      eventType: 'access_denied',
+      severity: 'critical',
+      targetType: 'auth',
+      targetLabel: 'Compte sans role applicatif',
+      metadata: {
+        reason: 'user_not_registered_or_pending_role',
+        path: window.location.pathname,
+      },
+    });
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-card rounded-xl border border-border p-8 text-center shadow-xl">

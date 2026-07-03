@@ -1,4 +1,4 @@
-import JSZip from 'jszip';
+import * as XLSX from 'xlsx';
 
 export function formatSipaValue(v) {
   if (!v) return '—';
@@ -52,19 +52,17 @@ const PCT_LABELS = new Map([
 ]);
 
 export async function extractAnalysisFieldsFromExcel(file) {
-  const zip = await JSZip.loadAsync(file);
-  const sharedStrings = await readSharedStrings(zip);
-  const worksheetPaths = Object.keys(zip.files)
-    .filter((path) => /^xl\/worksheets\/sheet\d+\.xml$/i.test(path))
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const buffer = await file.arrayBuffer();
+  const workbook = XLSX.read(buffer, { type: 'array', cellDates: false, cellNF: false, cellText: false });
 
   const fields = {};
   const seenLabels = [];
   const allRows = [];
 
-  for (const path of worksheetPaths) {
-    const xml = await readText(zip, path);
-    const rows = parseWorksheet(xml, sharedStrings);
+  for (const sheetName of workbook.SheetNames) {
+    const worksheet = workbook.Sheets[sheetName];
+    const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
+    const rows = rawRows.map((row) => (row && row.some((c) => c != null)) ? row : null);
     allRows.push(...rows);
     extractRows(rows, fields, seenLabels);
     extractProjectionTables(rows, fields);
@@ -385,73 +383,6 @@ function parseProjectionValue(value, type) {
 
 function hasValue(value) {
   return value !== null && value !== undefined && value !== '';
-}
-
-async function readText(zip, path) {
-  const file = zip.file(path);
-  return file ? file.async('text') : '';
-}
-
-async function readSharedStrings(zip) {
-  const xml = await readText(zip, 'xl/sharedStrings.xml');
-  if (!xml) return [];
-
-  const doc = parseXml(xml);
-  return Array.from(doc.getElementsByTagName('si')).map((si) =>
-    Array.from(si.getElementsByTagName('t')).map((node) => node.textContent || '').join('')
-  );
-}
-
-function parseWorksheet(xml, sharedStrings) {
-  const doc = parseXml(xml);
-  const rows = [];
-
-  Array.from(doc.getElementsByTagName('c')).forEach((cell) => {
-    const ref = cell.getAttribute('r');
-    if (!ref) return;
-
-    const { row, col } = decodeCellRef(ref);
-    const value = readCellValue(cell, sharedStrings);
-    if (value === null || value === '') return;
-
-    if (!rows[row]) rows[row] = [];
-    rows[row][col] = value;
-  });
-
-  return rows;
-}
-
-function parseXml(xml) {
-  return new DOMParser().parseFromString(xml, 'application/xml');
-}
-
-function readCellValue(cell, sharedStrings) {
-  const type = cell.getAttribute('t');
-  const valueNode = cell.getElementsByTagName('v')[0];
-
-  if (type === 'inlineStr') {
-    return Array.from(cell.getElementsByTagName('t')).map((node) => node.textContent || '').join('');
-  }
-
-  if (!valueNode) return null;
-
-  const raw = valueNode.textContent || '';
-  if (type === 's') return sharedStrings[Number(raw)] ?? '';
-  if (type === 'b') return raw === '1';
-  return raw;
-}
-
-function decodeCellRef(ref) {
-  const match = /^([A-Z]+)(\d+)$/i.exec(ref);
-  const letters = match?.[1].toUpperCase() || 'A';
-  const row = Number(match?.[2] || 1) - 1;
-  let col = 0;
-
-  for (let i = 0; i < letters.length; i += 1) {
-    col = col * 26 + (letters.charCodeAt(i) - 64);
-  }
-
-  return { row, col: col - 1 };
 }
 
 function extractRows(rows, fields, seenLabels) {

@@ -359,6 +359,15 @@ const createEntity = (table) => ({
       throw error;
     }
 
+    if (supportsSoftDelete(table)) {
+      await recordAuditLog({
+        eventType: table === TABLES.Property ? "property_soft_deleted" : "analysis_soft_deleted",
+        severity: "warning",
+        targetType: table,
+        targetId: id,
+      });
+    }
+
     return true;
   },
 
@@ -398,6 +407,13 @@ const createEntity = (table) => ({
       console.error(`[Supabase] restore error on ${table}:`, error);
       throw error;
     }
+
+    await recordAuditLog({
+      eventType: table === TABLES.Property ? "property_restored" : "analysis_restored",
+      severity: "warning",
+      targetType: table,
+      targetId: id,
+    });
 
     return normalizeRecord(data);
   },

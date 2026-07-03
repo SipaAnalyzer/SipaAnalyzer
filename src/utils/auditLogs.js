@@ -27,6 +27,7 @@ function writeFallbackLog(log) {
 
 export async function recordAuditLog({
   eventType,
+  severity = 'info',
   targetType = null,
   targetId = null,
   targetLabel = null,
@@ -43,11 +44,18 @@ export async function recordAuditLog({
     target_type: targetType,
     target_id: targetId,
     target_label: targetLabel,
-    metadata,
+    severity,
+    metadata: { severity, ...metadata },
     created_at: new Date().toISOString(),
   };
 
-  const result = await supabase.from('audit_logs').insert(payload);
+  let result = await supabase.from('audit_logs').insert(payload);
+
+  if (/column .*severity.* does not exist|Could not find .*severity.* column|schema cache/i.test(result.error?.message || '')) {
+    const fallbackPayload = { ...payload };
+    delete fallbackPayload.severity;
+    result = await supabase.from('audit_logs').insert(fallbackPayload);
+  }
 
   if (!result.error) return payload;
 

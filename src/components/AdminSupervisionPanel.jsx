@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import moment from 'moment';
 import { toast } from 'sonner';
-import { Activity, Database, FileDown, Loader2, LogIn, LogOut, RefreshCw, RotateCcw, Search, Server, Trash2 } from 'lucide-react';
+import { Activity, Database, Download, FileDown, FileText, Loader2, LogIn, LogOut, RefreshCw, RotateCcw, Search, Server, Trash2 } from 'lucide-react';
 
 import { base44 } from '@/api/base44Client';
 import { supabase } from '@/api/supabaseClient';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { listAuditLogs } from '@/utils/auditLogs';
 import { fetchSaronRate } from '@/utils/saronRate';
+import { exportBackupCsvBundle, exportBackupJson, exportSupervisionReport } from '@/utils/adminExports';
 
 const LOG_LABELS = {
   login: { label: 'Connexion', icon: LogIn, className: 'text-emerald-400 bg-emerald-500/10' },
@@ -21,6 +22,7 @@ export default function AdminSupervisionPanel() {
   return (
     <div id="section-supervision" className="space-y-6">
       <MonitoringPanel />
+      <BackupExportPanel />
       <FilteredLogsPanel />
       <TrashPanel />
     </div>
@@ -51,6 +53,18 @@ function MonitoringPanel() {
       };
     },
   });
+  const { data: logs = [] } = useQuery({
+    queryKey: ['admin-monitoring-report-logs'],
+    queryFn: () => listAuditLogs(100),
+  });
+  const { data: deletedProperties = [] } = useQuery({
+    queryKey: ['admin-monitoring-trash-properties'],
+    queryFn: () => base44.entities.Property.listDeleted(100),
+  });
+  const { data: deletedAnalyses = [] } = useQuery({
+    queryKey: ['admin-monitoring-trash-analysis'],
+    queryFn: () => base44.entities.Analysis.listDeleted(100),
+  });
 
   return (
     <section className="bg-card rounded-xl border border-border p-5">
@@ -59,10 +73,25 @@ function MonitoringPanel() {
           <Server className="h-4 w-4 text-primary" />
           <h2 className="font-semibold text-sm">Monitoring technique</h2>
         </div>
-        <Button size="sm" variant="outline" onClick={() => refetch()} className="gap-2">
-          <RefreshCw className="h-3.5 w-3.5" />
-          Rafraîchir
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => refetch()} className="gap-2">
+            <RefreshCw className="h-3.5 w-3.5" />
+            Rafraîchir
+          </Button>
+          <Button
+            size="sm"
+            disabled={isLoading}
+            onClick={() => exportSupervisionReport({
+              monitoring: data,
+              logs,
+              trashItems: [...deletedProperties, ...deletedAnalyses],
+            })}
+            className="gap-2"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Rapport PDF
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -81,12 +110,65 @@ function MonitoringPanel() {
   );
 }
 
+function BackupExportPanel() {
+  const { data: properties = [], isLoading: lp } = useQuery({
+    queryKey: ['admin-backup-properties'],
+    queryFn: () => base44.entities.Property.list('-created_date', 1000),
+  });
+  const { data: analyses = [], isLoading: la } = useQuery({
+    queryKey: ['admin-backup-analysis'],
+    queryFn: () => base44.entities.Analysis.list('-created_date', 2000),
+  });
+  const { data: auditLogs = [], isLoading: ll } = useQuery({
+    queryKey: ['admin-backup-audit-logs'],
+    queryFn: () => listAuditLogs(2000),
+  });
+  const { data: users = [], isLoading: lu } = useQuery({
+    queryKey: ['admin-backup-users'],
+    queryFn: () => base44.entities.User.list(),
+  });
+  const { data: permissions = [], isLoading: lperm } = useQuery({
+    queryKey: ['admin-backup-permissions'],
+    queryFn: () => base44.entities.UserPermission.list('-created_date', 1000),
+  });
+
+  const loading = lp || la || ll || lu || lperm;
+  const payload = { properties, analyses, auditLogs, users, permissions };
+
+  return (
+    <section className="bg-card rounded-xl border border-border p-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Download className="h-4 w-4 text-primary" />
+            <h2 className="font-semibold text-sm">Sauvegarde exportable</h2>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Export daté des biens, analyses, logs, utilisateurs et permissions.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" disabled={loading} onClick={() => exportBackupJson(payload)} className="gap-2">
+            <Download className="h-3.5 w-3.5" />
+            Backup JSON
+          </Button>
+          <Button size="sm" variant="outline" disabled={loading} onClick={() => exportBackupCsvBundle(payload)} className="gap-2">
+            <FileDown className="h-3.5 w-3.5" />
+            CSV
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FilteredLogsPanel() {
   const { data: logs = [], isLoading, refetch } = useQuery({
     queryKey: ['admin-filtered-logs'],
     queryFn: () => listAuditLogs(300),
   });
   const [typeFilter, setTypeFilter] = useState('all');
+  const [severityFilter, setSeverityFilter] = useState('all');
   const [search, setSearch] = useState('');
 
   const eventTypes = useMemo(() => [...new Set(logs.map((log) => log.event_type).filter(Boolean))].sort(), [logs]);
@@ -94,11 +176,12 @@ function FilteredLogsPanel() {
     const query = search.trim().toLowerCase();
     return logs.filter((log) => {
       if (typeFilter !== 'all' && log.event_type !== typeFilter) return false;
+      if (severityFilter !== 'all' && getSeverity(log) !== severityFilter) return false;
       if (!query) return true;
       return [log.event_type, log.actor_name, log.actor_email, log.target_label, log.target_type, log.metadata?.filename]
         .some((value) => String(value || '').toLowerCase().includes(query));
     });
-  }, [logs, search, typeFilter]);
+  }, [logs, search, severityFilter, typeFilter]);
 
   return (
     <section className="bg-card rounded-xl border border-border overflow-hidden">
@@ -113,10 +196,16 @@ function FilteredLogsPanel() {
         </Button>
       </div>
 
-      <div className="px-5 py-3 border-b border-border grid grid-cols-1 md:grid-cols-[180px_1fr] gap-3">
+      <div className="px-5 py-3 border-b border-border grid grid-cols-1 md:grid-cols-[180px_180px_1fr] gap-3">
         <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="text-xs bg-background border border-border rounded-lg px-2 py-2 text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary">
           <option value="all">Tous les types</option>
           {eventTypes.map((eventType) => <option key={eventType} value={eventType}>{LOG_LABELS[eventType]?.label || eventType}</option>)}
+        </select>
+        <select value={severityFilter} onChange={(event) => setSeverityFilter(event.target.value)} className="text-xs bg-background border border-border rounded-lg px-2 py-2 text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+          <option value="all">Toutes criticités</option>
+          <option value="info">Info</option>
+          <option value="warning">Warning</option>
+          <option value="critical">Critical</option>
         </select>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -199,6 +288,7 @@ function TrashPanel() {
 function LogRow({ log }) {
   const cfg = LOG_LABELS[log.event_type] || { label: log.event_type || 'Événement', icon: Activity, className: 'text-primary bg-primary/10' };
   const Icon = cfg.icon;
+  const severity = getSeverity(log);
 
   return (
     <div className="px-5 py-3 flex items-start gap-3">
@@ -208,6 +298,7 @@ function LogRow({ log }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-medium">{cfg.label}</p>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded ${severityClass(severity)}`}>{severity}</span>
           <span className="text-xs text-muted-foreground">{moment(log.created_at).format('DD MMM YYYY, HH:mm')}</span>
           {log.storage === 'local' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">local</span>}
         </div>
@@ -216,6 +307,16 @@ function LogRow({ log }) {
       </div>
     </div>
   );
+}
+
+function getSeverity(log) {
+  return log.severity || log.metadata?.severity || 'info';
+}
+
+function severityClass(severity) {
+  if (severity === 'critical') return 'bg-red-500/10 text-red-400';
+  if (severity === 'warning') return 'bg-amber-500/10 text-amber-400';
+  return 'bg-emerald-500/10 text-emerald-400';
 }
 
 function MonitorCard({ label, value, good }) {
