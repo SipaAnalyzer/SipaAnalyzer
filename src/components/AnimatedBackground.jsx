@@ -1,3 +1,3 @@
-export default function AnimatedBackground({ className = "animated-background" }) {
-  return <div className={className} aria-hidden="true" />;
+export default function AnimatedBackground() {
+  return <div className="animated-background" aria-hidden="true" />;
 }
