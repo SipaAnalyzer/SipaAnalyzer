@@ -9,16 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 const LogoSipaCrochet = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 120" className="h-14 w-auto object-contain">
-    <g stroke="currentColor" strokeWidth="16" fill="none" strokeLinecap="round">
-      <path d="M30 25V12H58" />
-      <path d="M88 12H116V25" />
-      <path d="M30 55V42H58" />
-      <path d="M88 42H116V55" />
-      <path d="M144 95V82H172" />
-      <path d="M202 82H230V95" />
-      <path d="M144 108V95H172" />
-      <path d="M202 95H230V108" />
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 280" width="52" height="56">
+    <g stroke="#A5D63A" strokeWidth="18" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M40 113V50H103" />
+      <path d="M157 50H220V113" />
+      <path d="M40 167V230H103" />
+      <path d="M157 230H220V167" />
     </g>
   </svg>
 );
