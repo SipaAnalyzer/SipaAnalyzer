@@ -73,7 +73,7 @@ function drawHoneycombBackground(doc) {
 }
 
 function drawSipaBrackets(doc) {
-  const size = 22;
+  const size = 16;
   const x = PAGE.width - PAGE.margin - size;
   const y = 4;
   const scale = size / 180;
