@@ -80,10 +80,32 @@ export default function PropertyDetail() {
     enabled: !!propertyId,
   });
 
+  const refreshAlertBadgeQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['nav-alert-properties'] });
+    queryClient.invalidateQueries({ queryKey: ['nav-alert-analyses'] });
+    queryClient.invalidateQueries({ queryKey: ['nav-alert-audit-logs'] });
+    queryClient.invalidateQueries({ queryKey: ['alerts-audit-logs'] });
+  };
+
   const deleteProperty = useMutation({
-    mutationFn: () => base44.entities.Property.delete(propertyId),
+    mutationFn: async () => {
+      const result = await base44.entities.Property.delete(propertyId);
+      await recordAuditLog({
+        eventType: 'property_soft_deleted',
+        severity: 'warning',
+        targetType: 'property',
+        targetId: propertyId,
+        targetLabel: property?.nom_bien,
+        metadata: {
+          property_id: propertyId,
+          property_name: property?.nom_bien,
+        },
+      });
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
+      refreshAlertBadgeQueries();
       navigate('/properties');
     },
   });
@@ -108,6 +130,7 @@ export default function PropertyDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['analyses', propertyId] });
+      refreshAlertBadgeQueries();
     },
   });
 

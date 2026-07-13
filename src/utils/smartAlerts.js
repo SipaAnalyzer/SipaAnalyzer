@@ -87,6 +87,17 @@ export function buildSmartAlerts({
         link: metadata.property_id ? `/property/${metadata.property_id}` : undefined,
       });
     }
+
+    if (log.event_type === 'property_soft_deleted') {
+      const propertyName = metadata.property_name || label;
+      alerts.push({
+        id: `property-deleted-${log.id || log.created_at}`,
+        severity: 'critical',
+        category: 'Suppression',
+        title: 'Bien supprime',
+        description: `${propertyName} a ete place en corbeille.`,
+      });
+    }
   });
 
   const permissionsByUser = new Map(permissions.map((permission) => [permission.user_id, permission]));
