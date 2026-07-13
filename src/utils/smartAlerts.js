@@ -14,6 +14,7 @@ export function buildSmartAlerts({
 } = {}) {
   const alerts = [];
   const latestByProperty = getLatestAnalysisByProperty(analyses);
+  const propertyById = new Map(properties.map((property) => [property.id, property]));
 
   properties.forEach((property) => {
     const latest = latestByProperty.get(property.id);
@@ -61,18 +62,7 @@ export function buildSmartAlerts({
     const label = log.target_label || log.target_id || 'élément concerné';
     const metadata = log.metadata || {};
     const changes = Array.isArray(metadata.changes) ? metadata.changes : [];
-    const hasPriceChange = changes.some((change) => ['prix_bien', 'prix_total'].includes(change.field));
     const hasMortgageRateChange = changes.some((change) => String(change.field || '').includes('taux_hypothecaire'));
-
-    if (log.event_type === 'property_updated' || hasPriceChange) {
-      alerts.push({
-        id: `price-change-${log.id || log.created_at}`,
-        severity: 'info',
-        category: 'Modification',
-        title: 'Prix modifié',
-        description: `${label} a été modifié récemment.`,
-      });
-    }
 
     if (log.event_type === 'analysis_update' && hasMortgageRateChange) {
       alerts.push({
@@ -85,12 +75,15 @@ export function buildSmartAlerts({
     }
 
     if (log.event_type === 'analysis_soft_deleted') {
+      const property = propertyById.get(metadata.property_id);
+      const propertyName = metadata.property_name || property?.nom_bien || label;
       alerts.push({
         id: `analysis-deleted-${log.id || log.created_at}`,
         severity: 'critical',
         category: 'Suppression',
         title: 'Analyse supprimée',
-        description: `${label} a été placée en corbeille.`,
+        description: `Une analyse concernant ${propertyName} a ete placee en corbeille.`,
+        link: metadata.property_id ? `/property/${metadata.property_id}` : undefined,
       });
     }
   });
@@ -114,7 +107,7 @@ export function buildSmartAlerts({
     }
   });
 
-  return dedupeAlerts(alerts)
+  return dedupeAlerts(alerts.filter((alert) => !String(alert.id || '').startsWith('price-change-')))
     .sort((a, b) => severityWeight(b.severity) - severityWeight(a.severity))
     .slice(0, 12);
 }

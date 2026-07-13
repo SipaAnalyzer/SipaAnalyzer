@@ -18,7 +18,7 @@ import { formatCHF, formatPercent, normalizeAnalyses } from '../utils/calculatio
 import { formatSipaValue } from '../utils/excelImport';
 import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
-import { listAuditLogs } from '../utils/auditLogs';
+import { listAuditLogs, recordAuditLog } from '../utils/auditLogs';
 import moment from 'moment';
 import {
   ArrowLeft,
@@ -89,7 +89,23 @@ export default function PropertyDetail() {
   });
 
   const deleteAnalysis = useMutation({
-    mutationFn: (id) => base44.entities.Analysis.delete(id),
+    mutationFn: async (id) => {
+      const analysis = analyses.find((item) => item.id === id);
+      const result = await base44.entities.Analysis.delete(id);
+      await recordAuditLog({
+        eventType: 'analysis_soft_deleted',
+        severity: 'warning',
+        targetType: 'analysis',
+        targetId: id,
+        targetLabel: property?.nom_bien || `Analyse #${id?.slice(0, 8)}`,
+        metadata: {
+          property_id: analysis?.property_id || propertyId,
+          property_name: property?.nom_bien,
+          analysis_id: id,
+        },
+      });
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['analyses', propertyId] });
     },
