@@ -211,6 +211,73 @@ function simpleTable(doc, state, headers, rows, widths) {
   state.y += 4;
 }
 
+function drawComparisonChart(doc, state, properties = []) {
+  const metrics = [
+    { key: 'score_global', label: 'Score', formatter: (value) => `${Math.round(value || 0)}/100` },
+    { key: 'rendement_brut', label: 'Rdt. brut', formatter: formatPercent },
+    { key: 'rendement_net_fonds_propres', label: 'Rdt. net/FP', formatter: formatPercent },
+  ];
+  const colors = [
+    [245, 158, 11],
+    [16, 185, 129],
+    [59, 130, 246],
+    [139, 92, 246],
+  ];
+  const chartWidth = PAGE.width - PAGE.margin * 2;
+  const labelWidth = 34;
+  const barWidth = chartWidth - labelWidth - 8;
+  const rowHeight = Math.max(12, properties.length * 5 + 9);
+
+  ensureSpace(doc, state, metrics.length * rowHeight + 26);
+
+  doc.setFillColor(250, 250, 250);
+  doc.roundedRect(PAGE.margin, state.y - 5, chartWidth, metrics.length * rowHeight + 16, 2, 2, 'F');
+  doc.setDrawColor(232, 232, 232);
+  doc.roundedRect(PAGE.margin, state.y - 5, chartWidth, metrics.length * rowHeight + 16, 2, 2, 'S');
+
+  properties.forEach((property, index) => {
+    const x = PAGE.margin + 4 + (index % 2) * 72;
+    const y = state.y - 1 + Math.floor(index / 2) * 5;
+    doc.setFillColor(...colors[index % colors.length]);
+    doc.circle(x, y - 1, 1.2, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(70, 70, 70);
+    doc.text(cleanText(property.nom_bien || `Bien ${index + 1}`).slice(0, 26), x + 4, y);
+  });
+
+  state.y += Math.ceil(properties.length / 2) * 5 + 4;
+
+  metrics.forEach((metric) => {
+    const values = properties.map((property) => Number(property.analysis?.[metric.key] || 0));
+    const max = Math.max(...values.map((value) => Math.abs(value)), 1);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(45, 45, 45);
+    doc.text(metric.label, PAGE.margin + 4, state.y + 4);
+
+    properties.forEach((property, index) => {
+      const value = values[index];
+      const normalized = Math.max(0, Math.abs(value) / max);
+      const x = PAGE.margin + labelWidth;
+      const y = state.y + index * 5;
+      const width = normalized * barWidth;
+
+      doc.setFillColor(...colors[index % colors.length]);
+      doc.roundedRect(x, y, width, 3, 1, 1, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(65, 65, 65);
+      doc.text(metric.formatter(value), x + Math.min(width + 2, barWidth - 18), y + 2.8);
+    });
+
+    state.y += rowHeight;
+  });
+
+  state.y += 6;
+}
+
 function finalizeDoc(doc, filename, auditLog) {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i += 1) {
@@ -376,6 +443,9 @@ export function exportComparisonPdf(properties = []) {
     `Genere le ${formatDate(new Date())} - ${properties.length} biens compares`
   );
   const state = { y };
+
+  sectionTitle(doc, state, 'Benchmark visuel');
+  drawComparisonChart(doc, state, properties);
 
   sectionTitle(doc, state, 'Biens compares');
   simpleTable(
