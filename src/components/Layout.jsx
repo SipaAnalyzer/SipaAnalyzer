@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
@@ -13,6 +13,23 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import QuickNotes from '@/components/QuickNotes';
 import { buildSmartAlerts } from '@/utils/smartAlerts';
 import { listAuditLogs } from '@/utils/auditLogs';
+
+const SEEN_ALERTS_KEY = 'sipa_seen_alert_ids';
+
+function readSeenAlertIds() {
+  if (typeof window === 'undefined') return [];
+  try {
+    return JSON.parse(window.localStorage.getItem(SEEN_ALERTS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function writeSeenAlertIds(ids) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(SEEN_ALERTS_KEY, JSON.stringify(ids.slice(0, 250)));
+}
+
 const LogoSipaCrochet = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 280" width="52" height="56">
     <g stroke="#A5D63A" strokeWidth="18" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -35,6 +52,7 @@ const navItems = [
 function SidebarContent({ location, user, onNavigate }) {
   const { permissions, isAdmin } = usePermissions();
   const { theme, setTheme } = useTheme();
+  const [seenAlertIds, setSeenAlertIds] = useState(readSeenAlertIds);
 
   const { data: alertProperties = [] } = useQuery({
     queryKey: ['nav-alert-properties'],
@@ -79,13 +97,33 @@ function SidebarContent({ location, user, onNavigate }) {
     staleTime: 60000,
   });
 
-  const alertCount = useMemo(() => buildSmartAlerts({
+  const alerts = useMemo(() => buildSmartAlerts({
     properties: alertProperties,
     analyses: alertAnalyses,
     auditLogs: alertAuditLogs,
     users: alertUsers,
     permissions: alertPermissions,
-  }).length, [alertProperties, alertAnalyses, alertAuditLogs, alertUsers, alertPermissions]);
+  }), [alertProperties, alertAnalyses, alertAuditLogs, alertUsers, alertPermissions]);
+
+  const alertIds = useMemo(() => alerts.map((alert) => alert.id).filter(Boolean), [alerts]);
+  const unseenAlertCount = useMemo(() => {
+    const seen = new Set(seenAlertIds);
+    return alertIds.filter((id) => !seen.has(id)).length;
+  }, [alertIds, seenAlertIds]);
+
+  const markAlertsSeen = () => {
+    setSeenAlertIds((current) => {
+      const merged = Array.from(new Set([...alertIds, ...current]));
+      writeSeenAlertIds(merged);
+      return merged;
+    });
+  };
+
+  useEffect(() => {
+    if (location.pathname === '/alerts') {
+      markAlertsSeen();
+    }
+  }, [location.pathname, alertIds.join('|')]);
 
   const visibleNavItems = navItems.filter(item => {
     if (item.path === '/comparator') return isAdmin || permissions.can_view_comparator;
@@ -130,7 +168,10 @@ function SidebarContent({ location, user, onNavigate }) {
 
         <Link
           to="/alerts"
-          onClick={onNavigate}
+          onClick={() => {
+            markAlertsSeen();
+            onNavigate?.();
+          }}
           className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${
             location.pathname === '/alerts'
               ? 'bg-sidebar-accent text-primary font-medium'
@@ -139,9 +180,9 @@ function SidebarContent({ location, user, onNavigate }) {
         >
           <Bell className="h-4 w-4" />
           <span className="flex-1">Alertes</span>
-          {alertCount > 0 && (
+          {unseenAlertCount > 0 && (
             <span className="ml-auto inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold leading-none text-white">
-              {alertCount > 9 ? '9+' : alertCount}
+              {unseenAlertCount > 9 ? '9+' : unseenAlertCount}
             </span>
           )}
         </Link>
