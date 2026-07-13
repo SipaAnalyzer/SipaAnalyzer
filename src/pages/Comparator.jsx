@@ -101,6 +101,13 @@ export default function Comparator() {
     return { ...merged, ...calculateAnalysis(merged) };
   };
 
+  const selectedForExport = useMemo(() => {
+    return selected.map((property) => ({
+      ...property,
+      analysis: getEffectiveAnalysis(property),
+    }));
+  }, [selected, overrides]);
+
   const addProperty = (id) => {
     setSelectedIds((current) => {
       if (current.includes(id)) return current;
@@ -133,14 +140,14 @@ export default function Comparator() {
       const row = { metric: metric.label };
 
       selected.forEach((property, index) => {
-        const rawValue = property.analysis?.[metric.key] || 0;
+        const rawValue = getEffectiveAnalysis(property)?.[metric.key] || 0;
         row[`bien_${index}`] = Math.max(0, (rawValue / max) * 100);
         row[`bien_${index}_formatted`] = metric.format(rawValue);
       });
 
       return row;
     });
-  }, [selected]);
+  }, [selected, overrides]);
 
   if (lp || la) {
     return (
@@ -186,7 +193,7 @@ export default function Comparator() {
               type="button"
               variant="outline"
               className="gap-2"
-              onClick={() => exportComparisonPdf(selected)}
+              onClick={() => exportComparisonPdf(selectedForExport)}
             >
               <Download className="h-4 w-4" />
               Exporter la comparaison
