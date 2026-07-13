@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
+import { supabase } from '@/api/supabaseClient';
 import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star, Sun, Moon, Bell } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTheme } from 'next-themes';
@@ -9,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import QuickNotes from '@/components/QuickNotes';
+import { buildSmartAlerts } from '@/utils/smartAlerts';
+import { listAuditLogs } from '@/utils/auditLogs';
 const LogoSipaCrochet = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 280" width="52" height="56">
     <g stroke="#A5D63A" strokeWidth="18" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -31,6 +35,57 @@ const navItems = [
 function SidebarContent({ location, user, onNavigate }) {
   const { permissions, isAdmin } = usePermissions();
   const { theme, setTheme } = useTheme();
+
+  const { data: alertProperties = [] } = useQuery({
+    queryKey: ['nav-alert-properties'],
+    queryFn: () => base44.entities.Property.list('-created_date', 300),
+    staleTime: 60000,
+  });
+
+  const { data: alertAnalyses = [] } = useQuery({
+    queryKey: ['nav-alert-analyses'],
+    queryFn: () => base44.entities.Analysis.list('-created_date', 800),
+    staleTime: 60000,
+  });
+
+  const { data: alertAuditLogs = [] } = useQuery({
+    queryKey: ['nav-alert-audit-logs'],
+    queryFn: () => listAuditLogs(200),
+    staleTime: 60000,
+  });
+
+  const { data: alertUsers = [] } = useQuery({
+    queryKey: ['nav-alert-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, created_at')
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!isAdmin,
+    staleTime: 60000,
+  });
+
+  const { data: alertPermissions = [] } = useQuery({
+    queryKey: ['nav-alert-permissions'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('user_permissions').select('*');
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!isAdmin,
+    staleTime: 60000,
+  });
+
+  const alertCount = useMemo(() => buildSmartAlerts({
+    properties: alertProperties,
+    analyses: alertAnalyses,
+    auditLogs: alertAuditLogs,
+    users: alertUsers,
+    permissions: alertPermissions,
+  }).length, [alertProperties, alertAnalyses, alertAuditLogs, alertUsers, alertPermissions]);
 
   const visibleNavItems = navItems.filter(item => {
     if (item.path === '/comparator') return isAdmin || permissions.can_view_comparator;
@@ -83,7 +138,12 @@ function SidebarContent({ location, user, onNavigate }) {
           }`}
         >
           <Bell className="h-4 w-4" />
-          Alertes
+          <span className="flex-1">Alertes</span>
+          {alertCount > 0 && (
+            <span className="ml-auto inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold leading-none text-white">
+              {alertCount > 9 ? '9+' : alertCount}
+            </span>
+          )}
         </Link>
 
         {isAdmin && (
