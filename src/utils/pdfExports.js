@@ -49,8 +49,8 @@ function drawHoneycombBackground(doc) {
     const cols = Math.ceil(PAGE.width / spacingX) + 1;
     const rows = Math.ceil(PAGE.height / spacingY) + 1;
 
-    doc.setDrawColor(165, 214, 58);
-    doc.setLineWidth(0.3);
+    doc.setDrawColor(232, 241, 214);
+    doc.setLineWidth(0.08);
 
     for (let row = 0; row < rows; row++) {
       const offsetX = row % 2 === 0 ? 0 : spacingX / 2;
