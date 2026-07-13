@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import ScoreBadge from '../components/ScoreBadge';
 import ScoreGauge from '../components/ScoreGauge';
-import ChatBot from '../components/ChatBot';
 import { calculateAnalysis, formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
 import { exportComparisonPdf } from '../utils/pdfExports';
 
@@ -440,7 +439,6 @@ export default function Comparator() {
         </>
       )}
 
-      <ChatBot properties={selected} />
     </div>
   );
 }

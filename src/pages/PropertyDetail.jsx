@@ -14,7 +14,6 @@ import FinancialTable from '../components/FinancialTable';
 import CommentSection from '../components/CommentSection';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
-import ChatBot from '../components/ChatBot';
 import { formatCHF, formatPercent, normalizeAnalyses } from '../utils/calculations';
 import { formatSipaValue } from '../utils/excelImport';
 import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
@@ -247,7 +246,6 @@ export default function PropertyDetail() {
         </TabsContent>
       </Tabs>
 
-      <ChatBot property={property} analysis={selected} />
     </div>
   );
 }
