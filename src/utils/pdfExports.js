@@ -72,6 +72,31 @@ function drawHoneycombBackground(doc) {
   }
 }
 
+function drawSipaBrackets(doc) {
+  const size = 22;
+  const x = PAGE.width - PAGE.margin - size;
+  const y = 4;
+  const scale = size / 180;
+  const sx = (value) => x + (value - 40) * scale;
+  const sy = (value) => y + (value - 50) * scale;
+
+  doc.setDrawColor(165, 214, 58);
+  doc.setLineWidth(1.35);
+  if (doc.setLineCap) doc.setLineCap('round');
+
+  doc.line(sx(40), sy(113), sx(40), sy(50));
+  doc.line(sx(40), sy(50), sx(103), sy(50));
+  doc.line(sx(157), sy(50), sx(220), sy(50));
+  doc.line(sx(220), sy(50), sx(220), sy(113));
+  doc.line(sx(40), sy(167), sx(40), sy(230));
+  doc.line(sx(40), sy(230), sx(103), sy(230));
+  doc.line(sx(157), sy(230), sx(220), sy(230));
+  doc.line(sx(220), sy(230), sx(220), sy(167));
+
+  doc.setLineWidth(0.2);
+  if (doc.setLineCap) doc.setLineCap('butt');
+}
+
 function createDoc(title, subtitle) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
@@ -92,6 +117,7 @@ function createDoc(title, subtitle) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.text(cleanText(subtitle), PAGE.margin, 22);
+  drawSipaBrackets(doc);
 
   doc.setTextColor(35, 35, 35);
   return { doc, y: 42 };
