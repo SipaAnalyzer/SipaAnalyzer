@@ -1,3 +1,4 @@
+import * as CFB from 'cfb';
 import { formatCHF, formatPercent } from './calculations';
 
 const SLIDE_W = 12192000;
@@ -16,91 +17,14 @@ function emu(value) {
   return Math.round(value * 914400);
 }
 
-function crc32(bytes) {
-  let table = crc32.table;
-  if (!table) {
-    table = Array.from({ length: 256 }, (_, n) => {
-      let c = n;
-      for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-      return c >>> 0;
-    });
-    crc32.table = table;
-  }
-
-  let crc = 0xffffffff;
-  for (let i = 0; i < bytes.length; i += 1) crc = table[(crc ^ bytes[i]) & 0xff] ^ (crc >>> 8);
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
-function writeU16(buffer, value) {
-  buffer.push(value & 0xff, (value >>> 8) & 0xff);
-}
-
-function writeU32(buffer, value) {
-  buffer.push(value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff);
-}
-
 function createZip(files) {
-  const encoder = new TextEncoder();
-  const out = [];
-  const central = [];
-  let offset = 0;
-
+  const container = CFB.utils.cfb_new();
   files.forEach(({ name, content }) => {
-    const nameBytes = encoder.encode(name);
-    const data = encoder.encode(content);
-    const crc = crc32(data);
-    const local = [];
-
-    writeU32(local, 0x04034b50);
-    writeU16(local, 20);
-    writeU16(local, 0);
-    writeU16(local, 0);
-    writeU16(local, 0);
-    writeU16(local, 0);
-    writeU32(local, crc);
-    writeU32(local, data.length);
-    writeU32(local, data.length);
-    writeU16(local, nameBytes.length);
-    writeU16(local, 0);
-    local.push(...nameBytes, ...data);
-    out.push(...local);
-
-    const header = [];
-    writeU32(header, 0x02014b50);
-    writeU16(header, 20);
-    writeU16(header, 20);
-    writeU16(header, 0);
-    writeU16(header, 0);
-    writeU16(header, 0);
-    writeU16(header, 0);
-    writeU32(header, crc);
-    writeU32(header, data.length);
-    writeU32(header, data.length);
-    writeU16(header, nameBytes.length);
-    writeU16(header, 0);
-    writeU16(header, 0);
-    writeU16(header, 0);
-    writeU16(header, 0);
-    writeU32(header, 0);
-    writeU32(header, offset);
-    header.push(...nameBytes);
-    central.push(...header);
-    offset += local.length;
+    CFB.utils.cfb_add(container, name, new TextEncoder().encode(content), { unsafe: true });
   });
 
-  const centralOffset = out.length;
-  out.push(...central);
-  writeU32(out, 0x06054b50);
-  writeU16(out, 0);
-  writeU16(out, 0);
-  writeU16(out, files.length);
-  writeU16(out, files.length);
-  writeU32(out, central.length);
-  writeU32(out, centralOffset);
-  writeU16(out, 0);
-
-  return new Blob([new Uint8Array(out)], {
+  const data = CFB.write(container, { type: 'array', fileType: 'zip' });
+  return new Blob([new Uint8Array(data)], {
     type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   });
 }
