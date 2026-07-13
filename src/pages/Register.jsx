@@ -1,109 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { supabase } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Loader2, Lock, Mail, UserPlus } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
-const ROLE_PRESETS = {
-  admin: {
-    role: "admin",
-    is_admin: true,
-    can_view_properties: true,
-    can_create_property: true,
-    can_edit_property: true,
-    can_delete_property: true,
-    can_create_analysis: true,
-    can_edit_analysis: true,
-    can_delete_analysis: true,
-    can_view_comparator: true,
-    can_view_presentation: true,
-    can_comment: true,
-  },
-  direction: {
-    role: "direction",
-    is_admin: false,
-    can_view_properties: true,
-    can_create_property: true,
-    can_edit_property: true,
-    can_delete_property: true,
-    can_create_analysis: true,
-    can_edit_analysis: true,
-    can_delete_analysis: true,
-    can_view_comparator: true,
-    can_view_presentation: true,
-    can_comment: true,
-  },
-  staff: {
-    role: "staff",
-    is_admin: false,
-    can_view_properties: true,
-    can_create_property: true,
-    can_edit_property: true,
-    can_delete_property: false,
-    can_create_analysis: true,
-    can_edit_analysis: true,
-    can_delete_analysis: false,
-    can_view_comparator: true,
-    can_view_presentation: true,
-    can_comment: true,
-  },
-  membre: {
-    role: "membre",
-    is_admin: false,
-    can_view_properties: true,
-    can_create_property: false,
-    can_edit_property: false,
-    can_delete_property: false,
-    can_create_analysis: false,
-    can_edit_analysis: false,
-    can_delete_analysis: false,
-    can_view_comparator: true,
-    can_view_presentation: true,
-    can_comment: false,
-  },
-};
-
-const ROLE_LABELS = {
-  admin: "Admin",
-  direction: "Direction",
-  staff: "Staff",
-  membre: "Membre",
-};
-
 export default function Register() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const tokenParam = urlParams.get("token");
-
-  const [invitation, setInvitation] = useState(null);
-  const [tokenChecked, setTokenChecked] = useState(false);
-  const [tokenError, setTokenError] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [accountCreated, setAccountCreated] = useState(false);
-  const [assignedRole, setAssignedRole] = useState("");
-
-  useEffect(() => {
-    if (tokenParam) {
-      supabase.rpc("verify_invitation_token", { token_text: tokenParam }).then(({ data, error }) => {
-        if (error || !data?.length || !data[0].valid) {
-          setTokenError("Lien d'invitation invalide ou expiré.");
-        } else {
-          setInvitation({ role: data[0].role, email: data[0].email || "" });
-          setEmail(data[0].email || "");
-        }
-        setTokenChecked(true);
-      });
-    } else {
-      setTokenChecked(true);
-    }
-  }, [tokenParam]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -117,25 +27,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const result = await base44.auth.register({ email, password });
-
-      const role = invitation?.role;
-      if (role && ROLE_PRESETS[role]) {
-        const userId = result?.user?.id;
-        if (userId) {
-          const preset = ROLE_PRESETS[role];
-          const { error: permError } = await supabase
-            .from("user_permissions")
-            .upsert({ user_id: userId, ...preset }, { onConflict: "user_id" });
-          if (permError) {
-            console.error("[Register] role assignment error:", permError);
-          } else {
-            await supabase.rpc("consume_invitation_token", { token_text: tokenParam });
-            setAssignedRole(ROLE_LABELS[role] || role);
-          }
-        }
-      }
-
+      await base44.auth.register({ email, password });
       setAccountCreated(true);
     } catch (err) {
       setError(err.message || "La création du compte a échoué.");
@@ -149,14 +41,10 @@ export default function Register() {
       <AuthLayout
         icon={CheckCircle2}
         title="Compte créé"
-        subtitle={assignedRole ? "Votre accès est déjà configuré" : "Votre accès doit être validé par un administrateur"}
+        subtitle="Votre accès doit être validé par un administrateur"
       >
         <div className="rounded-lg border border-border bg-background/60 p-4 text-sm text-muted-foreground">
-          {assignedRole ? (
-            <>Compte créé avec succès. Le rôle <strong>{assignedRole}</strong> vous a été attribué automatiquement. Vous pouvez dès à présent vous connecter.</>
-          ) : (
-            "Compte créé avec succès. Veuillez contacter votre administrateur afin qu'il vous attribue un rôle, puis rechargez la page."
-          )}
+          Compte créé avec succès. Veuillez contacter votre administrateur afin qu'il vous attribue un rôle, puis rechargez la page.
         </div>
 
         <Button className="w-full h-12 font-medium" asChild>
@@ -169,8 +57,8 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title={invitation?.email ? "Vous êtes invité" : "Créer un compte"}
-      subtitle={invitation?.email ? "Choisissez votre mot de passe pour finaliser votre inscription" : "Créez votre accès SIPA Analyzer"}
+      title="Créer un compte"
+      subtitle="Créez votre accès SIPA Analyzer"
       footer={
         <>
           Vous avez déjà un compte ?{" "}
@@ -180,17 +68,6 @@ export default function Register() {
         </>
       }
     >
-      {tokenError && (
-        <div className="mb-6 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive text-center">
-          {tokenError}
-        </div>
-      )}
-      {!tokenError && invitation?.role && (
-        <div className="mb-6 p-3 rounded-lg bg-primary/10 border border-primary/20 text-sm text-center">
-          Rôle attribué : <strong>{ROLE_LABELS[invitation.role] || invitation.role}</strong>
-        </div>
-      )}
-
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}
@@ -206,12 +83,11 @@ export default function Register() {
               id="email"
               type="email"
               autoComplete="email"
-              autoFocus={!invitation?.email}
+              autoFocus
               placeholder="vous@example.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="pl-10 h-12"
-              disabled={!!invitation?.email}
               required
             />
           </div>
@@ -225,7 +101,6 @@ export default function Register() {
               id="password"
               type="password"
               autoComplete="new-password"
-              autoFocus={!!invitation?.email}
               placeholder="••••••••"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -252,7 +127,7 @@ export default function Register() {
           </div>
         </div>
 
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading || !!tokenError}>
+        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
