@@ -148,41 +148,17 @@
   }
 }
 
-.bracket-layer {
+/* Bracket overlay */
+.animated-background::after {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cg stroke='%23A5D63A' stroke-width='21' fill='none' stroke-linecap='round'%3E%3Cpath d='M40 113V50H103'/%3E%3Cpath d='M157 50H220V113'/%3E%3Cpath d='M40 167V230H103'/%3E%3Cpath d='M157 230H220V167'/%3E%3Cpath d='M290 373V310H353'/%3E%3Cpath d='M407 310H470V373'/%3E%3Cpath d='M290 427V490H353'/%3E%3Cpath d='M407 490H470V427'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cg stroke='%23A5D63A' stroke-width='21' fill='none' stroke-linecap='round' opacity='0'%3E%3Cpath d='M40 113V50H103'%3E%3Canimate attributeName='opacity' values='0;1;0' dur='10s' begin='0s' repeatCount='indefinite'/%3E%3C/path%3E%3Cpath d='M157 50H220V113'%3E%3Canimate attributeName='opacity' values='0;1;0' dur='10s' begin='-1.25s' repeatCount='indefinite'/%3E%3C/path%3E%3Cpath d='M40 167V230H103'%3E%3Canimate attributeName='opacity' values='0;1;0' dur='10s' begin='-2.5s' repeatCount='indefinite'/%3E%3C/path%3E%3Cpath d='M157 230H220V167'%3E%3Canimate attributeName='opacity' values='0;1;0' dur='10s' begin='-3.75s' repeatCount='indefinite'/%3E%3C/path%3E%3Cpath d='M290 373V310H353'%3E%3Canimate attributeName='opacity' values='0;1;0' dur='10s' begin='-5s' repeatCount='indefinite'/%3E%3C/path%3E%3Cpath d='M407 310H470V373'%3E%3Canimate attributeName='opacity' values='0;1;0' dur='10s' begin='-6.25s' repeatCount='indefinite'/%3E%3C/path%3E%3Cpath d='M290 427V490H353'%3E%3Canimate attributeName='opacity' values='0;1;0' dur='10s' begin='-7.5s' repeatCount='indefinite'/%3E%3C/path%3E%3Cpath d='M407 490H470V427'%3E%3Canimate attributeName='opacity' values='0;1;0' dur='10s' begin='-8.75s' repeatCount='indefinite'/%3E%3C/path%3E%3C/g%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 500px 500px;
-  opacity: 0;
+  opacity: 0.12;
   transform: rotate(3deg) scale(1.1);
   pointer-events: none;
-  animation: bracketFade 10s ease-in-out infinite;
-}
-
-.bracket-layer-a {
-  animation-delay: 0s;
-}
-
-.bracket-layer-b {
-  background-position: 250px 0;
-  animation-delay: -2.5s;
-}
-
-.bracket-layer-c {
-  background-position: 0 250px;
-  animation-delay: -5s;
-}
-
-.bracket-layer-d {
-  background-position: 250px 250px;
-  animation-delay: -7.5s;
-}
-
-@keyframes bracketFade {
-  0%, 100% { opacity: 0; }
-  50% { opacity: 0.12; }
 }
 
 /* Login page bracket pattern */
