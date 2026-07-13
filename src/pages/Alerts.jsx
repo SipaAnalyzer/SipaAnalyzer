@@ -8,6 +8,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import SmartAlertsPanel from '../components/SmartAlertsPanel';
 import { buildSmartAlerts } from '../utils/smartAlerts';
 import { listAuditLogs } from '../utils/auditLogs';
+import { filterHiddenAlerts, readHiddenAlertIds, writeHiddenAlertIds } from '../utils/alertVisibility';
 
 const FILTERS = [
   { value: 'all', label: 'Toutes' },
@@ -19,6 +20,8 @@ const FILTERS = [
 export default function Alerts() {
   const { isAdmin } = usePermissions();
   const [severityFilter, setSeverityFilter] = useState('all');
+  const [hiddenAlertIds, setHiddenAlertIds] = useState(readHiddenAlertIds);
+  const [selectedAlertIds, setSelectedAlertIds] = useState([]);
 
   const { data: properties = [], isLoading: lp } = useQuery({
     queryKey: ['alerts-properties'],
@@ -72,9 +75,26 @@ export default function Alerts() {
     permissions,
   }), [properties, analyses, auditLogs, users, permissions]);
 
+  const visibleAlerts = useMemo(() => filterHiddenAlerts(alerts, hiddenAlertIds), [alerts, hiddenAlertIds]);
+
   const filteredAlerts = severityFilter === 'all'
-    ? alerts
-    : alerts.filter((alert) => alert.severity === severityFilter);
+    ? visibleAlerts
+    : visibleAlerts.filter((alert) => alert.severity === severityFilter);
+
+  const toggleAlertSelection = (id) => {
+    setSelectedAlertIds((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+    );
+  };
+
+  const hideSelectedAlerts = () => {
+    setHiddenAlertIds((current) => {
+      const merged = Array.from(new Set([...current, ...selectedAlertIds]));
+      writeHiddenAlertIds(merged);
+      return merged;
+    });
+    setSelectedAlertIds([]);
+  };
 
   if (lp || la) {
     return (
@@ -116,7 +136,12 @@ export default function Alerts() {
         </div>
       </div>
 
-      <SmartAlertsPanel alerts={filteredAlerts} />
+      <SmartAlertsPanel
+        alerts={filteredAlerts}
+        selectedIds={selectedAlertIds}
+        onToggleSelect={toggleAlertSelection}
+        onHideSelected={hideSelectedAlerts}
+      />
     </div>
   );
 }

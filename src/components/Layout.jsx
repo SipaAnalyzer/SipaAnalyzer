@@ -13,6 +13,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import QuickNotes from '@/components/QuickNotes';
 import { buildSmartAlerts } from '@/utils/smartAlerts';
 import { listAuditLogs } from '@/utils/auditLogs';
+import { filterHiddenAlerts, readHiddenAlertIds } from '@/utils/alertVisibility';
 
 const SEEN_ALERTS_KEY = 'sipa_seen_alert_ids';
 const NAV_ALERT_QUERY_OPTIONS = {
@@ -58,6 +59,7 @@ function SidebarContent({ location, user, onNavigate }) {
   const { permissions, isAdmin } = usePermissions();
   const { theme, setTheme } = useTheme();
   const [seenAlertIds, setSeenAlertIds] = useState(readSeenAlertIds);
+  const [hiddenAlertIds, setHiddenAlertIds] = useState(readHiddenAlertIds);
 
   const { data: alertProperties = [] } = useQuery({
     queryKey: ['nav-alert-properties'],
@@ -110,7 +112,8 @@ function SidebarContent({ location, user, onNavigate }) {
     permissions: alertPermissions,
   }), [alertProperties, alertAnalyses, alertAuditLogs, alertUsers, alertPermissions]);
 
-  const alertIds = useMemo(() => alerts.map((alert) => alert.id).filter(Boolean), [alerts]);
+  const visibleAlerts = useMemo(() => filterHiddenAlerts(alerts, hiddenAlertIds), [alerts, hiddenAlertIds]);
+  const alertIds = useMemo(() => visibleAlerts.map((alert) => alert.id).filter(Boolean), [visibleAlerts]);
   const unseenAlertCount = useMemo(() => {
     const seen = new Set(seenAlertIds);
     return alertIds.filter((id) => !seen.has(id)).length;
@@ -126,6 +129,7 @@ function SidebarContent({ location, user, onNavigate }) {
 
   useEffect(() => {
     if (location.pathname === '/alerts') {
+      setHiddenAlertIds(readHiddenAlertIds());
       markAlertsSeen();
     }
   }, [location.pathname, alertIds.join('|')]);

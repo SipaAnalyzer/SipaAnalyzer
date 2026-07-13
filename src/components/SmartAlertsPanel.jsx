@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Bell, CheckCircle2, Info, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, Bell, CheckCircle2, EyeOff, Info, ShieldAlert } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const ALERT_STYLE = {
   critical: {
@@ -19,7 +20,14 @@ const ALERT_STYLE = {
   },
 };
 
-export default function SmartAlertsPanel({ alerts = [] }) {
+export default function SmartAlertsPanel({
+  alerts = [],
+  selectedIds = [],
+  onToggleSelect,
+  onHideSelected,
+}) {
+  const hasSelection = selectedIds.length > 0;
+
   return (
     <section className="bg-card rounded-xl border border-border p-5">
       <div className="flex items-center justify-between gap-3 mb-4">
@@ -27,7 +35,22 @@ export default function SmartAlertsPanel({ alerts = [] }) {
           <Bell className="h-4 w-4 text-primary" />
           <h2 className="font-heading font-semibold text-sm">Alertes intelligentes</h2>
         </div>
-        <span className="text-xs text-muted-foreground">{alerts.length} alerte{alerts.length > 1 ? 's' : ''}</span>
+        <div className="flex items-center gap-2">
+          {onHideSelected && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5"
+              disabled={!hasSelection}
+              onClick={onHideSelected}
+            >
+              <EyeOff className="h-3.5 w-3.5" />
+              Masquer
+            </Button>
+          )}
+          <span className="text-xs text-muted-foreground">{alerts.length} alerte{alerts.length > 1 ? 's' : ''}</span>
+        </div>
       </div>
 
       {alerts.length === 0 ? (
@@ -43,9 +66,20 @@ export default function SmartAlertsPanel({ alerts = [] }) {
           {alerts.map((alert) => {
             const cfg = ALERT_STYLE[alert.severity] || ALERT_STYLE.info;
             const Icon = cfg.icon;
+            const checked = selectedIds.includes(alert.id);
             const content = (
               <div className={`h-full rounded-lg border p-4 transition hover:border-primary/40 ${cfg.className}`}>
                 <div className="flex items-start gap-3">
+                  {onToggleSelect && (
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => onToggleSelect(alert.id)}
+                      onClick={(event) => event.stopPropagation()}
+                      className="mt-0.5 h-4 w-4 rounded border-border accent-primary"
+                      aria-label="Selectionner l'alerte"
+                    />
+                  )}
                   <div className="mt-0.5">
                     <Icon className="h-4 w-4" />
                   </div>
