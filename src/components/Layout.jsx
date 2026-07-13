@@ -8,6 +8,7 @@ import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import QuickNotes from '@/components/QuickNotes';
 const LogoSipaCrochet = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 280" width="52" height="56">
     <g stroke="#A5D63A" strokeWidth="18" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -168,6 +169,8 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      <QuickNotes />
     </div>
   );
 }
