@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
-import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star, Sun, Moon, Bell } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -72,6 +72,19 @@ function SidebarContent({ location, user, onNavigate }) {
             {item.label}
           </Link>
         ))}
+
+        <Link
+          to="/alerts"
+          onClick={onNavigate}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${
+            location.pathname === '/alerts'
+              ? 'bg-sidebar-accent text-primary font-medium'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground'
+          }`}
+        >
+          <Bell className="h-4 w-4" />
+          Alertes
+        </Link>
 
         {isAdmin && (
           <Link

@@ -24,6 +24,7 @@ import NewAnalysis from "./pages/NewAnalysis";
 import EditAnalysis from "./pages/EditAnalysis";
 import Comparator from "./pages/Comparator";
 import Presentation from "./pages/Presentation";
+import Alerts from "./pages/Alerts";
 import Admin from "./pages/Admin";
 import ViewAnalysis from "./pages/ViewAnalysis";
 
@@ -80,6 +81,7 @@ const AuthenticatedApp = () => {
           <Route path="/analysis/:analysisId" element={<ViewAnalysis />} />
           <Route path="/comparator" element={<Comparator />} />
           <Route path="/presentation" element={<Presentation />} />
+          <Route path="/alerts" element={<Alerts />} />
           <Route path="/admin" element={<Admin />} />
         </Route>
       </Route>
