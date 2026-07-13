@@ -25,10 +25,10 @@ export default function FinancialTable({ analysis }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-card rounded-xl border border-border p-6">
+      <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
         <h3 className="font-heading font-semibold mb-5">TABLEAU FINANCIER</h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left py-2 px-4 font-medium text-muted-foreground">Rubrique</th>

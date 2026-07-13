@@ -64,17 +64,17 @@ export default function Properties() {
           <p className="text-sm text-muted-foreground mt-1">{properties.length} bien{properties.length > 1 ? 's' : ''} dans votre portefeuille</p>
         </div>
         {(isAdmin || permissions.can_create_property) && (
-          <Link to="/add-property"><Button className="gap-2"><Plus className="h-4 w-4" /> Ajouter un bien</Button></Link>
+          <Link to="/add-property" className="w-full sm:w-auto"><Button className="w-full sm:w-auto gap-2"><Plus className="h-4 w-4" /> Ajouter un bien</Button></Link>
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_160px_160px_180px] gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Rechercher un bien..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 bg-card border-border" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[160px] bg-card border-border"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full bg-card border-border"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les statuts</SelectItem>
             {WORKFLOW_STATUSES.map((status) => (
@@ -83,14 +83,14 @@ export default function Properties() {
           </SelectContent>
         </Select>
         <Select value={villeFilter} onValueChange={setVilleFilter}>
-          <SelectTrigger className="w-[160px] bg-card border-border"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full bg-card border-border"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Toutes les villes</SelectItem>
             {villes.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={rendementFilter} onValueChange={setRendementFilter}>
-          <SelectTrigger className="w-[180px] bg-card border-border"><SelectValue placeholder="Rdt. brut" /></SelectTrigger>
+          <SelectTrigger className="w-full bg-card border-border"><SelectValue placeholder="Rdt. brut" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les rendements</SelectItem>
             <SelectItem value="lt4">{"< 4%"}</SelectItem>
@@ -117,7 +117,7 @@ export default function Properties() {
                       <MapPin className="h-3 w-3" /> {p.ville}{p.canton ? `, ${p.canton}` : ''}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     <FavoriteButton propertyId={p.id} className="h-8 w-8 z-10" />
                     {p.lien_annonce && (
                       <a href={p.lien_annonce} target="_blank" rel="noopener noreferrer"
@@ -139,7 +139,7 @@ export default function Properties() {
                   {p.updated_at && p.updated_at !== p.created_at ? ` · modifié ${moment(p.updated_at).fromNow()}` : ''}
                 </div>
                 {p.latestAnalysis && (
-                  <div className="grid grid-cols-3 gap-3 pt-3 border-t border-border/50">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border/50">
                     <div>
                       <p className="text-[10px] text-muted-foreground">Prix total</p>
                       <p className="text-xs font-mono font-medium">{formatCHF(p.latestAnalysis.prix_total)}</p>

@@ -242,7 +242,7 @@ export default function Presentation() {
             Vue portefeuille des biens en cours d'analyse pour lecture comité
           </p>
         </div>
-        <Button variant="outline" className="gap-2 self-start" onClick={() => window.print()}>
+        <Button variant="outline" className="w-full sm:w-auto gap-2 self-start" onClick={() => window.print()}>
           <Printer className="h-4 w-4" />
           Exporter
         </Button>
@@ -288,14 +288,14 @@ export default function Presentation() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)] gap-5">
-        <div className="bg-card rounded-lg border border-border overflow-hidden min-h-[460px]">
+        <div className="bg-card rounded-lg border border-border overflow-hidden min-h-[340px] sm:min-h-[460px]">
           {withCoords.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[460px] gap-3 text-muted-foreground">
+            <div className="flex flex-col items-center justify-center h-[340px] sm:h-[460px] gap-3 text-muted-foreground">
               <MapPin className="h-10 w-10" />
               <p className="text-sm">Aucune adresse à géocoder</p>
             </div>
           ) : (
-            <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} style={{ height: 460, width: '100%' }} className="z-0">
+            <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} style={{ height: 'min(460px, 68vh)', minHeight: 340, width: '100%' }} className="z-0">
               <FitMapToProperties properties={withCoords} />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -371,7 +371,7 @@ export default function Presentation() {
                   </div>
 
                   {property.analysis ? (
-                    <div className="grid grid-cols-3 gap-3 pt-3 mt-3 border-t border-border/50">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 mt-3 border-t border-border/50">
                       <Metric label="Prix" value={formatCHF(property.analysis.prix_total)} />
                       <Metric label="Rdt. net/FP" value={formatPercent(property.analysis.rendement_net_fonds_propres)} highlight />
                       <Metric label="Distribué" value={formatCHF(property.analysis.revenu_distribue)} />
@@ -442,7 +442,7 @@ export default function Presentation() {
                 </div>
               </div>
               {property.analysis ? (
-                <div className="grid grid-cols-3 gap-3 pt-3 border-t border-border/50">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border/50">
                   <Metric label="Prix total" value={formatCHF(property.analysis.prix_total)} />
                   <Metric label="Rdt. brut" value={formatPercent(property.analysis.rendement_brut)} />
                   <Metric label="Rdt. net/FP" value={formatPercent(property.analysis.rendement_net_fonds_propres)} highlight />

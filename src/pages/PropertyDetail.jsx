@@ -127,10 +127,10 @@ export default function PropertyDetail() {
           <PropertyMeta property={property} compact />
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
           <FavoriteButton propertyId={propertyId} variant="outline" className="h-8 w-8" />
 
-          <Button size="sm" variant="outline" className="gap-2" onClick={() => exportPropertyPdf(property, normalizedAnalyses)}>
+          <Button size="sm" variant="outline" className="flex-1 sm:flex-none gap-2" onClick={() => exportPropertyPdf(property, normalizedAnalyses)}>
             <Download className="h-3.5 w-3.5" />
             PDF bien
           </Button>
@@ -183,7 +183,7 @@ export default function PropertyDetail() {
                     <h3 className="font-heading font-semibold">Investissement SIPA</h3>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full min-w-[560px] text-sm">
                       <thead>
                         <tr className="border-b border-border">
                           <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
@@ -253,7 +253,7 @@ export default function PropertyDetail() {
 function PropertyPresentation({ property, latest, comments }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
-      <section className="bg-card rounded-xl border border-border p-6">
+      <section className="bg-card rounded-xl border border-border p-4 sm:p-6">
         {property.image_url && (
           <div className="mb-5 overflow-hidden rounded-lg">
             <img src={property.image_url} alt={property.nom_bien} className="w-full h-56 object-cover" />
@@ -309,7 +309,7 @@ function PropertyPresentation({ property, latest, comments }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <MetricCard label="Prix total" value={formatCHF(latest.prix_total)} />
               <MetricCard label="Rdt. brut" value={formatPercent(latest.rendement_brut)} />
               <MetricCard label="Revenu net" value={formatCHF(latest.revenu_net)} />

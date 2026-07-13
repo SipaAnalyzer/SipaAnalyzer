@@ -424,7 +424,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
             <h3 className="font-heading font-semibold mb-5">TABLEAU FINANCIER</h3>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
@@ -714,7 +714,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                 <h3 className="font-heading font-semibold">Investissement SIPA</h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[720px] text-sm">
                   <thead>
                     <tr className="border-b border-border">
                       <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>

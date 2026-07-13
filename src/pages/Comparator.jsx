@@ -180,7 +180,7 @@ export default function Comparator() {
             variant="outline"
             onClick={() => setShowPicker((value) => !value)}
             disabled={selectedIds.length >= 4 || properties.length === 0}
-            className="gap-2"
+            className="w-full sm:w-auto gap-2"
           >
             <Plus className="h-4 w-4" />
             Sélectionner des biens à comparer
@@ -188,11 +188,11 @@ export default function Comparator() {
         </div>
 
         {selected.length >= 2 && (
-          <div className="flex justify-end">
+          <div className="flex justify-stretch sm:justify-end">
             <Button
               type="button"
               variant="outline"
-              className="gap-2"
+              className="w-full sm:w-auto gap-2"
               onClick={() => exportComparisonPdf(selectedForExport)}
             >
               <Download className="h-4 w-4" />
@@ -280,7 +280,7 @@ export default function Comparator() {
 
       {selected.length >= 2 && (
         <>
-          <div className="bg-card rounded-xl border border-border p-6">
+          <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
             <h3 className="font-heading font-semibold text-lg mb-1">
               Benchmark des indicateurs
             </h3>
@@ -290,8 +290,9 @@ export default function Comparator() {
             </p>
 
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-6 items-stretch">
-              <div className="min-h-[420px]">
-                <ResponsiveContainer width="100%" height={420}>
+              <div className="min-h-[360px] overflow-x-auto">
+                <div className="min-w-[620px] h-[360px] sm:h-[420px]">
+                <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={benchmarkData} layout="vertical" barGap={4} barCategoryGap={18}>
                     <CartesianGrid stroke="#2A2A2A" horizontal={false} />
                     <XAxis
@@ -323,6 +324,7 @@ export default function Comparator() {
                     ))}
                   </BarChart>
                 </ResponsiveContainer>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
@@ -365,7 +367,7 @@ export default function Comparator() {
           </div>
 
           <div className="bg-card rounded-xl border border-border overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[760px] text-sm">
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left px-5 py-3 text-xs text-muted-foreground font-medium">

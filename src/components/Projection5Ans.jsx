@@ -223,7 +223,8 @@ function ProjectionTable({ label, color, data, outflows }) {
       <div className={`${color === 'amber' ? 'bg-amber-500/10' : 'bg-emerald-500/10'} px-4 py-2.5 border-b ${borderClass}`}>
         <span className={`font-semibold text-sm ${textClass}`}>{label}</span>
       </div>
-      <table className="w-full text-sm">
+      <div className="overflow-x-auto">
+      <table className="w-full min-w-[640px] text-sm">
         <thead>
           <tr className="border-b border-border/50">
             <th className="text-left py-2 px-3 font-medium text-muted-foreground text-[11px]">Année</th>
@@ -248,6 +249,7 @@ function ProjectionTable({ label, color, data, outflows }) {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
