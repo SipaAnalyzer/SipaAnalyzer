@@ -8,11 +8,13 @@ import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
 import ScoreBadge from '../components/ScoreBadge';
 import { geocodeProperties } from '../utils/geocode';
+import { exportPresentationPowerPoint } from '../utils/powerpointExport';
 import {
   AlertTriangle,
   BarChart3,
   CheckCircle2,
   ExternalLink,
+  FileDown,
   Loader2,
   MapPin,
   Printer,
@@ -242,10 +244,20 @@ export default function Presentation() {
             Vue portefeuille des biens en cours d'analyse pour lecture comité
           </p>
         </div>
-        <Button variant="outline" className="gap-2 self-start" onClick={() => window.print()}>
-          <Printer className="h-4 w-4" />
-          Exporter
-        </Button>
+        <div className="flex flex-wrap gap-2 self-start">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => exportPresentationPowerPoint({ enCours, valides, ranked, summary })}
+          >
+            <FileDown className="h-4 w-4" />
+            PowerPoint
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => window.print()}>
+            <Printer className="h-4 w-4" />
+            Exporter
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
