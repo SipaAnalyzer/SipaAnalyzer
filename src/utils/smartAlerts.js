@@ -1,6 +1,7 @@
 import { normalizeAnalysis } from './calculations';
 
 const LOW_GROSS_YIELD = 4;
+const OPPORTUNITY_GROSS_YIELD = 4;
 const HIGH_CHARGES_RATIO = 25;
 const PENDING_ROLE_DAYS = 3;
 
@@ -25,6 +26,17 @@ export function buildSmartAlerts({
         category: 'Rentabilité',
         title: 'Rendement trop faible',
         description: `${property.nom_bien || 'Bien'} affiche un rendement brut de ${Number(latest.rendement_brut).toFixed(2)}%.`,
+        link: `/property/${property.id}`,
+      });
+    }
+
+    if (Number(latest.rendement_brut || 0) >= OPPORTUNITY_GROSS_YIELD) {
+      alerts.push({
+        id: `opportunity-detected-${property.id}`,
+        severity: 'info',
+        category: 'Opportunité',
+        title: 'Opportunité détectée',
+        description: `${property.nom_bien || 'Bien'} atteint un rendement brut de ${Number(latest.rendement_brut).toFixed(2)}%.`,
         link: `/property/${property.id}`,
       });
     }
