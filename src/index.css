@@ -148,8 +148,7 @@
   }
 }
 
-/* Bracket overlay */
-.animated-background::after {
+.bracket-layer {
   content: '';
   position: absolute;
   inset: 0;
@@ -160,6 +159,25 @@
   transform: rotate(3deg) scale(1.1);
   pointer-events: none;
   animation: bracketFade 10s ease-in-out infinite;
+}
+
+.bracket-layer-a {
+  animation-delay: 0s;
+}
+
+.bracket-layer-b {
+  background-position: 250px 0;
+  animation-delay: -2.5s;
+}
+
+.bracket-layer-c {
+  background-position: 0 250px;
+  animation-delay: -5s;
+}
+
+.bracket-layer-d {
+  background-position: 250px 250px;
+  animation-delay: -7.5s;
 }
 
 @keyframes bracketFade {
