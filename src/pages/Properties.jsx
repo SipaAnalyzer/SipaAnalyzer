@@ -9,7 +9,7 @@ import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
 import ScoreGauge from '../components/ScoreGauge';
 import FavoriteButton from '../components/FavoriteButton';
-import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
+import { formatCHF, formatPercent, normalizeAnalysis, WORKFLOW_STATUSES } from '../utils/calculations';
 import { Plus, Search, Building2, MapPin, Loader2, ExternalLink } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import moment from 'moment';
@@ -77,10 +77,9 @@ export default function Properties() {
           <SelectTrigger className="w-[160px] bg-card border-border"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les statuts</SelectItem>
-            <SelectItem value="brouillon">Brouillon</SelectItem>
-            <SelectItem value="en_cours">En cours</SelectItem>
-            <SelectItem value="valide">Validé</SelectItem>
-            <SelectItem value="abandonne">Abandonné</SelectItem>
+            {WORKFLOW_STATUSES.map((status) => (
+              <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={villeFilter} onValueChange={setVilleFilter}>

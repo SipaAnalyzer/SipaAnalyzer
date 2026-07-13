@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save, Upload, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { WORKFLOW_STATUSES } from '../utils/calculations';
 
 export default function AddProperty() {
   const navigate = useNavigate();
@@ -243,9 +244,9 @@ export default function AddProperty() {
             <Select value={form.statut} onValueChange={set('statut')}>
               <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="brouillon">Brouillon</SelectItem>
-                <SelectItem value="en_cours">En cours</SelectItem>
-                <SelectItem value="valide">Validé</SelectItem>
+                {WORKFLOW_STATUSES.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

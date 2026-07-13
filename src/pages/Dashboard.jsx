@@ -2,12 +2,18 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import KPICards from '../components/KPICards';
 import TopOpportunities from '../components/TopOpportunities';
+import SmartAlertsPanel from '../components/SmartAlertsPanel';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
 import { normalizeAnalysis } from '../utils/calculations';
+import { buildSmartAlerts } from '../utils/smartAlerts';
+import { listAuditLogs } from '../utils/auditLogs';
+import { usePermissions } from '@/hooks/usePermissions';
+import { supabase } from '@/api/supabaseClient';
 
 export default function Dashboard() {
+  const { isAdmin } = usePermissions();
   const { data: analyses = [], isLoading: la } = useQuery({
   queryKey: ['analyses'],
   queryFn: () => base44.entities.Analysis.list('-created_date', 200),
@@ -27,6 +33,36 @@ const { data: properties = [], isLoading: lp } = useQuery({
   refetchOnReconnect: true,
   refetchInterval: 3000,
 });
+
+  const { data: auditLogs = [] } = useQuery({
+    queryKey: ['dashboard-smart-alert-logs'],
+    queryFn: () => listAuditLogs(150),
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['dashboard-smart-alert-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, created_at')
+        .order('created_at', { ascending: false });
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!isAdmin,
+  });
+
+  const { data: permissions = [] } = useQuery({
+    queryKey: ['dashboard-smart-alert-permissions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('*');
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!isAdmin,
+  });
 
   if (la || lp) return (
     <div className="flex items-center justify-center h-full">
@@ -57,6 +93,14 @@ const { data: properties = [], isLoading: lp } = useQuery({
     .sort((a, b) => (b.score_global || 0) - (a.score_global || 0))
     .slice(0, 5);
 
+  const smartAlerts = buildSmartAlerts({
+    properties,
+    analyses,
+    auditLogs,
+    users,
+    permissions,
+  });
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -70,6 +114,8 @@ const { data: properties = [], isLoading: lp } = useQuery({
       </div>
 
       <KPICards total={total} enCours={enCours} valides={valides} abandonnes={abandonnes} />
+
+      <SmartAlertsPanel alerts={smartAlerts} />
 
       <TopOpportunities items={top5} />
     </div>

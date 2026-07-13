@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Save, Loader2, Upload, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { WORKFLOW_STATUSES } from '../utils/calculations';
 
 const parseOptionalNumber = (value) => {
   if (value === '' || value === null || value === undefined) {
@@ -238,10 +239,9 @@ export default function EditProperty() {
             <Select value={form.statut || 'brouillon'} onValueChange={set('statut')}>
               <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="brouillon">Brouillon</SelectItem>
-                <SelectItem value="en_cours">En cours</SelectItem>
-                <SelectItem value="valide">Validé</SelectItem>
-                <SelectItem value="abandonne">Abandonné</SelectItem>
+                {WORKFLOW_STATUSES.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

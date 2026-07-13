@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { calculateAnalysis, formatCHF, formatPercent } from '../utils/calculations';
+import { calculateAnalysis, formatCHF, formatPercent, WORKFLOW_STATUSES } from '../utils/calculations';
 import { extractAnalysisFieldsFromExcel, formatSipaValue } from '../utils/excelImport';
 import { fetchSaronRate } from '../utils/saronRate';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -368,10 +368,9 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
             <Select value={form.statut} onValueChange={set('statut')}>
               <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="brouillon">Brouillon</SelectItem>
-                <SelectItem value="en_cours">En cours</SelectItem>
-                <SelectItem value="valide">Validé</SelectItem>
-                <SelectItem value="abandonne">Abandonné</SelectItem>
+                {WORKFLOW_STATUSES.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

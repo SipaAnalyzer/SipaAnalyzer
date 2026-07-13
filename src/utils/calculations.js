@@ -78,11 +78,23 @@ export function formatPercent(value) {
 
 export const STATUS_CONFIG = {
   brouillon: { label: 'Brouillon', class: 'bg-zinc-500/20 text-zinc-400' },
-  en_cours: { label: 'En cours', class: 'bg-blue-500/20 text-blue-400' },
-  valide: { label: 'Validé', class: 'bg-emerald-500/20 text-emerald-400' },
-  abandonne: { label: 'Abandonné', class: 'bg-red-500/20 text-red-400' },
+  en_cours: { label: 'En analyse', class: 'bg-blue-500/20 text-blue-400' },
+  attente_direction: { label: 'Attente direction', class: 'bg-amber-500/20 text-amber-400' },
+  valide: { label: 'Valide', class: 'bg-emerald-500/20 text-emerald-400' },
+  refuse: { label: 'Refuse', class: 'bg-red-500/20 text-red-400' },
+  surveillance: { label: 'Surveillance', class: 'bg-violet-500/20 text-violet-400' },
+  abandonne: { label: 'Abandonne', class: 'bg-red-500/20 text-red-400' },
 };
 
+export const WORKFLOW_STATUSES = [
+  { value: 'brouillon', label: 'Brouillon' },
+  { value: 'en_cours', label: 'En analyse' },
+  { value: 'attente_direction', label: 'Attente direction' },
+  { value: 'valide', label: 'Valide' },
+  { value: 'refuse', label: 'Refuse' },
+  { value: 'surveillance', label: 'Surveillance' },
+  { value: 'abandonne', label: 'Abandonne' },
+];
 export function solveRateFromAmort(amort, pv, n) {
   if (!amort || amort <= 0 || !pv || pv <= 0 || !n || n <= 0) return null;
   const target = amort / pv;
