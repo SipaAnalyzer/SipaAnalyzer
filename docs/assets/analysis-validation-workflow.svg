@@ -1,0 +1,106 @@
+<svg width="1500" height="760" viewBox="0 0 1500 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1500" height="760" rx="28" fill="#0F1117"/>
+  <rect x="42" y="42" width="1416" height="676" rx="24" fill="#151923" stroke="#2B3242"/>
+
+  <text x="750" y="94" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="34" font-weight="700">
+    Processus actuel d'analyse et de validation
+  </text>
+  <text x="750" y="126" text-anchor="middle" fill="#94A3B8" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="17">
+    De la production du fichier Excel à la décision de commercialisation ou de surveillance
+  </text>
+
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2563EB"/>
+      <stop offset="1" stop-color="#38BDF8"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#059669"/>
+      <stop offset="1" stop-color="#34D399"/>
+    </linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#C77806"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#B91C1C"/>
+      <stop offset="1" stop-color="#F87171"/>
+    </linearGradient>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <rect x="92" y="250" width="180" height="112" rx="18" fill="#10151F" stroke="#263244"/>
+    <circle cx="132" cy="290" r="22" fill="url(#blue)"/>
+    <path d="M132 277C139 277 144 282 144 289C144 296 139 301 132 301C125 301 120 296 120 289C120 282 125 277 132 277Z" fill="white"/>
+    <path d="M116 321C120 310 126 306 132 306C138 306 144 310 148 321" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <text x="182" y="309" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">Analyste</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="346" y="250" width="214" height="112" rx="18" fill="#10151F" stroke="#263244"/>
+    <rect x="372" y="276" width="46" height="50" rx="8" fill="url(#green)"/>
+    <text x="395" y="309" text-anchor="middle" fill="white" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" font-weight="800">X</text>
+    <text x="486" y="294" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="19" font-weight="700">Fichier Excel</text>
+    <text x="486" y="319" text-anchor="middle" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15">d'analyse</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="634" y="250" width="236" height="112" rx="18" fill="#10151F" stroke="#263244"/>
+    <circle cx="674" cy="306" r="24" fill="url(#orange)"/>
+    <path d="M660 300L674 311L688 300" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M660 300H688V318H660V300Z" stroke="white" stroke-width="4" stroke-linejoin="round"/>
+    <text x="786" y="293" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="18" font-weight="700">Transmission</text>
+    <text x="786" y="319" text-anchor="middle" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15">e-mail / Slack</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="944" y="250" width="236" height="112" rx="18" fill="#10151F" stroke="#263244"/>
+    <circle cx="984" cy="306" r="24" fill="url(#blue)"/>
+    <path d="M973 307L981 315L997 296" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="1092" y="294" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="18" font-weight="700">Validation</text>
+    <text x="1092" y="320" text-anchor="middle" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15">direction</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <path d="M1314 220L1390 306L1314 392L1238 306L1314 220Z" fill="#10151F" stroke="#263244"/>
+    <text x="1314" y="298" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="18" font-weight="700">Décision</text>
+    <text x="1314" y="323" text-anchor="middle" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15">validée ?</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1112" y="504" width="286" height="104" rx="18" fill="#10151F" stroke="#263244"/>
+    <circle cx="1150" cy="556" r="22" fill="url(#green)"/>
+    <path d="M1139 556L1147 564L1162 546" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="1282" y="545" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="18" font-weight="700">Processus de</text>
+    <text x="1282" y="571" text-anchor="middle" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15">commercialisation</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="680" y="504" width="300" height="104" rx="18" fill="#10151F" stroke="#263244"/>
+    <circle cx="720" cy="556" r="22" fill="url(#red)"/>
+    <path d="M712 548L728 564M728 548L712 564" stroke="white" stroke-width="5" stroke-linecap="round"/>
+    <text x="862" y="542" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="17" font-weight="700">Mise en surveillance</text>
+    <text x="862" y="568" text-anchor="middle" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14">jusqu'à tarif intéressant</text>
+  </g>
+
+  <path d="M272 306H326" stroke="#64748B" stroke-width="5" stroke-linecap="round"/>
+  <path d="M314 290L330 306L314 322" stroke="#64748B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M560 306H614" stroke="#64748B" stroke-width="5" stroke-linecap="round"/>
+  <path d="M602 290L618 306L602 322" stroke="#64748B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M870 306H924" stroke="#64748B" stroke-width="5" stroke-linecap="round"/>
+  <path d="M912 290L928 306L912 322" stroke="#64748B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1180 306H1220" stroke="#64748B" stroke-width="5" stroke-linecap="round"/>
+  <path d="M1208 290L1224 306L1208 322" stroke="#64748B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path d="M1314 392V474C1314 490 1302 504 1286 504H1260" stroke="#34D399" stroke-width="5" stroke-linecap="round"/>
+  <path d="M1276 488L1260 504L1276 520" stroke="#34D399" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1338" y="456" fill="#34D399" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="17" font-weight="700">Oui</text>
+
+  <path d="M1390 306H1430C1444 306 1454 318 1454 332V640C1454 656 1442 668 1426 668H612C596 668 584 656 584 640V556C584 540 596 528 612 528H680" stroke="#F87171" stroke-width="5" stroke-linecap="round"/>
+  <path d="M664 512L680 528L664 544" stroke="#F87171" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1410" y="292" fill="#F87171" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="17" font-weight="700">Non</text>
+
+</svg>

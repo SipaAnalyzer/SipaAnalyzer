@@ -1,0 +1,85 @@
+<svg width="1400" height="640" viewBox="0 0 1400 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1400" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F172A"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="auth" x1="152" y1="216" x2="342" y2="406" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="role" x1="474" y1="216" x2="664" y2="406" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="permissions" x1="796" y1="216" x2="986" y2="406" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FBBF24"/>
+      <stop offset="1" stop-color="#F97316"/>
+    </linearGradient>
+    <linearGradient id="data" x1="1118" y1="216" x2="1308" y2="406" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34D399"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#000000" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <rect width="1400" height="640" fill="url(#bg)"/>
+  <rect x="48" y="48" width="1304" height="544" rx="28" fill="#0B1120" stroke="#263244"/>
+
+  <text x="700" y="106" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="40" font-weight="800">
+    Schéma de sécurité
+  </text>
+  <text x="700" y="142" text-anchor="middle" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="18">
+    Utilisateur authentifié → rôle → permissions → accès aux données
+  </text>
+
+  <g filter="url(#shadow)">
+    <rect x="110" y="210" width="274" height="230" rx="20" fill="#111827" stroke="#2D3A4E"/>
+    <circle cx="247" cy="274" r="58" fill="url(#auth)"/>
+    <circle cx="247" cy="258" r="18" fill="white" opacity="0.95"/>
+    <path d="M210 310C218 286 276 286 284 310" stroke="white" stroke-width="10" stroke-linecap="round"/>
+    <text x="247" y="362" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="22" font-weight="700">Utilisateur</text>
+    <text x="247" y="390" text-anchor="middle" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15">Connexion validée</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="432" y="210" width="274" height="230" rx="20" fill="#111827" stroke="#2D3A4E"/>
+    <circle cx="569" cy="274" r="58" fill="url(#role)"/>
+    <path d="M537 276L559 298L602 250" stroke="white" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="569" y="362" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="22" font-weight="700">Rôle</text>
+    <text x="569" y="390" text-anchor="middle" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15">Admin, analyste, membre...</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="754" y="210" width="274" height="230" rx="20" fill="#111827" stroke="#2D3A4E"/>
+    <circle cx="891" cy="274" r="58" fill="url(#permissions)"/>
+    <rect x="854" y="242" width="74" height="64" rx="10" fill="white" opacity="0.95"/>
+    <path d="M871 264H909M871 284H898" stroke="#F97316" stroke-width="7" stroke-linecap="round"/>
+    <text x="891" y="362" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="22" font-weight="700">Permissions</text>
+    <text x="891" y="390" text-anchor="middle" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15">Lecture, édition, export</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="1076" y="210" width="274" height="230" rx="20" fill="#111827" stroke="#2D3A4E"/>
+    <circle cx="1213" cy="274" r="58" fill="url(#data)"/>
+    <ellipse cx="1213" cy="252" rx="38" ry="14" fill="white" opacity="0.95"/>
+    <path d="M1175 252V295C1175 303 1192 310 1213 310C1234 310 1251 303 1251 295V252" stroke="white" stroke-width="7"/>
+    <path d="M1175 274C1175 282 1192 289 1213 289C1234 289 1251 282 1251 274" stroke="white" stroke-width="7"/>
+    <text x="1213" y="362" text-anchor="middle" fill="#F8FAFC" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="22" font-weight="700">Données</text>
+    <text x="1213" y="390" text-anchor="middle" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="15">Biens, analyses, logs</text>
+  </g>
+
+  <path d="M398 325H418" stroke="#64748B" stroke-width="5" stroke-linecap="round"/>
+  <path d="M410 309L426 325L410 341" stroke="#64748B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M720 325H740" stroke="#64748B" stroke-width="5" stroke-linecap="round"/>
+  <path d="M732 309L748 325L732 341" stroke="#64748B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1042 325H1062" stroke="#64748B" stroke-width="5" stroke-linecap="round"/>
+  <path d="M1054 309L1070 325L1054 341" stroke="#64748B" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="150" y="500" width="1100" height="54" rx="27" fill="#07111F" stroke="#263244"/>
+  <text x="700" y="533" text-anchor="middle" fill="#CBD5E1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="16">
+    Objectif : limiter chaque utilisateur aux actions et aux données autorisées, avec traçabilité des opérations sensibles.
+  </text>
+</svg>
