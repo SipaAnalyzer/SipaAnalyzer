@@ -226,12 +226,6 @@ export default function PropertyDetail() {
         </TabsContent>
 
         <TabsContent value="infos" className="mt-5 space-y-6">
-          <TraceabilityPanel
-            property={property}
-            analyses={normalizedAnalyses}
-            comments={comments}
-            userName={user?.full_name || user?.email}
-          />
           {selected?.notes && (
             <section className="bg-card rounded-xl border border-border p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -241,8 +235,14 @@ export default function PropertyDetail() {
               <pre className="w-full bg-background border border-border rounded-lg p-3 text-sm font-mono whitespace-pre-wrap break-words">{selected.notes}</pre>
             </section>
           )}
-          <ActivityFeed propertyId={propertyId} />
           <CommentSection propertyId={propertyId} initialComments={comments} />
+          <TraceabilityPanel
+            property={property}
+            analyses={normalizedAnalyses}
+            comments={comments}
+            userName={user?.full_name || user?.email}
+          />
+          <ActivityFeed propertyId={propertyId} />
         </TabsContent>
       </Tabs>
 
