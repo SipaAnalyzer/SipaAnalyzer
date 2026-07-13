@@ -19,10 +19,11 @@ export function buildSmartAlerts({
   properties.forEach((property) => {
     const latest = latestByProperty.get(property.id);
     if (!latest) return;
+    const latestMarker = latest.id || latest.updated_at || latest.updated_date || latest.created_at || latest.created_date || 'current';
 
     if (Number(latest.rendement_brut || 0) > 0 && Number(latest.rendement_brut || 0) < LOW_GROSS_YIELD) {
       alerts.push({
-        id: `low-yield-${property.id}`,
+        id: `low-yield-${property.id}-${latestMarker}`,
         severity: 'warning',
         category: 'Rentabilité',
         title: 'Rendement trop faible',
@@ -33,7 +34,7 @@ export function buildSmartAlerts({
 
     if (Number(latest.rendement_brut || 0) >= OPPORTUNITY_GROSS_YIELD) {
       alerts.push({
-        id: `opportunity-detected-${property.id}`,
+        id: `opportunity-detected-${property.id}-${latestMarker}`,
         severity: 'info',
         category: 'Opportunité',
         title: 'Opportunité détectée',
@@ -48,7 +49,7 @@ export function buildSmartAlerts({
 
     if (chargesRatio >= HIGH_CHARGES_RATIO) {
       alerts.push({
-        id: `high-charges-${property.id}`,
+        id: `high-charges-${property.id}-${latestMarker}`,
         severity: chargesRatio >= 35 ? 'critical' : 'warning',
         category: 'Charges',
         title: 'Charges trop élevées',

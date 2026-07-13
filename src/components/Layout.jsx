@@ -15,6 +15,11 @@ import { buildSmartAlerts } from '@/utils/smartAlerts';
 import { listAuditLogs } from '@/utils/auditLogs';
 
 const SEEN_ALERTS_KEY = 'sipa_seen_alert_ids';
+const NAV_ALERT_QUERY_OPTIONS = {
+  staleTime: 0,
+  refetchInterval: 30000,
+  refetchOnWindowFocus: true,
+};
 
 function readSeenAlertIds() {
   if (typeof window === 'undefined') return [];
@@ -57,19 +62,19 @@ function SidebarContent({ location, user, onNavigate }) {
   const { data: alertProperties = [] } = useQuery({
     queryKey: ['nav-alert-properties'],
     queryFn: () => base44.entities.Property.list('-created_date', 300),
-    staleTime: 60000,
+    ...NAV_ALERT_QUERY_OPTIONS,
   });
 
   const { data: alertAnalyses = [] } = useQuery({
     queryKey: ['nav-alert-analyses'],
     queryFn: () => base44.entities.Analysis.list('-created_date', 800),
-    staleTime: 60000,
+    ...NAV_ALERT_QUERY_OPTIONS,
   });
 
   const { data: alertAuditLogs = [] } = useQuery({
     queryKey: ['nav-alert-audit-logs'],
     queryFn: () => listAuditLogs(200),
-    staleTime: 60000,
+    ...NAV_ALERT_QUERY_OPTIONS,
   });
 
   const { data: alertUsers = [] } = useQuery({
@@ -83,7 +88,7 @@ function SidebarContent({ location, user, onNavigate }) {
       return data || [];
     },
     enabled: !!isAdmin,
-    staleTime: 60000,
+    ...NAV_ALERT_QUERY_OPTIONS,
   });
 
   const { data: alertPermissions = [] } = useQuery({
@@ -94,7 +99,7 @@ function SidebarContent({ location, user, onNavigate }) {
       return data || [];
     },
     enabled: !!isAdmin,
-    staleTime: 60000,
+    ...NAV_ALERT_QUERY_OPTIONS,
   });
 
   const alerts = useMemo(() => buildSmartAlerts({
