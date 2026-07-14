@@ -86,6 +86,7 @@ export async function extractAnalysisFieldsFromExcel(file, customLabels = [], pr
   const seenLabels = [...selected.seenLabels];
   const allRows = selected.rows;
 
+  normalizeBlankOptionalFields(fields);
   applyDerivedPercentages(fields);
 
   const notes = extractMetadataNotes(allRows);
@@ -116,6 +117,13 @@ export async function extractAnalysisFieldsFromExcel(file, customLabels = [], pr
     customFinancialFields,
     sheetName: selected.sheetName,
   };
+}
+
+function normalizeBlankOptionalFields(fields) {
+  if (Number(fields.honoraires_sipa || 0) === 0) {
+    delete fields.honoraires_sipa;
+    delete fields.honoraires_sipa_pct;
+  }
 }
 
 function scoreImportedSheet(rows, fields, sheetName, preferredSheetTerms = [], index = 0) {
