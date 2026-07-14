@@ -132,12 +132,28 @@ function scoreImportedSheet(rows, fields, sheetName, preferredSheetTerms = [], i
   const preferenceScore = preferredSheetTerms
     .map(normalizeText)
     .filter((term) => term.length >= 3)
-    .some((term) => sheetText.includes(term) || term.includes(sheetText))
-    ? 1000
+    .some((term) => matchesPreferredSheet(sheetText, term))
+    ? 10000
     : 0;
   const orderPenalty = index * 20;
 
   return fieldScore + sipaScore + projectionScore + capitalScore + preferenceScore - brouillonPenalty - orderPenalty;
+}
+
+function matchesPreferredSheet(sheetText, term) {
+  if (sheetText.includes(term) || term.includes(sheetText)) return true;
+
+  const sheetTokens = sheetText.split(' ').filter((token) => token.length >= 2);
+  const termTokens = term.split(' ').filter((token) => token.length >= 2);
+  if (!sheetTokens.length || !termTokens.length) return false;
+
+  const sheetSet = new Set(sheetTokens);
+  const commonTokens = termTokens.filter((token) => sheetSet.has(token));
+  const common = commonTokens.length;
+  const hasNumberMatch = commonTokens.some((token) => /\d/.test(token));
+  const hasTwoTextMatches = commonTokens.filter((token) => !/\d/.test(token)).length >= 2;
+
+  return (hasNumberMatch && common >= 2) || hasTwoTextMatches;
 }
 
 function extractCustomFields(rows, customLabels) {
