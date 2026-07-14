@@ -37,7 +37,7 @@ export default function NewAnalysis() {
           <p className="text-sm text-muted-foreground">Saisissez les données financières pour obtenir une évaluation complète</p>
         </div>
       </div>
-      <AnalysisForm initialPropertyId={propertyId} onSubmit={create.mutate} isSubmitting={create.isPending} />
+      <AnalysisForm initialPropertyId={propertyId} onSubmit={create.mutateAsync} isSubmitting={create.isPending} />
     </div>
   );
 }

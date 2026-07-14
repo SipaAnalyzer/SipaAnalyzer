@@ -217,6 +217,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const [newCustomFieldName, setNewCustomFieldName] = useState('');
   const [newCustomFieldAmount, setNewCustomFieldAmount] = useState('');
   const [newCustomFieldPct, setNewCustomFieldPct] = useState('');
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -241,7 +242,14 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     ),
   [form]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setSubmitError('');
+
+    if (!form.property_id) {
+      setSubmitError('Selectionne un bien avant d’enregistrer l’analyse.');
+      return;
+    }
+
     const customSipaData = customFinancialFields.length > 0
       ? customFinancialFields.map((cf) => ({
           label: cf.name,
@@ -254,7 +262,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       ? [...form.sipa_data, ...customSipaData]
       : customSipaData.length > 0 ? customSipaData : null;
 
-    onSubmit({
+    const payload = {
       property_id: form.property_id,
       statut: form.statut,
       sipa_data: mergedSipaData,
@@ -293,7 +301,14 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       revenu_distribue_fonds_propres: calc.revenu_distribue_fonds_propres,
       score_global: calc.score_global,
       note: calc.note,
-    });
+    };
+
+    try {
+      await Promise.resolve(onSubmit(payload));
+    } catch (error) {
+      console.error('[AnalysisForm] submit failed:', error);
+      setSubmitError(error?.message || "Impossible d'enregistrer l'analyse.");
+    }
   };
 
   const handleExcelImport = async (event) => {
@@ -889,8 +904,11 @@ Courtier : UBS, Valérie Zuber"
         </div>
       </section>
 
-      <div className="flex justify-end">
-        <Button onClick={handleSubmit} disabled={!form.property_id || isSubmitting} className="gap-2">
+      <div className="flex flex-col items-end gap-2">
+        {submitError && (
+          <p className="w-full text-right text-sm text-red-500">{submitError}</p>
+        )}
+        <Button type="button" onClick={handleSubmit} disabled={isSubmitting} className="gap-2">
           <Save className="h-4 w-4" />
           {isSubmitting ? "Enregistrement..." : "Enregistrer l'analyse"}
         </Button>

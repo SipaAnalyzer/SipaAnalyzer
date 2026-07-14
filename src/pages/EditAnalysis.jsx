@@ -43,7 +43,7 @@ export default function EditAnalysis() {
           <p className="text-sm text-muted-foreground">Mettez à jour les données financières</p>
         </div>
       </div>
-      <AnalysisForm initialData={analysis} initialPropertyId={analysis?.property_id} onSubmit={update.mutate} isSubmitting={update.isPending} />
+      <AnalysisForm initialData={analysis} initialPropertyId={analysis?.property_id} onSubmit={update.mutateAsync} isSubmitting={update.isPending} />
     </div>
   );
 }
