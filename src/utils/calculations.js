@@ -15,10 +15,9 @@ export function calculateAnalysis(data) {
   const revenuDistribue = revenuNet - impotCalcule;
   const revenuDistribueFP = fondsPropres > 0 ? (revenuDistribue / fondsPropres) * 100 : 0;
 
-  const NOTE_ORDER = ['C', 'B', 'A', 'S'];
+  const NOTE_ORDER = ['C', 'B', 'A'];
 
   function getBaseNote(rb) {
-    if (rb >= 5) return 'S';
     if (rb >= 4) return 'A';
     if (rb >= 3.5) return 'B';
     return 'C';
@@ -40,7 +39,7 @@ export function calculateAnalysis(data) {
   const baseNote = getBaseNote(rendementBrut);
   const adjustedNote = adjustNote(baseNote, data.emplacement_bien, data.etat_batiment);
 
-  const SCORE_MAP = { C: 50, B: 67, A: 82, S: 95 };
+  const SCORE_MAP = { C: 50, B: 67, A: 95 };
 
   return {
     prix_total: Math.round(prixBien + Number(data.versement_initial || 0) + Number(data.amortissement_5_ans || 0) + Number(data.honoraires_sipa || 0) + Number(data.frais_dossier_bancaire || 0)),
