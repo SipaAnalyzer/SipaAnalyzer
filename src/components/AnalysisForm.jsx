@@ -303,7 +303,11 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     setExcelImportState({ loading: true, message: '', error: '' });
 
     try {
-      const result = await extractAnalysisFieldsFromExcel(file, customLabels);
+      const result = await extractAnalysisFieldsFromExcel(file, customLabels, [
+        selectedProperty?.nom_bien,
+        selectedProperty?.adresse,
+        selectedProperty?.ville,
+      ]);
 
       if (!result.importedCount && !result.customFinancialFields?.length) {
         setExcelImportState({
@@ -330,7 +334,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       }
       setExcelImportState({
         loading: false,
-        message: `${result.importedCount} champ${result.importedCount > 1 ? 's' : ''} importé${result.importedCount > 1 ? 's' : ''} depuis ${file.name}.`,
+        message: `${result.importedCount} champ${result.importedCount > 1 ? 's' : ''} importe${result.importedCount > 1 ? 's' : ''} depuis ${result.sheetName || file.name}.`,
         error: '',
       });
       setActiveTab('financial');

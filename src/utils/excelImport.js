@@ -51,22 +51,40 @@ const PCT_LABELS = new Map([
   ['impot_pct', ['impot', 'taux d impot']],
 ]);
 
-export async function extractAnalysisFieldsFromExcel(file, customLabels = []) {
+export async function extractAnalysisFieldsFromExcel(file, customLabels = [], preferredSheetTerms = []) {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: 'array', cellDates: false, cellNF: false, cellText: false });
 
-  const fields = {};
-  const seenLabels = [];
-  const allRows = [];
-
-  for (const sheetName of workbook.SheetNames) {
+  const candidates = workbook.SheetNames.map((sheetName, index) => {
     const worksheet = workbook.Sheets[sheetName];
     const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
     const rows = rawRows.map((row) => (row && row.some((c) => c != null)) ? row : null);
-    allRows.push(...rows);
+    const fields = {};
+    const seenLabels = [];
+
     extractRows(rows, fields, seenLabels);
     extractProjectionTables(rows, fields);
-  }
+    applyDerivedPercentages(fields);
+
+    return {
+      sheetName,
+      rows,
+      fields,
+      seenLabels,
+      score: scoreImportedSheet(rows, fields, sheetName, preferredSheetTerms, index),
+    };
+  });
+
+  const selected = candidates.sort((a, b) => b.score - a.score)[0] || {
+    rows: [],
+    fields: {},
+    seenLabels: [],
+    sheetName: null,
+  };
+
+  const fields = { ...selected.fields };
+  const seenLabels = [...selected.seenLabels];
+  const allRows = selected.rows;
 
   applyDerivedPercentages(fields);
 
@@ -96,7 +114,30 @@ export async function extractAnalysisFieldsFromExcel(file, customLabels = []) {
     importedCount: Object.keys(fields).length,
     seenLabels,
     customFinancialFields,
+    sheetName: selected.sheetName,
   };
+}
+
+function scoreImportedSheet(rows, fields, sheetName, preferredSheetTerms = [], index = 0) {
+  const fieldScore = Object.keys(fields).length * 10;
+  const rowText = rows
+    .filter(Boolean)
+    .map((row) => row.map((cell) => normalizeText(cell)).filter(Boolean).join(' '))
+    .join(' ');
+  const sipaScore = rowText.includes('sipa group') ? 50 : 0;
+  const projectionScore = fields.operating_projection ? 35 : 0;
+  const capitalScore = fields.capital_projection ? 35 : 0;
+  const brouillonPenalty = /brouillon|calcul/i.test(sheetName || '') ? 80 : 0;
+  const sheetText = normalizeText(sheetName || '');
+  const preferenceScore = preferredSheetTerms
+    .map(normalizeText)
+    .filter((term) => term.length >= 3)
+    .some((term) => sheetText.includes(term) || term.includes(sheetText))
+    ? 1000
+    : 0;
+  const orderPenalty = index * 20;
+
+  return fieldScore + sipaScore + projectionScore + capitalScore + preferenceScore - brouillonPenalty - orderPenalty;
 }
 
 function extractCustomFields(rows, customLabels) {
@@ -459,7 +500,7 @@ function extractRows(rows, fields, seenLabels) {
 function matchesField(label, candidates) {
   return candidates.some((candidate) => {
     const normalizedCandidate = normalizeText(candidate);
-    return label.includes(normalizedCandidate) || normalizedCandidate.includes(label);
+    return label === normalizedCandidate || label.includes(normalizedCandidate);
   });
 }
 
