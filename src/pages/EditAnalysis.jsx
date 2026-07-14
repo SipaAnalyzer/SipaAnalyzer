@@ -26,6 +26,10 @@ export default function EditAnalysis() {
       recordAuditLog({ eventType: 'analysis_updated', targetType: 'analysis', targetId: analysisId, targetLabel: `Analyse #${analysisId?.slice(0, 8)}`, metadata: { property_id: analysis.property_id } });
       navigate(`/property/${analysis.property_id}`);
     },
+    onError: (error) => {
+      console.error('[EditAnalysis] save failed:', error);
+      toast.error(error?.message || "Impossible d'enregistrer l'analyse");
+    },
   });
 
   if (isLoading) return <div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;

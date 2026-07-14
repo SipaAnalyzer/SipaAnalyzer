@@ -22,6 +22,10 @@ export default function NewAnalysis() {
       recordAuditLog({ eventType: 'analysis_created', targetType: 'analysis', targetId: result.id, targetLabel: `Analyse #${result.id?.slice(0, 8)}`, metadata: { property_id: result.property_id } });
       navigate(`/property/${result.property_id}`);
     },
+    onError: (error) => {
+      console.error('[NewAnalysis] save failed:', error);
+      toast.error(error?.message || "Impossible d'enregistrer l'analyse");
+    },
   });
 
   return (

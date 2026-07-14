@@ -83,6 +83,36 @@ const withAuditFallback = async (operation, payload) => {
   return operation(fallback);
 };
 
+const extractMissingColumn = (error) => {
+  const message = error?.message || "";
+  return (
+    message.match(/column ["']?([a-zA-Z0-9_]+)["']? .*does not exist/i)?.[1] ||
+    message.match(/Could not find the ['"]([a-zA-Z0-9_]+)['"] column/i)?.[1] ||
+    null
+  );
+};
+
+const withMissingColumnFallback = async (operation, payload) => {
+  let nextPayload = { ...payload };
+  let result = await withAuditFallback(operation, nextPayload);
+  const removedColumns = new Set();
+
+  while (result.error) {
+    const missingColumn = extractMissingColumn(result.error);
+    if (!missingColumn || removedColumns.has(missingColumn) || !(missingColumn in nextPayload)) {
+      return result;
+    }
+
+    console.warn(`[Supabase] missing column "${missingColumn}" ignored for save.`);
+    removedColumns.add(missingColumn);
+    nextPayload = { ...nextPayload };
+    delete nextPayload[missingColumn];
+    result = await withAuditFallback(operation, nextPayload);
+  }
+
+  return result;
+};
+
 const getCurrentUserId = async () => {
   const { data } = await supabase.auth.getUser();
   return data.user?.id || null;
@@ -269,7 +299,7 @@ const createEntity = (table) => ({
       payload.created_by_id = userId;
     }
 
-    const { data: created, error } = await withAuditFallback(
+    const { data: created, error } = await withMissingColumnFallback(
       (nextPayload) =>
         supabase
           .from(table)
@@ -303,7 +333,7 @@ const createEntity = (table) => ({
       payload.updated_at = new Date().toISOString();
     }
 
-    const { data: updated, error } = await withAuditFallback(
+    const { data: updated, error } = await withMissingColumnFallback(
       (nextPayload) =>
         supabase
           .from(table)
