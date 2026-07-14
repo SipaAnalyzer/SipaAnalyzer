@@ -151,9 +151,10 @@ function matchesPreferredSheet(sheetText, term) {
   const commonTokens = termTokens.filter((token) => sheetSet.has(token));
   const common = commonTokens.length;
   const hasNumberMatch = commonTokens.some((token) => /\d/.test(token));
-  const hasTwoTextMatches = commonTokens.filter((token) => !/\d/.test(token)).length >= 2;
+  const commonTextCount = commonTokens.filter((token) => !/\d/.test(token)).length;
+  const commonRatio = common / Math.min(sheetTokens.length, termTokens.length);
 
-  return (hasNumberMatch && common >= 2) || hasTwoTextMatches;
+  return (hasNumberMatch && common >= 2) || (commonTextCount >= 3 && commonRatio >= 0.75);
 }
 
 function extractCustomFields(rows, customLabels) {
