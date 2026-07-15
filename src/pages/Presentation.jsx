@@ -282,7 +282,7 @@ export default function Presentation() {
         )}
       </div>
 
-      <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ height: 'clamp(400px, 75vh, 700px)' }}>
+      <div className="map-container bg-card rounded-lg border border-border overflow-hidden" style={{ height: 'clamp(450px, 82vh, 750px)' }}>
         {withCoords.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
             <MapPin className="h-10 w-10" />

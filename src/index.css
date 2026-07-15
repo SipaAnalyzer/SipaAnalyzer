@@ -236,3 +236,20 @@
   position: relative;
   z-index: 1;
 }
+
+/* Map container : pas de pseudo-élément décoratif, tiles toujours au-dessus */
+.map-container {
+  position: relative;
+  z-index: 1;
+}
+.honeycomb-card .map-container::before {
+  display: none !important;
+}
+.map-container .leaflet-container {
+  background: transparent;
+  z-index: 0 !important;
+}
+.map-container .leaflet-tile-pane {
+  filter: none !important;
+  -webkit-filter: none !important;
+}
