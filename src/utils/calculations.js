@@ -26,9 +26,10 @@ export function calculateAnalysis(data) {
   const scoreEmplacement = valQuali(data.emplacement_bien, 5) * 0.7;
   const scoreEtat = valQuali(data.etat_batiment, 5) * 0.5;
 
-  const scoreGlobal = round2(
+  let scoreGlobal = round2(
     scoreRendementBrut + scoreRendementNetFP + scoreRevenuDistribue + scoreEmplacement + scoreEtat
   );
+  if (rendementBrut >= 4 && scoreGlobal < 70) scoreGlobal = 70;
 
   function noteFromScore(s) {
     if (s >= 85) return 'S';
