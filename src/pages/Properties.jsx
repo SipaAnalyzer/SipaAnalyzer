@@ -175,10 +175,14 @@ export default function Properties() {
               <Link key={p.id} to={`/property/${p.id}`} className="block">
                 <div className={`relative bg-card rounded-xl border p-5 hover:border-primary/30 transition-all duration-200 group ${p.couleur ? 'border-t-4' : 'border-border border-t-border'}`}
                   style={p.couleur ? { borderTopColor: p.couleur === 'rouge' ? '#ef4444' : p.couleur === 'orange' ? '#f97316' : '#22c55e' } : {}}>
-                  {p.image_url && (
-                    <img src={p.image_url} alt="" className="absolute inset-0 w-full h-full object-cover rounded-xl pointer-events-none opacity-[0.07]" />
+                  {p.image_url ? (
+                    <img src={p.image_url} alt="" className="w-full h-36 object-cover rounded-lg mb-4" />
+                  ) : (
+                    <div className="w-full h-36 rounded-lg mb-4 bg-muted/30 flex items-center justify-center">
+                      <Building2 className="h-8 w-8 text-muted-foreground/40" />
+                    </div>
                   )}
-                  <div className="relative z-10">
+                  <div>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <FavoriteButton propertyId={p.id} className="h-5 w-5 shrink-0" />
