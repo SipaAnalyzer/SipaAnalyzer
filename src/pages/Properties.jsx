@@ -52,7 +52,18 @@ export default function Properties() {
 
   const updateCouleur = useMutation({
     mutationFn: ({ id, couleur }) => base44.entities.Property.update(id, { couleur }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['properties'] }),
+    onMutate: async ({ id, couleur }) => {
+      await queryClient.cancelQueries({ queryKey: ['properties'] });
+      const previous = queryClient.getQueryData(['properties']);
+      queryClient.setQueryData(['properties'], (old) =>
+        (old || []).map(p => p.id === id ? { ...p, couleur } : p)
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(['properties'], context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['properties'] }),
   });
 
   const villes = useMemo(() => [...new Set(properties.map(p => p.ville).filter(Boolean))], [properties]);
