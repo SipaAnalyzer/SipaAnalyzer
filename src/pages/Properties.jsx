@@ -177,14 +177,11 @@ export default function Properties() {
                 <div className={`bg-card rounded-xl border p-5 hover:border-primary/30 transition-all duration-200 group ${p.couleur ? 'border-t-4' : 'border-border border-t-border'}`}
                   style={p.couleur ? { borderTopColor: p.couleur === 'rouge' ? '#ef4444' : p.couleur === 'orange' ? '#f97316' : '#22c55e' } : {}}>
                   <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <FavoriteButton propertyId={p.id} className="h-5 w-5 shrink-0" />
                       <h3 className="font-heading font-semibold text-sm truncate group-hover:text-primary transition-colors">{p.nom_bien}</h3>
-                      <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3" /> {p.ville}{p.canton ? `, ${p.canton}` : ''}
-                      </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      <FavoriteButton propertyId={p.id} className="h-8 w-8 z-10" />
                       {p.lien_annonce && (
                         <a href={p.lien_annonce} target="_blank" rel="noopener noreferrer"
                           onClick={e => e.stopPropagation()}
