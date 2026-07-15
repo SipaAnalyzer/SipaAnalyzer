@@ -21,12 +21,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
+
 
 const safeNumber = (value) => Number(value) || 0;
 
@@ -298,9 +293,8 @@ export default function Presentation() {
             <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} style={{ height: 'min(460px, 68vh)', minHeight: 340, width: '100%' }} className="z-0">
               <FitMapToProperties properties={withCoords} />
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                subdomains={['a', 'b', 'c', 'd']}
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               {withCoords.map((property) => (
                 <Marker
