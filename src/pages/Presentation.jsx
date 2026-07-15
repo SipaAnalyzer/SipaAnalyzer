@@ -283,14 +283,14 @@ export default function Presentation() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)] gap-5">
-        <div className="bg-card rounded-lg border border-border" style={{ height: 'clamp(340px, 68vh, 600px)' }}>
+        <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ height: 'clamp(340px, 68vh, 600px)' }}>
           {withCoords.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
               <MapPin className="h-10 w-10" />
               <p className="text-sm">Aucune adresse à géocoder</p>
             </div>
           ) : (
-            <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} className="z-0 h-full w-full rounded-lg">
+            <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} style={{ width: '100%', height: 'clamp(340px, 68vh, 600px)' }} className="z-0">
               <FitMapToProperties properties={withCoords} />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -409,12 +409,12 @@ export default function Presentation() {
       <div className="pt-2">
         <h2 className="font-heading font-semibold text-sm mb-4 flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-          Biens validés ({valides.length})
+          Top {Math.min(5, rankedValides.length)} — Biens validés ({valides.length})
         </h2>
       </div>
-      {valides.length > 0 && (
+      {rankedValides.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {valides.map((property) => (
+          {rankedValides.slice(0, 5).map((property) => (
             <div key={property.id} className="bg-card rounded-lg border border-border p-5 hover:border-primary/30 transition-all">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
