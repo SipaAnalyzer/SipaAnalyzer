@@ -17,14 +17,8 @@ import moment from 'moment';
 const COULEURS = [
   { value: '', label: 'Aucune', className: 'bg-transparent border border-border' },
   { value: 'rouge', label: 'Rouge', className: 'bg-red-500' },
-  { value: 'rose', label: 'Rose', className: 'bg-pink-500' },
   { value: 'orange', label: 'Orange', className: 'bg-orange-500' },
-  { value: 'jaune', label: 'Jaune', className: 'bg-yellow-400' },
   { value: 'vert', label: 'Vert', className: 'bg-green-500' },
-  { value: 'teal', label: 'Teal', className: 'bg-teal-500' },
-  { value: 'bleu', label: 'Bleu', className: 'bg-blue-500' },
-  { value: 'indigo', label: 'Indigo', className: 'bg-indigo-500' },
-  { value: 'violet', label: 'Violet', className: 'bg-purple-500' },
 ];
 
 const SORT_OPTIONS = [
