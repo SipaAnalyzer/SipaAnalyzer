@@ -38,7 +38,7 @@ export default function Properties() {
   const [statusFilter, setStatusFilter] = useState(urlParams.get('status') || 'all');
   const [villeFilter, setVilleFilter] = useState('all');
   const [rendementFilter, setRendementFilter] = useState('all');
-  const [couleurFilter, setCouleurFilter] = useState('');
+  const [couleurFilter, setCouleurFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
 
   const { data: properties = [], isLoading: lp } = useQuery({
@@ -84,7 +84,7 @@ export default function Properties() {
       if (search && !p.nom_bien?.toLowerCase().includes(search.toLowerCase()) && !p.ville?.toLowerCase().includes(search.toLowerCase())) return false;
       if (statusFilter !== 'all' && p.statut !== statusFilter) return false;
       if (villeFilter !== 'all' && p.ville !== villeFilter) return false;
-      if (couleurFilter && (p.couleur || '') !== couleurFilter) return false;
+      if (couleurFilter !== 'all' && (p.couleur || '') !== couleurFilter) return false;
       if (rendementFilter !== 'all') {
         const rdt = p.latestAnalysis?.rendement_brut || 0;
         if (rendementFilter === 'lt4' && rdt >= 4) return false;
@@ -144,20 +144,25 @@ export default function Properties() {
             {villes.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={couleurFilter} onValueChange={setCouleurFilter}>
-          <SelectTrigger className="w-full bg-card border-border"><SelectValue placeholder="Couleur" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Toutes les couleurs</SelectItem>
-            {COULEURS.filter(c => c.value && couleursUtilisees.includes(c.value)).map(c => (
-              <SelectItem key={c.value} value={c.value}>
-                <span className="flex items-center gap-2">
-                  <span className={`inline-block w-3 h-3 rounded-full ${c.className}`} />
-                  {c.label}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-1.5">
+          {[
+            { value: 'all', label: 'Toutes' },
+            ...COULEURS.filter(c => c.value && couleursUtilisees.includes(c.value)).map(c => ({ value: c.value, label: c.label, className: c.className }))
+          ].map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setCouleurFilter(opt.value)}
+              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                couleurFilter === opt.value
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
+              }`}
+            >
+              {opt.className ? <span className={`inline-block w-2.5 h-2.5 rounded-full ${opt.className} mr-1.5 align-middle`} /> : null}
+              {opt.label}
+            </button>
+          ))}
+        </div>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full bg-card border-border"><SelectValue placeholder="Trier par" /></SelectTrigger>
           <SelectContent>
