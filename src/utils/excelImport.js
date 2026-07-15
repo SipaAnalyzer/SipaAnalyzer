@@ -161,7 +161,13 @@ function getPreferredSheetScore(sheetText, term) {
   const commonTextTokens = commonTokens.filter((token) => !/\d/.test(token));
   const commonTextCount = commonTextTokens.length;
   const hasDistinctiveTextMatch = commonTextTokens.some((token) => isDistinctiveSheetToken(token));
+  const termDistinctiveTextTokens = termTokens.filter((token) => !/\d/.test(token) && isDistinctiveSheetToken(token));
+  const commonDistinctiveTextCount = commonTextTokens.filter((token) => isDistinctiveSheetToken(token)).length;
   const commonRatio = common / Math.min(sheetTokens.length, termTokens.length);
+
+  if (termDistinctiveTextTokens.length >= 2 && commonDistinctiveTextCount === termDistinctiveTextTokens.length) {
+    return 10000;
+  }
 
   if ((hasNumberMatch && hasDistinctiveTextMatch) || (commonTextCount >= 3 && commonRatio >= 0.75)) {
     return 10000;

@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ScoreGauge from '../components/ScoreGauge';
 import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
@@ -14,11 +15,12 @@ import FinancialTable from '../components/FinancialTable';
 import CommentSection from '../components/CommentSection';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
-import { formatCHF, formatPercent, normalizeAnalyses } from '../utils/calculations';
+import { formatCHF, formatPercent, normalizeAnalyses, WORKFLOW_STATUSES } from '../utils/calculations';
 import { formatSipaValue } from '../utils/excelImport';
 import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
 import { listAuditLogs, recordAuditLog } from '../utils/auditLogs';
+import { toast } from 'sonner';
 import moment from 'moment';
 import {
   ArrowLeft,
@@ -134,6 +136,35 @@ export default function PropertyDetail() {
     },
   });
 
+  const updatePropertyStatus = useMutation({
+    mutationFn: async (newStatus) => {
+      const previousStatus = property?.statut || null;
+      const result = await base44.entities.Property.update(propertyId, { statut: newStatus });
+      await recordAuditLog({
+        eventType: 'property_status_changed',
+        targetType: 'property',
+        targetId: propertyId,
+        targetLabel: property?.nom_bien,
+        metadata: {
+          property_id: propertyId,
+          property_name: property?.nom_bien,
+          previous_status: previousStatus,
+          new_status: newStatus,
+        },
+      });
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      toast.success('Statut du bien mis à jour');
+    },
+    onError: (error) => {
+      console.error('[PropertyDetail] status update failed:', error);
+      toast.error('Impossible de mettre à jour le statut');
+    },
+  });
+
   if (lp || la || lc) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -213,7 +244,14 @@ export default function PropertyDetail() {
         <TabsContent value="analyse" className="mt-5 space-y-6">
           {selected ? (
             <>
-              <AnalysisSummary selected={selected} selectedAnalysisId={selectedAnalysisId} />
+              <AnalysisSummary
+                property={property}
+                selected={selected}
+                selectedAnalysisId={selectedAnalysisId}
+                canEdit={canEdit}
+                isUpdatingStatus={updatePropertyStatus.isPending}
+                onStatusChange={(status) => updatePropertyStatus.mutate(status)}
+              />
               <FinancialTable analysis={selected} />
               {selected.sipa_data && selected.sipa_data.filter((e) => !e._custom).length > 0 && (
                 <section className="bg-card rounded-xl border border-border p-6">
@@ -402,7 +440,7 @@ function PropertyMeta({ property, compact = false }) {
   );
 }
 
-function AnalysisSummary({ selected, selectedAnalysisId }) {
+function AnalysisSummary({ property, selected, selectedAnalysisId, canEdit, isUpdatingStatus, onStatusChange }) {
   return (
     <div className="bg-card rounded-xl border border-border p-6">
       <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -419,6 +457,13 @@ function AnalysisSummary({ selected, selectedAnalysisId }) {
           </div>
         </div>
 
+        <QuickPropertyStatusSelect
+          status={property?.statut || 'brouillon'}
+          canEdit={canEdit}
+          disabled={isUpdatingStatus}
+          onChange={onStatusChange}
+        />
+
         <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
           <MetricCard label="Prix total" value={formatCHF(selected.prix_total)} />
           <MetricCard label="Revenu net" value={formatCHF(selected.revenu_net)} />
@@ -428,6 +473,35 @@ function AnalysisSummary({ selected, selectedAnalysisId }) {
           <MetricCard label="Rdt. dist. / FP" value={formatPercent(selected.revenu_distribue_fonds_propres)} highlight />
         </div>
       </div>
+    </div>
+  );
+}
+
+function QuickPropertyStatusSelect({ status, canEdit, disabled, onChange }) {
+  if (!canEdit) {
+    return (
+      <div className="min-w-[180px] space-y-2">
+        <p className="text-xs font-medium text-muted-foreground">Statut du bien</p>
+        <StatusBadge statut={status} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full sm:w-56 space-y-2">
+      <p className="text-xs font-medium text-muted-foreground">Changer le statut du bien</p>
+      <Select value={status} onValueChange={onChange} disabled={disabled}>
+        <SelectTrigger className="h-9 bg-background">
+          <SelectValue placeholder="Statut" />
+        </SelectTrigger>
+        <SelectContent>
+          {WORKFLOW_STATUSES.map((item) => (
+            <SelectItem key={item.value} value={item.value}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
