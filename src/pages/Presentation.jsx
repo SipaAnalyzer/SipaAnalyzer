@@ -282,60 +282,59 @@ export default function Presentation() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)] gap-5">
-        <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ height: 'clamp(340px, 68vh, 600px)' }}>
-          {withCoords.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
-              <MapPin className="h-10 w-10" />
-              <p className="text-sm">Aucune adresse à géocoder</p>
-            </div>
-          ) : (
-            <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} style={{ width: '100%', height: 'clamp(340px, 68vh, 600px)' }} className="z-0">
-              <FitMapToProperties properties={withCoords} />
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {withCoords.map((property) => (
-                <Marker
-                  key={property.id}
-                  position={[Number(property.latitude), Number(property.longitude)]}
-                  icon={createScoreIcon(property)}
-                >
-                  <Popup>
-                    <div className="text-sm font-medium">{property.nom_bien}</div>
-                    <div className="text-xs text-gray-500">
-                      {property.ville}{property.canton ? `, ${property.canton}` : ''}
+      <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ height: 'clamp(400px, 75vh, 700px)' }}>
+        {withCoords.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+            <MapPin className="h-10 w-10" />
+            <p className="text-sm">Aucune adresse à géocoder</p>
+          </div>
+        ) : (
+          <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} style={{ width: '100%', height: '100%' }} className="z-0">
+            <FitMapToProperties properties={withCoords} />
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+            {withCoords.map((property) => (
+              <Marker
+                key={property.id}
+                position={[Number(property.latitude), Number(property.longitude)]}
+                icon={createScoreIcon(property)}
+              >
+                <Popup>
+                  <div className="text-sm font-medium">{property.nom_bien}</div>
+                  <div className="text-xs text-gray-500">
+                    {property.ville}{property.canton ? `, ${property.canton}` : ''}
+                  </div>
+                  {property.analysis && (
+                    <div className="text-xs mt-2 space-y-1">
+                      <div>Score: {property.analysis.score_global}/100</div>
+                      <div>Prix: {formatCHF(property.analysis.prix_total)}</div>
+                      <div>Rdt. net/FP: {formatPercent(property.analysis.rendement_net_fonds_propres)}</div>
                     </div>
-                    {property.analysis && (
-                      <div className="text-xs mt-2 space-y-1">
-                        <div>Score: {property.analysis.score_global}/100</div>
-                        <div>Prix: {formatCHF(property.analysis.prix_total)}</div>
-                        <div>Rdt. net/FP: {formatPercent(property.analysis.rendement_net_fonds_propres)}</div>
-                      </div>
-                    )}
-                    {property.lien_annonce && (
-                      <a href={property.lien_annonce} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline flex items-center gap-1 mt-2">
-                        Voir l'annonce <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
-                    <div className="flex items-center gap-3 mt-2">
-                      <a href={getStreetViewUrl(property)} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline">
-                        Street View
-                      </a>
-                      <a href={getGoogleMapsUrl(property)} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline">
-                        Google Maps
-                      </a>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
-          )}
-        </div>
+                  )}
+                  {property.lien_annonce && (
+                    <a href={property.lien_annonce} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline flex items-center gap-1 mt-2">
+                      Voir l'annonce <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                  <div className="flex items-center gap-3 mt-2">
+                    <a href={getStreetViewUrl(property)} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline">
+                      Street View
+                    </a>
+                    <a href={getGoogleMapsUrl(property)} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline">
+                      Google Maps
+                    </a>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        )}
+      </div>
 
-        <div className="bg-card rounded-lg border border-border p-5">
-          <div className="flex items-center justify-between gap-3 mb-4">
+      <div className="bg-card rounded-lg border border-border p-5">
+        <div className="flex items-center justify-between gap-3 mb-4">
             <div>
               <h2 className="font-heading font-semibold text-sm">Top opportunités</h2>
               <p className="text-xs text-muted-foreground mt-1">Classement par score puis rendement net/FP</p>
@@ -380,7 +379,6 @@ export default function Presentation() {
             </div>
           )}
         </div>
-      </div>
 
       {withoutCoords.length > 0 && (
         <div className="bg-card rounded-lg border border-border p-5">
