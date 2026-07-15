@@ -151,18 +151,33 @@ function scoreImportedSheet(rows, fields, sheetName, preferredSheetTerms = [], i
 function matchesPreferredSheet(sheetText, term) {
   if (sheetText.includes(term) || term.includes(sheetText)) return true;
 
-  const sheetTokens = sheetText.split(' ').filter((token) => token.length >= 2);
-  const termTokens = term.split(' ').filter((token) => token.length >= 2);
+  const sheetTokens = tokenizeSheetName(sheetText);
+  const termTokens = tokenizeSheetName(term);
   if (!sheetTokens.length || !termTokens.length) return false;
 
   const sheetSet = new Set(sheetTokens);
   const commonTokens = termTokens.filter((token) => sheetSet.has(token));
   const common = commonTokens.length;
   const hasNumberMatch = commonTokens.some((token) => /\d/.test(token));
-  const commonTextCount = commonTokens.filter((token) => !/\d/.test(token)).length;
+  const commonTextTokens = commonTokens.filter((token) => !/\d/.test(token));
+  const commonTextCount = commonTextTokens.length;
+  const hasDistinctiveTextMatch = commonTextTokens.some((token) => isDistinctiveSheetToken(token));
   const commonRatio = common / Math.min(sheetTokens.length, termTokens.length);
 
-  return (hasNumberMatch && common >= 2) || (commonTextCount >= 3 && commonRatio >= 0.75);
+  return (hasNumberMatch && hasDistinctiveTextMatch) || (commonTextCount >= 3 && commonRatio >= 0.75);
+}
+
+const SHEET_TOKEN_STOPWORDS = new Set([
+  'a', 'au', 'aux', 'de', 'des', 'du', 'la', 'le', 'les', 'l', 'd',
+  'rue', 'route', 'chemin', 'avenue', 'place', 'grand', 'grande',
+]);
+
+function tokenizeSheetName(text) {
+  return text.split(' ').filter((token) => token.length >= 2);
+}
+
+function isDistinctiveSheetToken(token) {
+  return token.length >= 3 && !SHEET_TOKEN_STOPWORDS.has(token);
 }
 
 function extractCustomFields(rows, customLabels) {
@@ -530,12 +545,30 @@ function matchesField(label, candidates) {
 }
 
 function findNearbyValue(rows, rowIndex, colIndex, kind) {
-  const candidates = [];
+  const sameRowCandidates = [];
 
   for (let col = colIndex + 1; col <= colIndex + 6; col += 1) {
-    candidates.push(rows[rowIndex]?.[col]);
+    sameRowCandidates.push(rows[rowIndex]?.[col]);
   }
 
+  if (kind === 'text') {
+    const textCandidate = sameRowCandidates.find((candidate) => candidate != null && candidate !== '');
+    if (textCandidate != null) return String(textCandidate).trim();
+  }
+
+  const sameRowNumericCandidates = sameRowCandidates
+    .map((candidate) => parseNumber(candidate))
+    .filter((candidate) => candidate != null);
+
+  if (sameRowNumericCandidates.length) {
+    if (kind === 'amount') {
+      return sameRowNumericCandidates.find((value) => Math.abs(value) > 100) ?? sameRowNumericCandidates[0];
+    }
+
+    return sameRowNumericCandidates[0];
+  }
+
+  const candidates = [];
   for (let row = rowIndex + 1; row <= rowIndex + 3; row += 1) {
     for (let col = colIndex; col <= colIndex + 4; col += 1) {
       candidates.push(rows[row]?.[col]);
