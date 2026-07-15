@@ -140,20 +140,19 @@ function scoreImportedSheet(rows, fields, sheetName, preferredSheetTerms = [], i
   const preferenceScore = preferredSheetTerms
     .map(normalizeText)
     .filter((term) => term.length >= 3)
-    .some((term) => matchesPreferredSheet(sheetText, term))
-    ? 10000
-    : 0;
+    .reduce((bestScore, term) => Math.max(bestScore, getPreferredSheetScore(sheetText, term)), 0);
   const orderPenalty = index * 20;
 
   return fieldScore + sipaScore + projectionScore + capitalScore + preferenceScore - brouillonPenalty - orderPenalty;
 }
 
-function matchesPreferredSheet(sheetText, term) {
-  if (sheetText.includes(term) || term.includes(sheetText)) return true;
+function getPreferredSheetScore(sheetText, term) {
+  if (sheetText === term) return 20000;
+  if (sheetText.includes(term) || term.includes(sheetText)) return 10000;
 
   const sheetTokens = tokenizeSheetName(sheetText);
   const termTokens = tokenizeSheetName(term);
-  if (!sheetTokens.length || !termTokens.length) return false;
+  if (!sheetTokens.length || !termTokens.length) return 0;
 
   const sheetSet = new Set(sheetTokens);
   const commonTokens = termTokens.filter((token) => sheetSet.has(token));
@@ -164,7 +163,11 @@ function matchesPreferredSheet(sheetText, term) {
   const hasDistinctiveTextMatch = commonTextTokens.some((token) => isDistinctiveSheetToken(token));
   const commonRatio = common / Math.min(sheetTokens.length, termTokens.length);
 
-  return (hasNumberMatch && hasDistinctiveTextMatch) || (commonTextCount >= 3 && commonRatio >= 0.75);
+  if ((hasNumberMatch && hasDistinctiveTextMatch) || (commonTextCount >= 3 && commonRatio >= 0.75)) {
+    return 10000;
+  }
+
+  return 0;
 }
 
 const SHEET_TOKEN_STOPWORDS = new Set([
