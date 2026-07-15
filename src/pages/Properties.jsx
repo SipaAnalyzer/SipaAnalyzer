@@ -12,7 +12,6 @@ import FavoriteButton from '../components/FavoriteButton';
 import { formatCHF, formatPercent, normalizeAnalysis, WORKFLOW_STATUSES } from '../utils/calculations';
 import { Plus, Search, Building2, MapPin, Loader2, ExternalLink } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
-import moment from 'moment';
 
 const COULEURS = [
   { value: '', label: 'Aucune', className: 'bg-transparent border border-border' },
@@ -195,11 +194,6 @@ export default function Properties() {
                   <div className="flex items-center gap-2 mb-3">
                     <StatusBadge statut={p.statut} />
                     {p.latestAnalysis?.note && <ScoreBadge note={p.latestAnalysis.note} />}
-                    <span className="text-xs text-muted-foreground ml-auto">{p.analysisCount} analyse{p.analysisCount > 1 ? 's' : ''}</span>
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mb-3">
-                    Créé {moment(p.created_at || p.created_date).fromNow()}
-                    {p.updated_at && p.updated_at !== p.created_at ? ` · modifié ${moment(p.updated_at).fromNow()}` : ''}
                   </div>
                   {p.latestAnalysis && (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border/50">
