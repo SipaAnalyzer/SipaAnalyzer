@@ -283,14 +283,14 @@ export default function Presentation() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)] gap-5">
-        <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ height: 'clamp(340px, 68vh, 600px)' }}>
+        <div className="bg-card rounded-lg border border-border" style={{ height: 'clamp(340px, 68vh, 600px)' }}>
           {withCoords.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground" style={{ height: 'clamp(340px, 68vh, 600px)' }}>
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
               <MapPin className="h-10 w-10" />
               <p className="text-sm">Aucune adresse à géocoder</p>
             </div>
           ) : (
-            <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} style={{ height: 'clamp(340px, 68vh, 600px)', width: '100%' }} className="z-0">
+            <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} className="z-0 h-full w-full rounded-lg">
               <FitMapToProperties properties={withCoords} />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -343,11 +343,11 @@ export default function Presentation() {
             <Trophy className="h-4 w-4 text-primary" />
           </div>
 
-          {ranked.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">Aucun bien en cours d'analyse</p>
+          {rankedValides.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">Aucun bien validé</p>
           ) : (
             <div className="space-y-3">
-              {ranked.slice(0, 5).map((property, index) => (
+              {rankedValides.slice(0, 5).map((property, index) => (
                 <div key={property.id} className="rounded-lg border border-border/60 p-4 bg-background/60">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
