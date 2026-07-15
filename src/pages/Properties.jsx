@@ -36,7 +36,7 @@ export default function Properties() {
   const enriched = useMemo(() => {
     return properties.map(p => {
       const propAnalyses = analyses.filter(a => a.property_id === p.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-      return { ...p, latestAnalysis: normalizeAnalysis(propAnalyses[0]), analysisCount: propAnalyses.length };
+      return { ...p, latestAnalysis: normalizeAnalysis(propAnalyses[0], p.ville), analysisCount: propAnalyses.length };
     });
   }, [properties, analyses]);
 

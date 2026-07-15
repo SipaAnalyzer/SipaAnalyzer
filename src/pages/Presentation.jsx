@@ -127,7 +127,7 @@ export default function Presentation() {
           .filter((analysis) => analysis.property_id === property.id)
           .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
 
-        return { ...property, analysis: normalizeAnalysis(latest) };
+        return { ...property, analysis: normalizeAnalysis(latest, property.ville) };
       });
   }, [properties, analyses]);
 
@@ -139,7 +139,7 @@ export default function Presentation() {
           .filter((analysis) => analysis.property_id === property.id)
           .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
 
-        return { ...property, analysis: normalizeAnalysis(latest) };
+        return { ...property, analysis: normalizeAnalysis(latest, property.ville) };
       });
   }, [properties, analyses]);
 

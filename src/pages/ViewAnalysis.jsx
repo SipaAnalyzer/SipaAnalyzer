@@ -22,13 +22,13 @@ export default function ViewAnalysis() {
     enabled: !!analysisId,
   });
 
-  const analysis = normalizeAnalysis(analysisRaw);
-
   const { data: property } = useQuery({
-    queryKey: ['property', analysis?.property_id],
-    queryFn: () => base44.entities.Property.get(analysis.property_id),
-    enabled: !!analysis?.property_id,
+    queryKey: ['property', analysisRaw?.property_id],
+    queryFn: () => base44.entities.Property.get(analysisRaw.property_id),
+    enabled: !!analysisRaw?.property_id,
   });
+
+  const analysis = normalizeAnalysis(analysisRaw, property?.ville);
 
   if (isLoading) {
     return (

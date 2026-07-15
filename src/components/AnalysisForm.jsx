@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import ScoreGauge from './ScoreGauge';
 import ScoreBadge from './ScoreBadge';
 import ExcelProjectionTables, { createEmptyExcelProjections } from './ExcelProjectionTables';
-import { Calculator, FileSpreadsheet, FileText, Landmark, Plus, Save, Table, X } from 'lucide-react';
+import { Calculator, FileSpreadsheet, FileText, Landmark, MapPin, Plus, Save, Table, X } from 'lucide-react';
 
 function InputField({ value, onChange, prefix, className }) {
   return (
@@ -229,6 +229,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
 
   const calc = useMemo(() => calculateAnalysis({
     ...form,
+    ville: selectedProperty?.ville,
     annee_construction: selectedProperty?.annee_construction,
   }), [form, selectedProperty]);
 
@@ -405,15 +406,16 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
             </Select>
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground mb-1.5 block">Emplacement du bien</Label>
-            <Select value={form.emplacement_bien} onValueChange={set('emplacement_bien')}>
-              <SelectTrigger className="bg-background border-border"><SelectValue placeholder="..." /></SelectTrigger>
-              <SelectContent>
-                {['Excellent', 'Très bon', 'Bon', 'Moyen', 'Mauvais'].map((v) => (
-                  <SelectItem key={v} value={v}>{v}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Emplacement (ville)</Label>
+            <div className="flex items-center gap-2 h-10 px-3 rounded-lg border border-border bg-muted/30 text-sm">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span>{selectedProperty?.ville || '—'}</span>
+              {selectedProperty?.ville && (
+                <span className="ml-auto text-xs font-mono text-muted-foreground">
+                  {calc.score_emplacement}/15
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </section>

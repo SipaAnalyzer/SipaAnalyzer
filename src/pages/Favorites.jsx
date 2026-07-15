@@ -33,7 +33,7 @@ export default function Favorites() {
 
         return {
           ...property,
-          latestAnalysis: normalizeAnalysis(propAnalyses[0]),
+          latestAnalysis: normalizeAnalysis(propAnalyses[0], property.ville),
           analysisCount: propAnalyses.length,
         };
       });

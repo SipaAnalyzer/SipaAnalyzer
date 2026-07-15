@@ -1,3 +1,30 @@
+const LOCATION_SCORES = {
+  'Lausanne': 15, 'Neuchâtel': 15, 'Neuchatel': 15,
+  'Genève': 13, 'Geneve': 13, 'Zurich': 13, 'Zürich': 13,
+  'Basel': 13, 'Bâle': 13, 'Bern': 13, 'Berne': 13,
+  'Montreux': 13, 'Vevey': 13, 'Nyon': 13, 'Morges': 13,
+  'Pully': 13, 'Lutry': 13, 'Lugano': 13,
+  'Fribourg': 12, 'Yverdon-les-Bains': 12, 'Yverdon': 12,
+  'Sion': 12, 'Sierre': 12, 'Martigny': 12, 'Aigle': 12,
+  'Renens': 12, 'Prilly': 12,   'Crissier': 12,
+  'Bussigny': 12, 'Ecublens': 12, 'Écublens': 12,
+  'La Chaux-de-Fonds': 10, 'Le Locle': 10,
+  'Bienne': 10, 'Biel': 10, 'Delémont': 10,
+  'Moudon': 10, 'Payerne': 10, 'Orbe': 10,
+  'Cossonay': 10, 'Aubonne': 10, 'Rolle': 10,
+  'Gland': 10, 'Coppet': 10,
+  'Sainte-Croix': 7, 'Ste-Croix': 7,
+};
+
+function getLocationScore(ville) {
+  if (!ville) return 5;
+  const normalized = ville.trim().toLowerCase();
+  for (const [city, score] of Object.entries(LOCATION_SCORES)) {
+    if (city.toLowerCase() === normalized) return score;
+  }
+  return 5;
+}
+
 export function calculateAnalysis(data) {
   const prixBien = Number(data.prix_bien || 0);
   const revenusLocatifs = Number(data.revenus_locatifs || 0);
@@ -15,21 +42,21 @@ export function calculateAnalysis(data) {
   const revenuDistribue = revenuNet - impotCalcule;
   const revenuDistribueFP = fondsPropres > 0 ? (revenuDistribue / fondsPropres) * 100 : 0;
 
-  const valQuali = (v, def) => {
-    const map = { Excellent: 10, 'Très bon': 8, Bon: 5, Mauvais: 2 };
-    return map[v] ?? def;
+  const valEtat = (v) => {
+    const map = { Excellent: 5, 'Très bon': 4, Bon: 3, Moyen: 2, Mauvais: 1 };
+    return map[v] ?? 3;
   };
 
-  const scoreRendementBrut = Math.min(rendementBrut / 8 * 80, 80);
-  const scoreRendementNetFP = Math.min(Math.max(rendementNetFP / 15 * 10, 0), 10);
-  const scoreRevenuDistribue = Math.min(Math.max(revenuDistribueFP / 10 * 4, 0), 4);
-  const scoreEmplacement = valQuali(data.emplacement_bien, 5) * 0.4;
-  const scoreEtat = valQuali(data.etat_batiment, 5) * 0.2;
+  const scoreRendementBrut = rendementBrut <= 4
+    ? rendementBrut / 4 * 60
+    : 60 + (rendementBrut - 4) / 4 * 25;
+  const scoreRendementNetFP = Math.min(Math.max(rendementNetFP / 15 * 5, 0), 5);
+  const scoreEmplacement = getLocationScore(data.ville);
+  const scoreEtat = valEtat(data.etat_batiment);
 
-  let scoreGlobal = round2(
-    scoreRendementBrut + scoreRendementNetFP + scoreRevenuDistribue + scoreEmplacement + scoreEtat
-  );
-  if (rendementBrut >= 4 && scoreGlobal < 70) scoreGlobal = 70;
+  let scoreGlobal = Math.min(round2(
+    Math.min(scoreRendementBrut, 85) + scoreRendementNetFP + scoreEmplacement + scoreEtat
+  ), 100);
 
   function noteFromScore(s) {
     if (s >= 85) return 'S';
@@ -49,22 +76,25 @@ export function calculateAnalysis(data) {
     revenu_distribue: Math.round(revenuDistribue),
     revenu_distribue_fonds_propres: round2(revenuDistribueFP),
     score_global: scoreGlobal,
+    score_emplacement: scoreEmplacement,
+    score_etat: scoreEtat,
     note,
   };
 }
 
 function round2(v) { return Math.round(v * 100) / 100; }
 
-export function normalizeAnalysis(analysis) {
+export function normalizeAnalysis(analysis, ville) {
   if (!analysis) return analysis;
   return {
     ...analysis,
-    ...calculateAnalysis(analysis),
+    ...calculateAnalysis(ville ? { ...analysis, ville } : analysis),
   };
 }
 
-export function normalizeAnalyses(analyses = []) {
-  return analyses.map(normalizeAnalysis);
+export function normalizeAnalyses(analyses = [], property) {
+  const ville = property?.ville;
+  return analyses.map((a) => normalizeAnalysis(a, ville));
 }
 
 export function formatCHF(amount) {

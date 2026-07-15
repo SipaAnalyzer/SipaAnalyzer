@@ -177,7 +177,7 @@ export default function PropertyDetail() {
     return <div className="p-8 text-center text-muted-foreground">Bien non trouvé</div>;
   }
 
-  const normalizedAnalyses = normalizeAnalyses(analyses);
+  const normalizedAnalyses = normalizeAnalyses(analyses, property);
   const latest = normalizedAnalyses[0];
   const selected = selectedAnalysisId
     ? normalizedAnalyses.find((analysis) => analysis.id === selectedAnalysisId) || latest
@@ -392,8 +392,8 @@ function PropertyPresentation({ property, latest, comments }) {
               <MetricCard label="Revenu net" value={formatCHF(latest.revenu_net)} />
               <MetricCard label="Revenu distribué" value={formatCHF(latest.revenu_distribue)} />
               <MetricCard label="Rdt. net / FP" value={formatPercent(latest.rendement_net_fonds_propres)} highlight />
-              {latest.emplacement_bien && latest.etat_batiment && (
-                <MetricCard label="Emplacement / État" value={`${latest.emplacement_bien} / ${latest.etat_batiment}`} />
+              {property.ville && latest.etat_batiment && (
+                <MetricCard label="Localisation / État" value={`${property.ville} (${latest.score_emplacement ?? '?'}/15) / ${latest.etat_batiment}`} />
               )}
             </div>
 

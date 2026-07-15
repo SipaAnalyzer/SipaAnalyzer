@@ -49,7 +49,10 @@ const { data: properties = [], isLoading: lp } = useQuery({
   );
 
   const enriched = latestPerProperty
-    .map(a => ({ ...normalizeAnalysis(a), property: properties.find(p => p.id === a.property_id) }))
+    .map(a => {
+      const prop = properties.find(p => p.id === a.property_id);
+      return { ...normalizeAnalysis(a, prop?.ville), property: prop };
+    })
     .filter(a => a.property);
 
   const top5 = [...enriched]
