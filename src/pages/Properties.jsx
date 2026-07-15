@@ -173,45 +173,49 @@ export default function Properties() {
             const colorDef = COULEURS.find(c => c.value === p.couleur);
             return (
               <Link key={p.id} to={`/property/${p.id}`} className="block">
-                <div className={`bg-card rounded-xl border p-5 hover:border-primary/30 transition-all duration-200 group ${p.couleur ? 'border-t-4' : 'border-border border-t-border'}`}
+                <div className={`relative bg-card rounded-xl border p-5 hover:border-primary/30 transition-all duration-200 group ${p.couleur ? 'border-t-4' : 'border-border border-t-border'}`}
                   style={p.couleur ? { borderTopColor: p.couleur === 'rouge' ? '#ef4444' : p.couleur === 'orange' ? '#f97316' : '#22c55e' } : {}}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <FavoriteButton propertyId={p.id} className="h-5 w-5 shrink-0" />
-                      <h3 className="font-heading font-semibold text-sm truncate group-hover:text-primary transition-colors">{p.nom_bien}</h3>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      {p.lien_annonce && (
-                        <a href={p.lien_annonce} target="_blank" rel="noopener noreferrer"
-                          onClick={e => e.stopPropagation()}
-                          className="text-muted-foreground hover:text-primary transition-colors z-10" title="Voir l'annonce">
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      )}
-                      {p.latestAnalysis && <ScoreGauge score={p.latestAnalysis.score_global || 0} size={60} />}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <StatusBadge statut={p.statut} />
-                    {p.latestAnalysis?.note && <ScoreBadge note={p.latestAnalysis.note} />}
-                  </div>
-                  {p.latestAnalysis && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border/50">
-                      <div>
-                        <p className="text-[10px] text-muted-foreground">Prix total</p>
-                        <p className="text-xs font-mono font-medium">{formatCHF(p.latestAnalysis.prix_total)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-muted-foreground">Rdt. brut</p>
-                        <p className="text-xs font-mono font-medium">{formatPercent(p.latestAnalysis.rendement_brut)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-muted-foreground">Rdt. net/FP</p>
-                        <p className="text-xs font-mono font-medium text-primary">{formatPercent(p.latestAnalysis.rendement_net_fonds_propres)}</p>
-                      </div>
-                    </div>
+                  {p.image_url && (
+                    <img src={p.image_url} alt="" className="absolute inset-0 w-full h-full object-cover rounded-xl pointer-events-none opacity-[0.07]" />
                   )}
-                  <div className="flex items-center gap-2 pt-3 mt-3 border-t border-border/30">
+                  <div className="relative z-10">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <FavoriteButton propertyId={p.id} className="h-5 w-5 shrink-0" />
+                        <h3 className="font-heading font-semibold text-sm truncate group-hover:text-primary transition-colors">{p.nom_bien}</h3>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {p.lien_annonce && (
+                          <a href={p.lien_annonce} target="_blank" rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            className="text-muted-foreground hover:text-primary transition-colors z-10" title="Voir l'annonce">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        )}
+                        {p.latestAnalysis && <ScoreGauge score={p.latestAnalysis.score_global || 0} size={60} />}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <StatusBadge statut={p.statut} />
+                      {p.latestAnalysis?.note && <ScoreBadge note={p.latestAnalysis.note} />}
+                    </div>
+                    {p.latestAnalysis && (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border/50">
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">Prix total</p>
+                          <p className="text-xs font-mono font-medium">{formatCHF(p.latestAnalysis.prix_total)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">Rdt. brut</p>
+                          <p className="text-xs font-mono font-medium">{formatPercent(p.latestAnalysis.rendement_brut)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">Rdt. net/FP</p>
+                          <p className="text-xs font-mono font-medium text-primary">{formatPercent(p.latestAnalysis.rendement_net_fonds_propres)}</p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 pt-3 mt-3 border-t border-border/30">
                     <span className="text-[10px] text-muted-foreground mr-1">Couleur :</span>
                     {['rouge', 'orange', 'vert'].map(c => (
                       <button
@@ -231,6 +235,7 @@ export default function Properties() {
                         ✕
                       </button>
                     )}
+                  </div>
                   </div>
                 </div>
               </Link>
