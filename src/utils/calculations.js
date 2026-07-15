@@ -20,11 +20,11 @@ export function calculateAnalysis(data) {
     return map[v] ?? def;
   };
 
-  const scoreRendementBrut = Math.min(rendementBrut / 8 * 50, 50);
-  const scoreRendementNetFP = Math.min(Math.max(rendementNetFP / 15 * 20, 0), 20);
-  const scoreRevenuDistribue = Math.min(Math.max(revenuDistribueFP / 10 * 10, 0), 10);
-  const scoreEmplacement = valQuali(data.emplacement_bien, 5);
-  const scoreEtat = valQuali(data.etat_batiment, 5);
+  const scoreRendementBrut = Math.min(rendementBrut / 8 * 55, 55);
+  const scoreRendementNetFP = Math.min(Math.max(rendementNetFP / 15 * 25, 0), 25);
+  const scoreRevenuDistribue = Math.min(Math.max(revenuDistribueFP / 10 * 8, 0), 8);
+  const scoreEmplacement = valQuali(data.emplacement_bien, 5) * 0.7;
+  const scoreEtat = valQuali(data.etat_batiment, 5) * 0.5;
 
   const scoreGlobal = round2(
     scoreRendementBrut + scoreRendementNetFP + scoreRevenuDistribue + scoreEmplacement + scoreEtat
