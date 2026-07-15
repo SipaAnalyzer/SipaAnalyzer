@@ -283,14 +283,14 @@ export default function Presentation() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,.65fr)] gap-5">
-        <div className="bg-card rounded-lg border border-border overflow-hidden min-h-[340px] sm:min-h-[460px]">
+        <div className="bg-card rounded-lg border border-border overflow-hidden" style={{ height: 'clamp(340px, 68vh, 600px)' }}>
           {withCoords.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[340px] sm:h-[460px] gap-3 text-muted-foreground">
+            <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground" style={{ height: 'clamp(340px, 68vh, 600px)' }}>
               <MapPin className="h-10 w-10" />
               <p className="text-sm">Aucune adresse à géocoder</p>
             </div>
           ) : (
-            <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} style={{ height: 'min(460px, 68vh)', minHeight: 340, width: '100%' }} className="z-0">
+            <MapContainer center={mapCenter} zoom={LEMAN_ZOOM} style={{ height: 'clamp(340px, 68vh, 600px)', width: '100%' }} className="z-0">
               <FitMapToProperties properties={withCoords} />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
