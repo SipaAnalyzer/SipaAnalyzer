@@ -527,7 +527,8 @@ function extractRows(rows, fields, seenLabels) {
       FIELD_DEFINITIONS.forEach((field) => {
         if (!matchesField(label, field.labels) || fields[field.key] != null) return;
 
-        const value = findNearbyValue(rows, rowIndex, colIndex, field.kind);
+        const value = findPrimaryTableValue(rows, rowIndex, colIndex, field.kind) ??
+          findNearbyValue(rows, rowIndex, colIndex, field.kind);
         if (value == null) return;
 
         fields[field.key] = normalizeFieldValue(value, field.kind);
@@ -537,13 +538,32 @@ function extractRows(rows, fields, seenLabels) {
       PCT_LABELS.forEach((labels, pctKey) => {
         if (!matchesField(label, labels) || fields[pctKey] != null) return;
 
-        const percent = findNearbyPercent(rows, rowIndex, colIndex, label);
+        const percent = findPrimaryTablePercent(rows, rowIndex, colIndex, label) ??
+          findNearbyPercent(rows, rowIndex, colIndex, label);
         if (percent == null) return;
 
         fields[pctKey] = percent;
       });
     });
   });
+}
+
+function findPrimaryTableValue(rows, rowIndex, colIndex, kind) {
+  if (kind !== 'amount' || colIndex !== 0 || rowIndex > 27) return null;
+
+  const value = parseNumber(rows[rowIndex]?.[4]);
+  return value == null ? null : value;
+}
+
+function findPrimaryTablePercent(rows, rowIndex, colIndex, label) {
+  if (colIndex !== 0 || rowIndex > 27) return null;
+
+  const labelPercent = extractPercent(label);
+  if (labelPercent != null) return labelPercent;
+
+  const value = parseNumber(rows[rowIndex]?.[2]);
+  if (value == null) return null;
+  return Math.abs(value) <= 1 ? round2(value * 100) : round2(value);
 }
 
 function matchesField(label, candidates) {
