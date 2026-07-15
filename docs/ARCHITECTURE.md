@@ -11,7 +11,6 @@ flowchart LR
   FE --> DB["PostgreSQL Supabase"]
   FE --> FN["Supabase Edge Functions"]
   FN --> SARON["Source taux SARON"]
-  FN --> AI["Provider IA optionnel"]
   FE --> PDF["Exports PDF côté client"]
 ```
 

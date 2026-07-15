@@ -648,48 +648,6 @@ export const base44 = {
     },
   },
 
-  integrations: {
-    Core: {
-      async InvokeLLM(payload) {
-        const { data, error } = await supabase.functions.invoke("ai-insights", {
-          body: payload,
-        });
-
-        if (error) {
-          let details = "";
-
-          try {
-            details = await error.context?.json?.();
-          } catch {
-            try {
-              details = await error.context?.text?.();
-            } catch {
-              details = "";
-            }
-          }
-
-          const detailMessage =
-            typeof details === "string" ? details : details?.error;
-
-          console.error("[Supabase] AI insights error:", error);
-          throw new Error(
-            detailMessage ||
-            error.message ||
-              "Impossible de générer l'analyse IA pour le moment."
-          );
-        }
-
-        return data;
-        /*
-        return {
-          analysis_text:
-            "L'analyse IA est désactivée temporairement pendant la migration vers Supabase.",
-        };
-        */
-      },
-    },
-  },
-
   users: {
     async inviteUser(email) {
       console.warn(

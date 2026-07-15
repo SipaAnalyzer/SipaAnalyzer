@@ -46,9 +46,7 @@ Le périmètre fonctionnel de SIPA Analyzer couvre l'ensemble du cycle de vie de
 | Administration | Gestion des utilisateurs, rôles et supervision | Admin | Critique |
 | Panneau de supervision | Monitoring technique, logs, corbeille | Admin | Élevée |
 | Authentification | Connexion, inscription, OTP, reset password | Auth | Critique |
-| IA Insights | Analyse automatisée par IA des biens | Analyse | Faible |
 | Panneau de traçabilité | Historique des modifications métier | Audit | Élevée |
-| Chatbot | Assistant conversationnel intégré | Support | Faible |
 | Thème sombre/clair | Support du mode sombre via next-themes | UI | Faible |
 
 ### 1.4 Utilisateurs cibles et cas d'usage
@@ -599,33 +597,7 @@ Ce durcissement apporte plusieurs ameliorations :
 
 ### 7.3 Securite des Edge Functions
 
-Les Edge Functions Supabase s'executent dans un environnement Deno securise. Chaque fonction recoit les en-tetes CORS appropries pour controler les origines autorisees. Les cles API des fournisseurs d'IA sont stockees dans Supabase Secrets et recuperees via Deno.env.get().
-
-La fonction ai-insights illustre les bonnes pratiques de securite :
-
-`	ypescript
-// Verification de la methode HTTP
-if (request.method !== "POST") {
-  return jsonResponse({ error: "Methode non autorisee." }, 405);
-}
-
-// Recuperation de la cle API depuis les secrets (pas dans le code)
-const apiKey = Deno.env.get(cfg.apiKeyEnv);
-if (!apiKey) {
-  return jsonResponse(
-    { error: " est manquant dans les secrets Supabase." },
-    500
-  );
-}
-
-// Transmission securisee de la cle au fournisseur d'IA
-const response = await fetch(cfg.url, {
-  headers: {
-    Authorization: "Bearer ",
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({ model, messages }),
-});
+Les Edge Functions Supabase s'executent dans un environnement Deno securise. Chaque fonction gere les en-tetes CORS et les variables d'environnement via Supabase Secrets (Deno.env.get()). Les tokens JWT sont verifies dans les fonctions sensibles (delete-user).});
 `
 
 La fonction delete-user implemente des verifications supplementaires pour empecher les abus :
@@ -919,31 +891,7 @@ Les Edge Functions Supabase s'executent dans un environnement Deno, un runtime J
 
 Chaque fonction est un script TypeScript independant qui exporte un gestionnaire de requete via Deno.serve(). Le deployment est gere par Supabase CLI, qui compile et deploie les fonctions sur le reseau global Supabase. Les variables d'environnement (cles API, URLs) sont configurees via Supabase Secrets et accessibles via Deno.env.get().
 
-### 11.2 ai-insights
-
-La fonction ai-insights est le point d'acces aux services d'intelligence artificielle pour l'analyse automatisee des biens immobiliers. Elle supporte cinq fournisseurs d'IA differents :
-
-- **OpenAI** (GPT-4.1 Mini) : modele par defaut, excellent pour les analyses detaillees
-- **DeepSeek** (deepseek-chat) : alternative economique performante
-- **ZenMux** (GLM-4.7 Flash Free) : modele gratuit pour les tests
-- **Grok** (grok-2) : fournisseur xAI pour la diversite des perspectives
-- **Groq** (Llama 3.3 70B) : inference ultra-rapide sur hardware specialise
-
-La fonction accepte un payload contenant le prompt utilisateur, un system prompt optionnel, le fournisseur souhaite et une liste de messages optionnelle. Le system prompt par defaut configure l'IA comme un expert en analyse immobiliere suisse travaillant pour SIPA Immobilier SA.
-
-Le flux de traitement est le suivant :
-1. Verification de la methode HTTP (POST uniquement)
-2. Parsing du payload JSON
-3. Selection du fournisseur (default: Groq)
-4. Recuperation de la cle API depuis les secrets Supabase
-5. Construction du tableau de messages (system + user)
-6. Appel a l'API du fournisseur selectionne
-7. Extraction du texte de la reponse
-8. Retour du resultat au frontend
-
-L'analyse IA est utilisee principalement pour generer des commentaires contextuels sur les biens, expliquer les indicateurs financiers, et fournir des recommendations d'investissement preliminaires. Les reponses sont toujours accompagnees de la mention "analyse a titre indicatif, soumise a validation par un conseiller SIPA" pour rappeler leur caractere non contractuel.
-
-### 11.3 saron-rate
+### 11.2 saron-rate
 
 La fonction saron-rate est un proxy qui interroge l'API de la Banque Nationale Suisse (BNS) pour recuperer le taux SARON (Swiss Average Rate Overnight) actuel. Le SARON est le taux de reference pour les hypotheses a taux variable en Suisse, et son integration dans SIPA Analyzer permet aux utilisateurs de baser leurs simulations sur des donnees de marche actualisees.
 
@@ -1208,15 +1156,9 @@ Variables requises :
 
 Variables optionnelles (dans le code) :
 - VITE_STRIPE_PUBLISHABLE_KEY : Cle publique Stripe (paiements)
-- OPENAI_API_KEY : Cle API OpenAI (Edge Function)
-- DEEPSEEK_API_KEY : Cle API DeepSeek (Edge Function)
-- GROK_API_KEY : Cle API Grok (Edge Function)
-- GROQ_API_KEY : Cle API Groq (Edge Function)
-- ZENMUX_API_KEY : Cle API ZenMux (Edge Function)
-
-Les cles API des fournisseurs d'IA sont stockees dans Supabase Secrets et ne
-sont jamais transmises au frontend. Seules les variables VITE_ sont necessaires
-dans le frontend et ne contiennent que des informations publiques.
+Les secrets sont stockes dans Supabase Secrets et ne sont jamais transmis au
+frontend. Seules les variables VITE_ sont necessaires dans le frontend et ne
+contiennent que des informations publiques.
 
 ### 15.3 Checklist de promotion dev vers prod
 
@@ -1426,7 +1368,7 @@ des Systemes d'Information).
 | Competence | Realisation SIPA Analyzer |
 |---|---|
 | Developper les composants frontend | 16 pages React, 26 composants reutilisables, 3 hooks |
-| Developper les composants backend | 3 Edge Functions Deno (ai-insights, saron-rate, delete-user) |
+| Developper les composants backend | 2 Edge Functions Deno (saron-rate, delete-user) |
 | Implementer la couche d'acces aux donnees | Adaptateur base44Client, client Supabase, audit log |
 | Integrer les composants | Integration React Query, routage React Router, contextes d'auth |
 | Gerer les dependances | package.json avec 80+ dependances, versioning explicite |
@@ -1476,12 +1418,8 @@ Pour deployer les migrations Supabase :
 4. Appliquer les migrations : supabase db push
 
 Pour deployer les Edge Functions :
-supabase functions deploy ai-insights
 supabase functions deploy saron-rate
 supabase functions deploy delete-user
-
-Pour configurer les secrets Supabase :
-supabase secrets set OPENAI_API_KEY=<valeur>
 supabase secrets set DEEPSEEK_API_KEY=<valeur>
 supabase secrets set GROQ_API_KEY=<valeur>
 supabase secrets set GROK_API_KEY=<valeur>
@@ -2667,7 +2605,6 @@ envisageables :
 | HMR | Hot Module Replacement |
 | HTTP | HyperText Transfer Protocol |
 | HTTPS | HTTP Secure |
-| IA | Intelligence Artificielle |
 | IRR | Internal Rate of Return (TRI) |
 | JSON | JavaScript Object Notation |
 | JSONB | JSON Binary (PostgreSQL) |

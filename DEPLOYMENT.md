@@ -44,17 +44,6 @@ Netlify:
 - Le rôle par défaut accepté à l'inscription est `en_attente`, sans aucune permission. L'admin doit ensuite passer l'utilisateur en `membre`, `direction` ou `admin`.
 - Les règles RLS autorisent les opérations attendues.
 
-## IA
-
-L'IA est prête techniquement via `supabase/functions/ai-insights`, mais peut rester désactivée tant que le quota/API provider n'est pas choisi.
-
-Pour OpenAI plus tard:
-
-```powershell
-supabase secrets set OPENAI_API_KEY="..."
-supabase functions deploy ai-insights --project-ref nrqqsbubmfjjqvubgqjs
-```
-
 ## Checklist de recette
 
 - Connexion avec compte admin.
