@@ -38,7 +38,7 @@ export default function Properties() {
   const [statusFilter, setStatusFilter] = useState(urlParams.get('status') || 'all');
   const [villeFilter, setVilleFilter] = useState('all');
   const [rendementFilter, setRendementFilter] = useState('all');
-  const [couleurFilter, setCouleurFilter] = useState('all');
+  const [couleurFilter, setCouleurFilter] = useState('');
   const [sortBy, setSortBy] = useState('date-desc');
 
   const { data: properties = [], isLoading: lp } = useQuery({
@@ -84,7 +84,7 @@ export default function Properties() {
       if (search && !p.nom_bien?.toLowerCase().includes(search.toLowerCase()) && !p.ville?.toLowerCase().includes(search.toLowerCase())) return false;
       if (statusFilter !== 'all' && p.statut !== statusFilter) return false;
       if (villeFilter !== 'all' && p.ville !== villeFilter) return false;
-      if (couleurFilter !== 'all' && (p.couleur || '') !== couleurFilter) return false;
+      if (couleurFilter && (p.couleur || '') !== couleurFilter) return false;
       if (rendementFilter !== 'all') {
         const rdt = p.latestAnalysis?.rendement_brut || 0;
         if (rendementFilter === 'lt4' && rdt >= 4) return false;
@@ -147,7 +147,7 @@ export default function Properties() {
         <Select value={couleurFilter} onValueChange={setCouleurFilter}>
           <SelectTrigger className="w-full bg-card border-border"><SelectValue placeholder="Couleur" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes les couleurs</SelectItem>
+            <SelectItem value="">Toutes les couleurs</SelectItem>
             {COULEURS.filter(c => c.value && couleursUtilisees.includes(c.value)).map(c => (
               <SelectItem key={c.value} value={c.value}>
                 <span className="flex items-center gap-2">
