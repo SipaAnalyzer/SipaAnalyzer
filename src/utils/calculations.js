@@ -15,31 +15,30 @@ export function calculateAnalysis(data) {
   const revenuDistribue = revenuNet - impotCalcule;
   const revenuDistribueFP = fondsPropres > 0 ? (revenuDistribue / fondsPropres) * 100 : 0;
 
-  const NOTE_ORDER = ['C', 'B', 'A'];
+  const valQuali = (v, def) => {
+    const map = { Excellent: 10, 'Très bon': 8, Bon: 5, Mauvais: 2 };
+    return map[v] ?? def;
+  };
 
-  function getBaseNote(rb) {
-    if (rb >= 4) return 'A';
-    if (rb >= 3.5) return 'B';
-    return 'C';
+  const scoreRendementBrut = Math.min(rendementBrut / 8 * 50, 50);
+  const scoreRendementNetFP = Math.min(Math.max(rendementNetFP / 15 * 20, 0), 20);
+  const scoreRevenuDistribue = Math.min(Math.max(revenuDistribueFP / 10 * 10, 0), 10);
+  const scoreEmplacement = valQuali(data.emplacement_bien, 5);
+  const scoreEtat = valQuali(data.etat_batiment, 5);
+
+  const scoreGlobal = round2(
+    scoreRendementBrut + scoreRendementNetFP + scoreRevenuDistribue + scoreEmplacement + scoreEtat
+  );
+
+  function noteFromScore(s) {
+    if (s >= 85) return 'S';
+    if (s >= 70) return 'A';
+    if (s >= 55) return 'B';
+    if (s >= 40) return 'C';
+    return 'D';
   }
 
-  function adjustNote(base, emplacement, etat) {
-    let bonus = 0;
-    const pos = ['Excellent', 'Très bon'];
-    const neg = ['Mauvais'];
-    if (pos.includes(emplacement)) bonus++;
-    else if (neg.includes(emplacement)) bonus--;
-    if (pos.includes(etat)) bonus++;
-    else if (neg.includes(etat)) bonus--;
-    bonus = Math.max(-1, Math.min(1, bonus >= 1 ? 1 : (bonus <= -1 ? -1 : 0)));
-    const idx = Math.max(0, Math.min(NOTE_ORDER.length - 1, NOTE_ORDER.indexOf(base) + bonus));
-    return NOTE_ORDER[idx];
-  }
-
-  const baseNote = getBaseNote(rendementBrut);
-  const adjustedNote = adjustNote(baseNote, data.emplacement_bien, data.etat_batiment);
-
-  const SCORE_MAP = { C: 50, B: 67, A: 95 };
+  const note = noteFromScore(scoreGlobal);
 
   return {
     prix_total: Math.round(prixBien + Number(data.versement_initial || 0) + Number(data.amortissement_5_ans || 0) + Number(data.honoraires_sipa || 0) + Number(data.frais_dossier_bancaire || 0)),
@@ -48,8 +47,8 @@ export function calculateAnalysis(data) {
     rendement_net_fonds_propres: round2(rendementNetFP),
     revenu_distribue: Math.round(revenuDistribue),
     revenu_distribue_fonds_propres: round2(revenuDistribueFP),
-    score_global: SCORE_MAP[adjustedNote],
-    note: adjustedNote,
+    score_global: scoreGlobal,
+    note,
   };
 }
 
@@ -121,4 +120,5 @@ export const NOTE_CONFIG = {
   A: { class: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
   B: { class: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
   C: { class: 'bg-lime-500/20 text-lime-400 border-lime-500/30' },
+  D: { class: 'bg-red-500/20 text-red-400 border-red-500/30' },
 };
