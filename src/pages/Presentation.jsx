@@ -41,7 +41,7 @@ const createScoreIcon = (property) => {
         border-radius: 999px;
         background: #ef4444;
         border: 3px solid white;
-        box-shadow: 0 10px 25px rgba(0,0,0,.25);
+        box-shadow: 0 1px 4px rgba(0,0,0,.15);
       "></div>
     `,
     iconSize: [23, 23],
@@ -282,7 +282,7 @@ export default function Presentation() {
         )}
       </div>
 
-      <div className="map-container bg-card rounded-lg border border-border overflow-hidden" style={{ height: 'clamp(450px, 82vh, 750px)' }}>
+      <div className="map-container bg-card rounded-lg border border-border overflow-hidden" style={{ height: 'clamp(500px, 88vh, 850px)' }}>
         {withCoords.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
             <MapPin className="h-10 w-10" />
