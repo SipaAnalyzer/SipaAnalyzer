@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
@@ -40,7 +40,6 @@ export default function Properties() {
   const [rendementFilter, setRendementFilter] = useState('all');
   const [couleurFilter, setCouleurFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
-  const [pickerOpen, setPickerOpen] = useState(null);
 
   const { data: properties = [], isLoading: lp } = useQuery({
     queryKey: ['properties'],
@@ -97,18 +96,7 @@ export default function Properties() {
     }
   }, [filtered, sortBy]);
 
-  const handleColorClick = useCallback((e, propertyId) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setPickerOpen(pickerOpen === propertyId ? null : propertyId);
-  }, [pickerOpen]);
 
-  const handleColorSelect = useCallback((e, propertyId, couleur) => {
-    e.preventDefault();
-    e.stopPropagation();
-    updateCouleur.mutate({ id: propertyId, couleur });
-    setPickerOpen(null);
-  }, [updateCouleur]);
 
   if (lp || la) return <div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
@@ -180,8 +168,9 @@ export default function Properties() {
           {sorted.map(p => {
             const colorDef = COULEURS.find(c => c.value === p.couleur);
             return (
-              <Link key={p.id} to={`/property/${p.id}`} className="block relative">
-                <div className="bg-card rounded-xl border border-border p-5 hover:border-primary/30 transition-all duration-200 group">
+              <Link key={p.id} to={`/property/${p.id}`} className="block">
+                <div className={`bg-card rounded-xl border p-5 hover:border-primary/30 transition-all duration-200 group ${p.couleur ? 'border-t-4' : 'border-border border-t-border'}`}
+                  style={p.couleur ? { borderTopColor: p.couleur === 'rouge' ? '#ef4444' : p.couleur === 'orange' ? '#f97316' : '#22c55e' } : {}}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-heading font-semibold text-sm truncate group-hover:text-primary transition-colors">{p.nom_bien}</h3>
@@ -226,28 +215,27 @@ export default function Properties() {
                       </div>
                     </div>
                   )}
-                </div>
-                <div className="absolute top-2 left-2 z-20">
-                  <button
-                    onClick={(e) => handleColorClick(e, p.id)}
-                    className={`w-5 h-5 rounded-full border-2 border-white shadow-sm transition-transform hover:scale-110 ${colorDef ? colorDef.className : 'bg-transparent border-border'}`}
-                    title={colorDef ? colorDef.label : 'Ajouter une couleur'}
-                  />
-                  {pickerOpen === p.id && (
-                    <div
-                      className="absolute top-7 left-0 z-30 bg-card border border-border rounded-lg shadow-xl p-2 grid grid-cols-5 gap-1"
-                      onClick={e => { e.preventDefault(); e.stopPropagation(); }}
-                    >
-                      {COULEURS.map(c => (
-                        <button
-                          key={c.value}
-                          onClick={(e) => handleColorSelect(e, p.id, c.value)}
-                          className={`w-6 h-6 rounded-full border-2 border-white/50 hover:scale-110 transition-transform ${c.className} ${p.couleur === c.value ? 'ring-2 ring-primary' : ''}`}
-                          title={c.label}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 pt-3 mt-3 border-t border-border/30">
+                    <span className="text-[10px] text-muted-foreground mr-1">Couleur :</span>
+                    {['rouge', 'orange', 'vert'].map(c => (
+                      <button
+                        key={c}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateCouleur.mutate({ id: p.id, couleur: p.couleur === c ? '' : c }); }}
+                        className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-125 ${p.couleur === c ? 'border-white ring-2 ring-primary scale-110' : 'border-border/50 opacity-50 hover:opacity-100'}`}
+                        style={{ backgroundColor: c === 'rouge' ? '#ef4444' : c === 'orange' ? '#f97316' : '#22c55e' }}
+                        title={c}
+                      />
+                    ))}
+                    {p.couleur && (
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateCouleur.mutate({ id: p.id, couleur: '' }); }}
+                        className="text-[10px] text-muted-foreground hover:text-foreground ml-1"
+                        title="Enlever la couleur"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
               </Link>
             );
