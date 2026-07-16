@@ -166,6 +166,18 @@ export default function PropertyDetail() {
     },
   });
 
+  const updateCouleur = useMutation({
+    mutationFn: (couleur) => base44.entities.Property.update(propertyId, { couleur }),
+    onMutate: async (couleur) => {
+      await queryClient.cancelQueries({ queryKey: ['property', propertyId] });
+      queryClient.setQueryData(['property', propertyId], (old) => old ? { ...old, couleur } : old);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+    },
+  });
+
   if (lp || la || lc) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -239,7 +251,7 @@ export default function PropertyDetail() {
         </TabsList>
 
         <TabsContent value="presentation" className="mt-5">
-          <PropertyPresentation property={property} latest={latest} comments={comments} />
+          <PropertyPresentation property={property} latest={latest} comments={comments} updateCouleur={updateCouleur} />
         </TabsContent>
 
         <TabsContent value="analyse" className="mt-5 space-y-6">
@@ -328,10 +340,11 @@ export default function PropertyDetail() {
   );
 }
 
-function PropertyPresentation({ property, latest, comments }) {
+function PropertyPresentation({ property, latest, comments, updateCouleur }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
-      <section className="bg-card rounded-xl border border-border p-4 sm:p-6">
+      <section className={`bg-card rounded-xl border p-4 sm:p-6 ${property.couleur ? 'border-t-4' : 'border-border'}`}
+        style={property.couleur ? { borderTopColor: property.couleur === 'rouge' ? '#ef4444' : property.couleur === 'orange' ? '#f97316' : '#22c55e' } : {}}>
         {property.image_url && (
           <div className="mb-5 overflow-hidden rounded-lg">
             <img src={property.image_url} alt={property.nom_bien} className="w-full h-56 object-cover" />
@@ -341,6 +354,23 @@ function PropertyPresentation({ property, latest, comments }) {
         <div className="flex items-center gap-2 mb-5">
           <Building2 className="h-4 w-4 text-primary" />
           <h2 className="font-heading font-semibold">Présentation du bien</h2>
+          <div className="ml-auto flex items-center gap-1.5">
+            {['rouge', 'orange', 'vert'].map(c => (
+              <button
+                key={c}
+                onClick={() => updateCouleur.mutate(property.couleur === c ? '' : c)}
+                className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-125 ${property.couleur === c ? 'border-white ring-2 ring-primary scale-110' : 'border-border/50 opacity-50 hover:opacity-100'}`}
+                style={{ backgroundColor: c === 'rouge' ? '#ef4444' : c === 'orange' ? '#f97316' : '#22c55e' }}
+                title={c}
+              />
+            ))}
+            {property.couleur && (
+              <button
+                onClick={() => updateCouleur.mutate('')}
+                className="text-xs text-muted-foreground hover:text-foreground ml-1" title="Enlever la couleur"
+              >✕</button>
+            )}
+          </div>
         </div>
 
         <PropertyMeta property={property} />
