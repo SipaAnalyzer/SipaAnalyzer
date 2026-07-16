@@ -135,6 +135,8 @@ const AUDIT_FIELDS = {
     annee_construction: "Année de construction",
     surface: "Surface",
     nombre_logements: "Nombre de logements",
+    nombre_bureaux: "Nombre de bureaux",
+    nombre_parkings: "Nombre de parkings",
     lien_annonce: "Lien annonce",
     latitude: "Latitude",
     longitude: "Longitude",

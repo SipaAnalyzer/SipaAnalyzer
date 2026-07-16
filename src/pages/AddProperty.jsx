@@ -19,7 +19,7 @@ export default function AddProperty() {
   const [imageUploading, setImageUploading] = useState(false);
   const [form, setForm] = useState({
     nom_bien: '', adresse: '', ville: '', canton: '', pays: 'Suisse',
-    annee_construction: '', surface: '', nombre_logements: '', statut: 'brouillon',
+    annee_construction: '', surface: '', nombre_logements: '', nombre_bureaux: '', nombre_parkings: '', statut: 'brouillon',
     lien_annonce: '', lien_piece_jointe: '', image_url: '', latitude: '', longitude: '',
   });
 
@@ -99,6 +99,8 @@ export default function AddProperty() {
       annee_construction: form.annee_construction ? parseInt(form.annee_construction) : undefined,
       surface: form.surface ? parseFloat(form.surface) : undefined,
       nombre_logements: form.nombre_logements ? parseInt(form.nombre_logements) : undefined,
+      nombre_bureaux: form.nombre_bureaux ? parseInt(form.nombre_bureaux) : undefined,
+      nombre_parkings: form.nombre_parkings ? parseInt(form.nombre_parkings) : undefined,
       latitude: form.latitude !== '' ? parseFloat(form.latitude) : undefined,
       longitude: form.longitude !== '' ? parseFloat(form.longitude) : undefined,
     }),
@@ -153,6 +155,14 @@ export default function AddProperty() {
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block">Nombre de logements</Label>
             <Input type="number" value={form.nombre_logements} onChange={set('nombre_logements')} placeholder="12" className="bg-background border-border" />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Nombre de bureaux</Label>
+            <Input type="number" value={form.nombre_bureaux} onChange={set('nombre_bureaux')} placeholder="3" className="bg-background border-border" />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Nombre de parkings</Label>
+            <Input type="number" value={form.nombre_parkings} onChange={set('nombre_parkings')} placeholder="6" className="bg-background border-border" />
           </div>
             <div className="sm:col-span-2">
               <Label className="text-xs text-muted-foreground mb-1.5 block">Photo du bien</Label>

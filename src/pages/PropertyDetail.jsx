@@ -39,6 +39,7 @@ import {
   Building2,
   FileText,
   TrendingUp,
+  Car,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -352,6 +353,8 @@ function PropertyPresentation({ property, latest, comments }) {
           <InfoItem label="Année de construction" value={property.annee_construction} />
           <InfoItem label="Surface" value={property.surface ? `${property.surface} m²` : null} />
           <InfoItem label="Nombre de logements" value={property.nombre_logements} />
+          <InfoItem label="Nombre de bureaux" value={property.nombre_bureaux} />
+          <InfoItem label="Nombre de parkings" value={property.nombre_parkings} />
           <InfoItem label="Statut" value={property.statut} />
         </div>
 
@@ -434,6 +437,18 @@ function PropertyMeta({ property, compact = false }) {
         <span className="flex items-center gap-1">
           <Home className="h-3.5 w-3.5" />
           {property.nombre_logements} logements
+        </span>
+      )}
+      {property.nombre_bureaux && (
+        <span className="flex items-center gap-1">
+          <Building2 className="h-3.5 w-3.5" />
+          {property.nombre_bureaux} bureaux
+        </span>
+      )}
+      {property.nombre_parkings && (
+        <span className="flex items-center gap-1">
+          <Car className="h-3.5 w-3.5" />
+          {property.nombre_parkings} parkings
         </span>
       )}
     </div>
