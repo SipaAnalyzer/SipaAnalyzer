@@ -138,7 +138,7 @@ export default function Presentation() {
       });
   }, [properties, analyses]);
 
-  const allWithAnalysis = useMemo(() => [...enCours, ...valides], [enCours, valides]);
+  const allWithAnalysis = valides;
 
   const [geocodedCoords, setGeocodedCoords] = useState([]);
 
