@@ -32,6 +32,8 @@ const average = (items, selector) => {
 };
 
 const createScoreIcon = (property) => {
+  const markerColor = property.couleur === 'vert' ? '#22c55e' : '#ef4444';
+
   return L.divIcon({
     className: 'portfolio-marker',
     html: `
@@ -39,7 +41,7 @@ const createScoreIcon = (property) => {
         width: 23px;
         height: 23px;
         border-radius: 999px;
-        background: #ef4444;
+        background: ${markerColor};
         border: 3px solid white;
         box-shadow: 0 1px 4px rgba(0,0,0,.15);
       "></div>
@@ -138,7 +140,11 @@ export default function Presentation() {
       });
   }, [properties, analyses]);
 
-  const allWithAnalysis = valides;
+  const greenValides = useMemo(() => {
+    return valides.filter((property) => property.couleur === 'vert');
+  }, [valides]);
+
+  const allWithAnalysis = greenValides;
 
   const [geocodedCoords, setGeocodedCoords] = useState([]);
 
