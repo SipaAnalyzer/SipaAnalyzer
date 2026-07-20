@@ -10,7 +10,7 @@ import StatusBadge from '../components/StatusBadge';
 import ScoreGauge from '../components/ScoreGauge';
 import FavoriteButton from '../components/FavoriteButton';
 import { formatCHF, formatPercent, normalizeAnalysis, WORKFLOW_STATUSES } from '../utils/calculations';
-import { Plus, Search, Building2, MapPin, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Search, Building2, Loader2, ExternalLink } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 
 const COULEURS = [
@@ -168,12 +168,12 @@ export default function Properties() {
           <p className="text-xs text-muted-foreground mt-1">Ajoutez votre premier bien pour commencer</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-visible">
           {sorted.map(p => {
             const colorDef = COULEURS.find(c => c.value === p.couleur);
             return (
-              <Link key={p.id} to={`/property/${p.id}`} className="block">
-                <div className={`relative bg-card rounded-xl border p-5 hover:border-primary/30 transition-all duration-200 group ${p.couleur ? 'border-t-4' : 'border-border border-t-border'}`}
+              <Link key={p.id} to={`/property/${p.id}`} className="relative block">
+                <div className={`relative transform-gpu bg-card rounded-xl border p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out group hover:z-30 hover:scale-[1.03] hover:-translate-y-1 hover:border-primary/60 hover:shadow-[0_24px_60px_rgba(0,0,0,0.22)] ${p.couleur ? 'border-t-4' : 'border-border border-t-border'}`}
                   style={p.couleur ? { borderTopColor: p.couleur === 'rouge' ? '#ef4444' : p.couleur === 'orange' ? '#f97316' : '#22c55e' } : {}}>
                   {p.image_url ? (
                     <img src={p.image_url} alt="" className="w-full h-36 object-cover rounded-lg mb-4" />
