@@ -1084,11 +1084,14 @@ function buildProjectionExportRows(projection) {
 
 function downloadRowsAsCsv(rows, filename) {
   const csv = rows.map((row) => row.map(escapeCsvCell).join(';')).join('\r\n');
-  downloadBlob(`${propertySafeName(filename)}.csv`, `\ufeff${csv}`, 'text/csv;charset=utf-8');
+  downloadBlob(`${propertySafeName(filename)}.csv`, `\ufeffsep=;\r\n${csv}`, 'text/csv;charset=utf-8');
 }
 
 function downloadRowsAsXlsx(rows, filename) {
   const worksheet = XLSX.utils.aoa_to_sheet(rows);
+  worksheet['!cols'] = buildExcelColumnWidths(rows);
+  worksheet['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(rows.length - 1, 0), c: Math.max((rows[0]?.length || 1) - 1, 0) } }) };
+  worksheet['!freeze'] = { xSplit: 0, ySplit: 1 };
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Export');
   XLSX.writeFile(workbook, `${propertySafeName(filename)}.xlsx`);
@@ -1109,6 +1112,17 @@ function downloadBlob(filename, content, type) {
 function escapeCsvCell(value) {
   const text = value === null || value === undefined ? '' : String(value);
   return /[;"\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function buildExcelColumnWidths(rows) {
+  const columnCount = Math.max(1, ...rows.map((row) => row.length));
+  return Array.from({ length: columnCount }, (_, columnIndex) => {
+    const maxLength = rows.reduce((max, row) => {
+      const value = row[columnIndex];
+      return Math.max(max, value === null || value === undefined ? 0 : String(value).length);
+    }, 8);
+    return { wch: Math.min(Math.max(maxLength + 2, columnIndex === 1 ? 28 : 12), 42) };
+  });
 }
 
 function propertySafeName(value) {
