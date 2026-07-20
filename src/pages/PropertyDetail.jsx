@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -15,7 +15,7 @@ import FinancialTable from '../components/FinancialTable';
 import CommentSection from '../components/CommentSection';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
-import { formatCHF, formatPercent, normalizeAnalyses, WORKFLOW_STATUSES } from '../utils/calculations';
+import { calculateAnalysis, formatCHF, formatPercent, normalizeAnalyses, WORKFLOW_STATUSES } from '../utils/calculations';
 import { formatSipaValue } from '../utils/excelImport';
 import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
@@ -61,6 +61,7 @@ export default function PropertyDetail() {
   const queryClient = useQueryClient();
   const [selectedAnalysisId, setSelectedAnalysisId] = useState(null);
   const [analysisViewMode, setAnalysisViewMode] = useState('simplified');
+  const [technicalDraft, setTechnicalDraft] = useState(null);
 
   const canEdit = isAdmin || permissions.can_edit_property;
   const canDelete = isAdmin || permissions.can_delete_property;
@@ -179,6 +180,36 @@ export default function PropertyDetail() {
     },
   });
 
+  const updateTechnicalAnalysis = useMutation({
+    mutationFn: ({ id, payload }) => base44.entities.Analysis.update(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['analyses', propertyId] });
+      refreshAlertBadgeQueries();
+      toast.success('Analyse technique enregistrée');
+    },
+    onError: (error) => {
+      console.error('[PropertyDetail] technical analysis update failed:', error);
+      toast.error("Impossible d'enregistrer la vue technique");
+    },
+  });
+
+  const normalizedAnalyses = property ? normalizeAnalyses(analyses, property) : [];
+  const latest = normalizedAnalyses[0];
+  const selected = selectedAnalysisId
+    ? normalizedAnalyses.find((analysis) => analysis.id === selectedAnalysisId) || latest
+    : latest;
+  const displayedAnalysis = analysisViewMode === 'technical' && technicalDraft?.id === selected?.id
+    ? normalizeAnalysisDraft(technicalDraft, property)
+    : selected;
+
+  useEffect(() => {
+    if (selected?.id) {
+      setTechnicalDraft({ ...selected });
+    } else {
+      setTechnicalDraft(null);
+    }
+  }, [selected?.id]);
+
   if (lp || la || lc) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -191,11 +222,14 @@ export default function PropertyDetail() {
     return <div className="p-8 text-center text-muted-foreground">Bien non trouvé</div>;
   }
 
-  const normalizedAnalyses = normalizeAnalyses(analyses, property);
-  const latest = normalizedAnalyses[0];
-  const selected = selectedAnalysisId
-    ? normalizedAnalyses.find((analysis) => analysis.id === selectedAnalysisId) || latest
-    : latest;
+  const saveTechnicalDraft = () => {
+    if (!technicalDraft?.id) return;
+    const normalizedDraft = normalizeAnalysisDraft(technicalDraft, property);
+    updateTechnicalAnalysis.mutate({
+      id: technicalDraft.id,
+      payload: buildTechnicalAnalysisPayload(normalizedDraft),
+    });
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -219,7 +253,7 @@ export default function PropertyDetail() {
             PDF bien
           </Button>
 
-          {selected && <PdfExportDialog onExport={(sections) => exportAnalysisPdf(property, selected, sections)} />}
+          {displayedAnalysis && <PdfExportDialog onExport={(sections) => exportAnalysisPdf(property, displayedAnalysis, sections)} />}
 
           {canCreateAnalysis && (
             <Link to={`/new-analysis?propertyId=${propertyId}`}>
@@ -256,12 +290,12 @@ export default function PropertyDetail() {
         </TabsContent>
 
         <TabsContent value="analyse" className="mt-5 space-y-6">
-          {selected ? (
+          {displayedAnalysis ? (
             <>
               <AnalysisViewModeToggle value={analysisViewMode} onChange={setAnalysisViewMode} />
               <AnalysisSummary
                 property={property}
-                selected={selected}
+                selected={displayedAnalysis}
                 selectedAnalysisId={selectedAnalysisId}
                 canEdit={canEdit}
                 isUpdatingStatus={updatePropertyStatus.isPending}
@@ -269,16 +303,23 @@ export default function PropertyDetail() {
               />
               {analysisViewMode === 'simplified' ? (
                 <>
-                  <FinancialTable analysis={selected} />
-                  {selected.sipa_data && selected.sipa_data.filter((e) => !e._custom).length > 0 && (
-                    <SipaImportedDataTable analysis={selected} />
+                  <FinancialTable analysis={displayedAnalysis} />
+                  {displayedAnalysis.sipa_data && displayedAnalysis.sipa_data.filter((e) => !e._custom).length > 0 && (
+                    <SipaImportedDataTable analysis={displayedAnalysis} />
                   )}
                 </>
               ) : (
-                <TechnicalAnalysisSnapshot analysis={selected} canEditAnalysis={canEditAnalysis} />
+                <TechnicalAnalysisSnapshot
+                  analysis={displayedAnalysis}
+                  draft={technicalDraft || displayedAnalysis}
+                  setDraft={setTechnicalDraft}
+                  canEditAnalysis={canEditAnalysis}
+                  isSaving={updateTechnicalAnalysis.isPending}
+                  onSave={saveTechnicalDraft}
+                />
               )}
               
-              <Projection5Ans analysis={selected} />
+              <Projection5Ans analysis={displayedAnalysis} />
               <AnalysisHistory
                 property={property}
                 analyses={normalizedAnalyses}
@@ -358,7 +399,7 @@ function AnalysisViewModeToggle({ value, onChange }) {
   );
 }
 
-function TechnicalAnalysisSnapshot({ analysis, canEditAnalysis }) {
+function TechnicalAnalysisSnapshot({ analysis, draft, setDraft, canEditAnalysis, isSaving, onSave }) {
   const prixTotal = Math.round(
     Number(analysis.prix_bien || 0) +
     Number(analysis.versement_initial || 0) +
@@ -367,6 +408,41 @@ function TechnicalAnalysisSnapshot({ analysis, canEditAnalysis }) {
     Number(analysis.frais_dossier_bancaire || 0)
   );
   const customFields = analysis.sipa_data ? analysis.sipa_data.filter((entry) => entry._custom) : [];
+  const canEdit = canEditAnalysis && !!draft;
+  const updateDraftField = (key, value) => {
+    if (!canEdit) return;
+    setDraft((current) => ({ ...(current || analysis), [key]: value }));
+  };
+  const updatePctField = (amountKey, pctKey, base) => (pct) => {
+    if (!canEdit) return;
+    setDraft((current) => ({
+      ...(current || analysis),
+      [amountKey]: pct == null || !base ? null : Math.round(Number(base || 0) * pct / 100),
+      [pctKey]: pct,
+    }));
+  };
+  const updateCustomField = (entryIndex, valueType, value) => {
+    if (!canEdit) return;
+    setDraft((current) => {
+      const base = current || analysis;
+      const customCursor = { current: -1 };
+      const sipaData = (base.sipa_data || []).map((entry) => {
+        if (!entry._custom) return entry;
+        customCursor.current += 1;
+        if (customCursor.current !== entryIndex) return entry;
+
+        const values = [...(entry.values || [])];
+        const existingIndex = values.findIndex((item) => item.type === valueType);
+        if (existingIndex >= 0) {
+          values[existingIndex] = { ...values[existingIndex], value };
+        } else {
+          values.push({ type: valueType, value });
+        }
+        return { ...entry, values };
+      });
+      return { ...base, sipa_data: sipaData };
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -379,17 +455,22 @@ function TechnicalAnalysisSnapshot({ analysis, canEditAnalysis }) {
             </p>
           </div>
           {canEditAnalysis && (
-            <Link to={`/edit-analysis/${analysis.id}`}>
-              <Button size="sm" variant="outline" className="gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" className="gap-2" onClick={onSave} disabled={isSaving}>
                 <Pencil className="h-3.5 w-3.5" />
-                Modifier
+                {isSaving ? 'Enregistrement...' : 'Enregistrer'}
               </Button>
-            </Link>
+              <Link to={`/edit-analysis/${analysis.id}`}>
+                <Button size="sm" variant="ghost" className="gap-2">
+                  Edition complète
+                </Button>
+              </Link>
+            </div>
           )}
         </div>
 
-        <div className="overflow-auto rounded-md border border-border bg-background shadow-inner">
-          <table className="w-full min-w-[1040px] border-collapse font-mono text-[12px]">
+        <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
+          <table className="w-full min-w-[1040px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
             <thead>
               <tr>
                 <ExcelCorner />
@@ -407,22 +488,22 @@ function TechnicalAnalysisSnapshot({ analysis, canEditAnalysis }) {
               </tr>
             </thead>
             <tbody>
-              <ExcelReadRow row={2} section="Acquisition" label="Prix du bien" amount={analysis.prix_bien} />
-              <ExcelReadRow row={3} section="Acquisition" label="Versement initial copropriete" amount={analysis.versement_initial} />
-              <ExcelReadRow row={4} section="Acquisition" label="Amortissement sur 5 ans" amount={analysis.amortissement_5_ans} />
-              <ExcelReadRow row={5} section="Acquisition" label="Honoraires transaction SIPA" amount={analysis.honoraires_sipa} pct={percentOf(analysis.honoraires_sipa, analysis.prix_bien)} />
-              <ExcelReadRow row={6} section="Acquisition" label="Frais de dossier bancaire" amount={analysis.frais_dossier_bancaire} />
+              <ExcelReadRow row={2} section="Acquisition" label="Prix du bien" amount={analysis.prix_bien} editable={canEdit} onAmountChange={(value) => updateDraftField('prix_bien', value)} />
+              <ExcelReadRow row={3} section="Acquisition" label="Versement initial copropriete" amount={analysis.versement_initial} editable={canEdit} onAmountChange={(value) => updateDraftField('versement_initial', value)} />
+              <ExcelReadRow row={4} section="Acquisition" label="Amortissement sur 5 ans" amount={analysis.amortissement_5_ans} editable={canEdit} onAmountChange={(value) => updateDraftField('amortissement_5_ans', value)} />
+              <ExcelReadRow row={5} section="Acquisition" label="Honoraires transaction SIPA" amount={analysis.honoraires_sipa} pct={percentOf(analysis.honoraires_sipa, analysis.prix_bien)} editable={canEdit} onAmountChange={(value) => updateDraftField('honoraires_sipa', value)} onPctChange={updatePctField('honoraires_sipa', 'honoraires_sipa_pct', analysis.prix_bien)} />
+              <ExcelReadRow row={6} section="Acquisition" label="Frais de dossier bancaire" amount={analysis.frais_dossier_bancaire} editable={canEdit} onAmountChange={(value) => updateDraftField('frais_dossier_bancaire', value)} />
               <ExcelComputedRow row={7} section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} formula="=SOMME(C2:C6)" strong />
-              <ExcelReadRow row={8} section="Financement" label="Fonds propres" amount={analysis.fonds_propres} />
-              <ExcelReadRow row={9} section="Financement" label="Hypotheque" amount={analysis.hypotheque} pct={percentOf(analysis.hypotheque, prixTotal)} />
-              <ExcelReadRow row={10} section="Exploitation" label="Revenus locatifs hors charges" amount={analysis.revenus_locatifs} />
+              <ExcelReadRow row={8} section="Financement" label="Fonds propres" amount={analysis.fonds_propres} editable={canEdit} onAmountChange={(value) => updateDraftField('fonds_propres', value)} />
+              <ExcelReadRow row={9} section="Financement" label="Hypotheque" amount={analysis.hypotheque} pct={percentOf(analysis.hypotheque, prixTotal)} editable={canEdit} onAmountChange={(value) => updateDraftField('hypotheque', value)} onPctChange={updatePctField('hypotheque', 'hypotheque_pct', prixTotal)} />
+              <ExcelReadRow row={10} section="Exploitation" label="Revenus locatifs hors charges" amount={analysis.revenus_locatifs} editable={canEdit} onAmountChange={(value) => updateDraftField('revenus_locatifs', value)} />
               <ExcelComputedRow row={11} section="Exploitation" label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} formula="=C10/C7" />
-              <ExcelReadRow row={12} section="Exploitation" label="Charges operationnelles" amount={analysis.charges_operationnelles} />
-              <ExcelReadRow row={13} section="Exploitation" label="Interet hypothecaire moyen 5 ans" amount={analysis.interets_hypothecaires} pct={percentOf(analysis.interets_hypothecaires, analysis.hypotheque)} />
-              <ExcelReadRow row={14} section="Exploitation" label="Honoraires de gestion" amount={analysis.gestion} pct={percentOf(analysis.gestion, analysis.revenus_locatifs)} />
+              <ExcelReadRow row={12} section="Exploitation" label="Charges operationnelles" amount={analysis.charges_operationnelles} editable={canEdit} onAmountChange={(value) => updateDraftField('charges_operationnelles', value)} />
+              <ExcelReadRow row={13} section="Exploitation" label="Interet hypothecaire moyen 5 ans" amount={analysis.interets_hypothecaires} pct={percentOf(analysis.interets_hypothecaires, analysis.hypotheque)} editable={canEdit} onAmountChange={(value) => updateDraftField('interets_hypothecaires', value)} onPctChange={updatePctField('interets_hypothecaires', 'interets_hypothecaires_pct', analysis.hypotheque)} />
+              <ExcelReadRow row={14} section="Exploitation" label="Honoraires de gestion" amount={analysis.gestion} pct={percentOf(analysis.gestion, analysis.revenus_locatifs)} editable={canEdit} onAmountChange={(value) => updateDraftField('gestion', value)} onPctChange={updatePctField('gestion', 'gestion_pct', analysis.revenus_locatifs)} />
               <ExcelComputedRow row={15} section="Exploitation" label="Revenu net" value={formatCHF(analysis.revenu_net)} formula="=C10-C12-C13-C14" strong />
               <ExcelComputedRow row={16} section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(analysis.rendement_net_fonds_propres)} formula="=E15/C8" />
-              <ExcelReadRow row={17} section="Fiscalite" label="Impot" amount={analysis.impot} pct={percentOf(analysis.impot, analysis.revenu_net)} />
+              <ExcelReadRow row={17} section="Fiscalite" label="Impot" amount={analysis.impot} pct={percentOf(analysis.impot, analysis.revenu_net)} editable={canEdit} onAmountChange={(value) => updateDraftField('impot', value)} onPctChange={updatePctField('impot', 'impot_pct', analysis.revenu_net)} />
               <ExcelComputedRow row={18} section="Distribution" label="Revenu distribue" value={formatCHF(analysis.revenu_distribue)} formula="=C15-C17" strong />
               <ExcelComputedRow row={19} section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(analysis.revenu_distribue_fonds_propres)} formula="=E18/C8" />
               {customFields.map((entry, index) => {
@@ -436,6 +517,9 @@ function TechnicalAnalysisSnapshot({ analysis, canEditAnalysis }) {
                     label={entry.label}
                     amount={amount?.value}
                     pct={pct?.value}
+                    editable={canEdit}
+                    onAmountChange={(value) => updateCustomField(index, 'amount', value ?? 0)}
+                    onPctChange={(value) => updateCustomField(index, 'pct', value)}
                   />
                 );
               })}
@@ -446,8 +530,8 @@ function TechnicalAnalysisSnapshot({ analysis, canEditAnalysis }) {
 
       <section className="bg-card rounded-xl border border-border p-4">
         <h3 className="font-heading font-semibold mb-5">Hypotheses bancaires techniques</h3>
-        <div className="overflow-x-auto rounded-md border border-border bg-background shadow-inner">
-          <table className="w-full min-w-[860px] border-collapse font-mono text-[12px]">
+        <div className="overflow-x-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
+          <table className="w-full min-w-[860px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
             <thead>
               <tr>
                 <ExcelCorner />
@@ -466,8 +550,8 @@ function TechnicalAnalysisSnapshot({ analysis, canEditAnalysis }) {
               </tr>
             </thead>
             <tbody>
-              <ExcelBankSnapshot row={2} title="Banque A" analysis={analysis} prefix="banque_a" />
-              <ExcelBankSnapshot row={3} title="Banque B" analysis={analysis} prefix="banque_b" />
+              <ExcelBankSnapshot row={2} title="Banque A" analysis={analysis} prefix="banque_a" editable={canEdit} onChange={updateDraftField} />
+              <ExcelBankSnapshot row={3} title="Banque B" analysis={analysis} prefix="banque_b" editable={canEdit} onChange={updateDraftField} />
             </tbody>
           </table>
         </div>
@@ -517,7 +601,7 @@ function SipaImportedDataTable({ analysis }) {
 
 function ExcelCorner() {
   return (
-    <th className="sticky left-0 z-10 h-7 w-10 border-b border-r border-border bg-muted/60 text-center text-[11px] text-muted-foreground">
+    <th className="sticky left-0 z-10 h-6 w-10 border-b border-r border-[#d9d9d9] bg-[#f3f3f3] text-center text-[10px] font-normal text-[#666]">
       #
     </th>
   );
@@ -525,7 +609,7 @@ function ExcelCorner() {
 
 function ExcelColumnHeader({ children }) {
   return (
-    <th className="h-7 border-b border-r border-border bg-muted/60 px-3 text-center text-[11px] font-semibold text-muted-foreground last:border-r-0">
+    <th className="h-6 border-b border-r border-[#d9d9d9] bg-[#f3f3f3] px-3 text-center text-[10px] font-normal text-[#666] last:border-r-0">
       {children}
     </th>
   );
@@ -533,7 +617,7 @@ function ExcelColumnHeader({ children }) {
 
 function ExcelRowNumber({ children }) {
   return (
-    <td className="sticky left-0 z-10 h-8 w-10 border-b border-r border-border bg-muted/50 text-center text-[11px] text-muted-foreground">
+    <td className="sticky left-0 z-10 h-6 w-10 border-b border-r border-[#d9d9d9] bg-[#f3f3f3] text-center text-[10px] text-[#666]">
       {children}
     </td>
   );
@@ -541,7 +625,7 @@ function ExcelRowNumber({ children }) {
 
 function ExcelHeaderCell({ children, align = 'left' }) {
   return (
-    <th className={`h-8 border-b border-r border-border bg-emerald-950/30 px-2 ${align === 'right' ? 'text-right' : 'text-left'} text-[11px] font-semibold uppercase text-emerald-200 last:border-r-0`}>
+    <th className={`h-6 border-b border-r border-[#d9d9d9] bg-white px-2 ${align === 'right' ? 'text-right' : 'text-left'} text-[11px] font-bold text-black last:border-r-0`}>
       {children}
     </th>
   );
@@ -549,53 +633,178 @@ function ExcelHeaderCell({ children, align = 'left' }) {
 
 function ExcelCell({ children, align = 'left', className = '' }) {
   return (
-    <td className={`h-8 border-b border-r border-border bg-background px-2 ${align === 'right' ? 'text-right' : 'text-left'} last:border-r-0 ${className}`}>
+    <td className={`h-6 border-b border-r border-[#d9d9d9] bg-white px-2 ${align === 'right' ? 'text-right' : 'text-left'} last:border-r-0 ${className}`}>
       {children}
     </td>
   );
 }
 
-function ExcelReadRow({ row, section, label, amount, pct }) {
+function ExcelReadRow({ row, section, label, amount, pct, editable = false, onAmountChange, onPctChange }) {
   return (
-    <tr className="hover:bg-primary/5">
+    <tr className="hover:bg-[#fff2cc]">
       <ExcelRowNumber>{row}</ExcelRowNumber>
-      <ExcelCell className="bg-muted/20 font-semibold text-muted-foreground">{section}</ExcelCell>
+      <ExcelCell className="font-normal text-black">{section}</ExcelCell>
       <ExcelCell>{label}</ExcelCell>
-      <ExcelCell align="right">{formatCHF(amount)}</ExcelCell>
-      <ExcelCell align="right">{pct == null ? '-' : formatPercent(pct)}</ExcelCell>
-      <ExcelCell className="bg-sky-500/5 text-sky-300" />
+      <ExcelCell align="right" className={editable ? 'p-0' : ''}>
+        {editable ? (
+          <ExcelNumberInput value={amount} onChange={onAmountChange} suffix=" CHF" />
+        ) : (
+          formatCHF(amount)
+        )}
+      </ExcelCell>
+      <ExcelCell align="right" className={editable && onPctChange ? 'p-0' : ''}>
+        {editable && onPctChange ? (
+          <ExcelNumberInput value={pct} onChange={onPctChange} suffix=" %" />
+        ) : (
+          pct == null ? '-' : formatPercent(pct)
+        )}
+      </ExcelCell>
+      <ExcelCell className="bg-white text-black" />
     </tr>
   );
 }
 
 function ExcelComputedRow({ row, section, label, value, formula, strong = false }) {
   return (
-    <tr className={strong ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-primary/5'}>
+    <tr className={strong ? 'hover:bg-[#fff2cc]' : 'hover:bg-[#fff2cc]'}>
       <ExcelRowNumber>{row}</ExcelRowNumber>
-      <ExcelCell className="bg-muted/20 font-semibold text-muted-foreground">{section}</ExcelCell>
-      <ExcelCell className={strong ? 'bg-primary/10 font-semibold text-primary' : 'bg-muted/20 text-muted-foreground'}>{label}</ExcelCell>
-      <ExcelCell className="bg-muted/20" />
-      <ExcelCell className="bg-muted/20" />
-      <ExcelCell align="right" className={`${strong ? 'bg-primary/10 font-bold text-primary' : 'bg-sky-500/10 text-sky-300'}`}>
+      <ExcelCell className="font-normal text-black">{section}</ExcelCell>
+      <ExcelCell className={strong ? 'bg-[#e2f0d9] font-bold text-black' : 'bg-white text-black'}>{label}</ExcelCell>
+      <ExcelCell className="bg-white" />
+      <ExcelCell className="bg-white" />
+      <ExcelCell align="right" className={`${strong ? 'bg-[#e2f0d9] font-bold text-black' : 'bg-white text-black'}`}>
         {value}
-        {formula && <span className="ml-2 text-[10px] text-muted-foreground">{formula}</span>}
+        {formula && <span className="ml-2 text-[10px] text-[#666]">{formula}</span>}
       </ExcelCell>
     </tr>
   );
 }
 
-function ExcelBankSnapshot({ row, title, analysis, prefix }) {
+function ExcelBankSnapshot({ row, title, analysis, prefix, editable = false, onChange }) {
   return (
-    <tr className="hover:bg-primary/5">
+    <tr className="hover:bg-[#fff2cc]">
       <ExcelRowNumber>{row}</ExcelRowNumber>
-      <ExcelCell className="bg-muted/20 font-semibold text-muted-foreground">{title}</ExcelCell>
-      <ExcelCell>{analysis[`${prefix}_type_taux`] || 'fixe'}</ExcelCell>
-      <ExcelCell align="right">{formatPercent(analysis[`${prefix}_taux_hypothecaire`])}</ExcelCell>
-      <ExcelCell align="right">{formatPercent(analysis[`${prefix}_marge_saron`])}</ExcelCell>
-      <ExcelCell align="right">{formatCHF(analysis[`${prefix}_amortissement_annuel`])}</ExcelCell>
-      <ExcelCell>{analysis[`${prefix}_evaluation`] || '-'}</ExcelCell>
+      <ExcelCell className="font-normal text-black">{title}</ExcelCell>
+      <ExcelCell className={editable ? 'p-0' : ''}>
+        {editable ? (
+          <select
+            value={analysis[`${prefix}_type_taux`] || 'fixe'}
+            onChange={(event) => onChange(`${prefix}_type_taux`, event.target.value)}
+            className="h-6 w-full bg-transparent px-2 text-black outline-none focus:bg-[#fff2cc]"
+          >
+            <option value="fixe">Fixe</option>
+            <option value="saron">Variable full SARON</option>
+            <option value="mixte">Variable base fixe + SARON</option>
+          </select>
+        ) : (
+          analysis[`${prefix}_type_taux`] || 'fixe'
+        )}
+      </ExcelCell>
+      <ExcelCell align="right" className={editable ? 'p-0' : ''}>
+        {editable ? <ExcelNumberInput value={analysis[`${prefix}_taux_hypothecaire`]} onChange={(value) => onChange(`${prefix}_taux_hypothecaire`, value)} suffix=" %" /> : formatPercent(analysis[`${prefix}_taux_hypothecaire`])}
+      </ExcelCell>
+      <ExcelCell align="right" className={editable ? 'p-0' : ''}>
+        {editable ? <ExcelNumberInput value={analysis[`${prefix}_marge_saron`]} onChange={(value) => onChange(`${prefix}_marge_saron`, value)} suffix=" %" /> : formatPercent(analysis[`${prefix}_marge_saron`])}
+      </ExcelCell>
+      <ExcelCell align="right" className={editable ? 'p-0' : ''}>
+        {editable ? <ExcelNumberInput value={analysis[`${prefix}_amortissement_annuel`]} onChange={(value) => onChange(`${prefix}_amortissement_annuel`, value)} suffix=" CHF" /> : formatCHF(analysis[`${prefix}_amortissement_annuel`])}
+      </ExcelCell>
+      <ExcelCell className={editable ? 'p-0' : ''}>
+        {editable ? (
+          <input
+            type="text"
+            value={analysis[`${prefix}_evaluation`] || ''}
+            onChange={(event) => onChange(`${prefix}_evaluation`, event.target.value)}
+            className="h-6 w-full bg-transparent px-2 text-black outline-none focus:bg-[#fff2cc]"
+          />
+        ) : (
+          analysis[`${prefix}_evaluation`] || '-'
+        )}
+      </ExcelCell>
     </tr>
   );
+}
+
+function ExcelNumberInput({ value, onChange, suffix = '' }) {
+  return (
+    <input
+      type="number"
+      value={value ?? ''}
+      onChange={(event) => onChange?.(event.target.value === '' ? null : parseFloat(event.target.value) || 0)}
+      className="h-6 w-full bg-transparent px-2 text-right text-black outline-none focus:bg-[#fff2cc]"
+      title={suffix ? `Valeur${suffix}` : 'Valeur'}
+    />
+  );
+}
+
+function normalizeAnalysisDraft(draft, property) {
+  if (!draft) return null;
+
+  const prixTotal = Math.round(
+    Number(draft.prix_bien || 0) +
+    Number(draft.versement_initial || 0) +
+    Number(draft.amortissement_5_ans || 0) +
+    Number(draft.honoraires_sipa || 0) +
+    Number(draft.frais_dossier_bancaire || 0)
+  );
+  const calc = calculateAnalysis({
+    ...draft,
+    ville: property?.ville,
+    annee_construction: property?.annee_construction,
+  });
+
+  return {
+    ...draft,
+    prix_total: prixTotal,
+    rendement_brut: calc.rendement_brut,
+    revenu_net: calc.revenu_net,
+    rendement_net_fonds_propres: calc.rendement_net_fonds_propres,
+    revenu_distribue: calc.revenu_distribue,
+    revenu_distribue_fonds_propres: calc.revenu_distribue_fonds_propres,
+    score_global: calc.score_global,
+    note: calc.note,
+    score_emplacement: calc.score_emplacement,
+  };
+}
+
+function buildTechnicalAnalysisPayload(analysis) {
+  return {
+    statut: analysis.statut,
+    sipa_data: analysis.sipa_data || null,
+    prix_bien: analysis.prix_bien,
+    versement_initial: analysis.versement_initial,
+    amortissement_5_ans: analysis.amortissement_5_ans,
+    honoraires_sipa: analysis.honoraires_sipa,
+    frais_dossier_bancaire: analysis.frais_dossier_bancaire,
+    fonds_propres: analysis.fonds_propres,
+    hypotheque: analysis.hypotheque,
+    revenus_locatifs: analysis.revenus_locatifs,
+    charges_operationnelles: analysis.charges_operationnelles,
+    interets_hypothecaires: analysis.interets_hypothecaires,
+    gestion: analysis.gestion,
+    impot: analysis.impot,
+    notes: analysis.notes || null,
+    banque_a_taux_hypothecaire: analysis.banque_a_taux_hypothecaire,
+    banque_a_type_taux: analysis.banque_a_type_taux,
+    banque_a_marge_saron: analysis.banque_a_marge_saron,
+    banque_a_amortissement_annuel: analysis.banque_a_amortissement_annuel,
+    banque_a_evaluation: analysis.banque_a_evaluation,
+    banque_b_taux_hypothecaire: analysis.banque_b_taux_hypothecaire,
+    banque_b_type_taux: analysis.banque_b_type_taux,
+    banque_b_marge_saron: analysis.banque_b_marge_saron,
+    banque_b_amortissement_annuel: analysis.banque_b_amortissement_annuel,
+    banque_b_evaluation: analysis.banque_b_evaluation,
+    operating_projection: analysis.operating_projection,
+    capital_projection: analysis.capital_projection,
+    prix_total: analysis.prix_total,
+    rendement_brut: analysis.rendement_brut,
+    revenu_net: analysis.revenu_net,
+    rendement_net_fonds_propres: analysis.rendement_net_fonds_propres,
+    revenu_distribue: analysis.revenu_distribue,
+    revenu_distribue_fonds_propres: analysis.revenu_distribue_fonds_propres,
+    score_global: analysis.score_global,
+    note: analysis.note,
+  };
 }
 
 function percentOf(amount, base) {
