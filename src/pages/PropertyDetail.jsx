@@ -60,6 +60,7 @@ export default function PropertyDetail() {
   const { permissions, isAdmin } = usePermissions();
   const queryClient = useQueryClient();
   const [selectedAnalysisId, setSelectedAnalysisId] = useState(null);
+  const [analysisViewMode, setAnalysisViewMode] = useState('simplified');
 
   const canEdit = isAdmin || permissions.can_edit_property;
   const canDelete = isAdmin || permissions.can_delete_property;
@@ -257,6 +258,7 @@ export default function PropertyDetail() {
         <TabsContent value="analyse" className="mt-5 space-y-6">
           {selected ? (
             <>
+              <AnalysisViewModeToggle value={analysisViewMode} onChange={setAnalysisViewMode} />
               <AnalysisSummary
                 property={property}
                 selected={selected}
@@ -265,38 +267,15 @@ export default function PropertyDetail() {
                 isUpdatingStatus={updatePropertyStatus.isPending}
                 onStatusChange={(status) => updatePropertyStatus.mutate(status)}
               />
-              <FinancialTable analysis={selected} />
-              {selected.sipa_data && selected.sipa_data.filter((e) => !e._custom).length > 0 && (
-                <section className="bg-card rounded-xl border border-border p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                    <h3 className="font-heading font-semibold">Investissement SIPA</h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[560px] text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
-                          <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeurs</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/50">
-                        {selected.sipa_data.filter((e) => !e._custom).map((entry, i) => (
-                          <tr key={i}>
-                            <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">{entry.label}</td>
-                            <td className="py-2.5 pl-4 text-sm">
-                              <div className="flex flex-wrap gap-2">
-                                {entry.values.map((v, j) => (
-                                  <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
-                                ))}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
+              {analysisViewMode === 'simplified' ? (
+                <>
+                  <FinancialTable analysis={selected} />
+                  {selected.sipa_data && selected.sipa_data.filter((e) => !e._custom).length > 0 && (
+                    <SipaImportedDataTable analysis={selected} />
+                  )}
+                </>
+              ) : (
+                <TechnicalAnalysisSnapshot analysis={selected} canEditAnalysis={canEditAnalysis} />
               )}
               
               <Projection5Ans analysis={selected} />
@@ -338,6 +317,249 @@ export default function PropertyDetail() {
 
     </div>
   );
+}
+
+function AnalysisViewModeToggle({ value, onChange }) {
+  return (
+    <section className="bg-card rounded-xl border border-border p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="font-heading font-semibold text-sm">Vue d'analyse</h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            La vue simplifiee garde l'affichage actuel. La vue technique presente les donnees en grille.
+          </p>
+        </div>
+        <div className="inline-flex rounded-lg border border-border bg-background p-1">
+          <button
+            type="button"
+            onClick={() => onChange('simplified')}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              value === 'simplified'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Simplifie
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange('technical')}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              value === 'technical'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Technique
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TechnicalAnalysisSnapshot({ analysis, canEditAnalysis }) {
+  const prixTotal = Math.round(
+    Number(analysis.prix_bien || 0) +
+    Number(analysis.versement_initial || 0) +
+    Number(analysis.amortissement_5_ans || 0) +
+    Number(analysis.honoraires_sipa || 0) +
+    Number(analysis.frais_dossier_bancaire || 0)
+  );
+  const customFields = analysis.sipa_data ? analysis.sipa_data.filter((entry) => entry._custom) : [];
+
+  return (
+    <div className="space-y-6">
+      <section className="bg-card rounded-xl border border-border p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
+          <div>
+            <h3 className="font-heading font-semibold">Vue technique</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Lecture type Excel de l'analyse selectionnee.
+            </p>
+          </div>
+          {canEditAnalysis && (
+            <Link to={`/edit-analysis/${analysis.id}`}>
+              <Button size="sm" variant="outline" className="gap-2">
+                <Pencil className="h-3.5 w-3.5" />
+                Modifier
+              </Button>
+            </Link>
+          )}
+        </div>
+
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[980px] border-collapse text-sm">
+            <thead className="bg-muted/40">
+              <tr>
+                <TechHeader>Bloc</TechHeader>
+                <TechHeader>Rubrique</TechHeader>
+                <TechHeader align="right">Montant CHF</TechHeader>
+                <TechHeader align="right">%</TechHeader>
+                <TechHeader align="right">Calcul</TechHeader>
+              </tr>
+            </thead>
+            <tbody>
+              <TechReadRow section="Acquisition" label="Prix du bien" amount={analysis.prix_bien} />
+              <TechReadRow section="Acquisition" label="Versement initial copropriete" amount={analysis.versement_initial} />
+              <TechReadRow section="Acquisition" label="Amortissement sur 5 ans" amount={analysis.amortissement_5_ans} />
+              <TechReadRow section="Acquisition" label="Honoraires transaction SIPA" amount={analysis.honoraires_sipa} pct={percentOf(analysis.honoraires_sipa, analysis.prix_bien)} />
+              <TechReadRow section="Acquisition" label="Frais de dossier bancaire" amount={analysis.frais_dossier_bancaire} />
+              <TechReadComputedRow section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
+              <TechReadRow section="Financement" label="Fonds propres" amount={analysis.fonds_propres} />
+              <TechReadRow section="Financement" label="Hypotheque" amount={analysis.hypotheque} pct={percentOf(analysis.hypotheque, prixTotal)} />
+              <TechReadRow section="Exploitation" label="Revenus locatifs hors charges" amount={analysis.revenus_locatifs} />
+              <TechReadComputedRow section="Exploitation" label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} />
+              <TechReadRow section="Exploitation" label="Charges operationnelles" amount={analysis.charges_operationnelles} />
+              <TechReadRow section="Exploitation" label="Interet hypothecaire moyen 5 ans" amount={analysis.interets_hypothecaires} pct={percentOf(analysis.interets_hypothecaires, analysis.hypotheque)} />
+              <TechReadRow section="Exploitation" label="Honoraires de gestion" amount={analysis.gestion} pct={percentOf(analysis.gestion, analysis.revenus_locatifs)} />
+              <TechReadComputedRow section="Exploitation" label="Revenu net" value={formatCHF(analysis.revenu_net)} strong />
+              <TechReadComputedRow section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(analysis.rendement_net_fonds_propres)} />
+              <TechReadRow section="Fiscalite" label="Impot" amount={analysis.impot} pct={percentOf(analysis.impot, analysis.revenu_net)} />
+              <TechReadComputedRow section="Distribution" label="Revenu distribue" value={formatCHF(analysis.revenu_distribue)} strong />
+              <TechReadComputedRow section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(analysis.revenu_distribue_fonds_propres)} />
+              {customFields.map((entry, index) => {
+                const amount = entry.values?.find((value) => value.type === 'amount');
+                const pct = entry.values?.find((value) => value.type === 'pct');
+                return (
+                  <TechReadRow
+                    key={`${entry.label}-${index}`}
+                    section="Personnalise"
+                    label={entry.label}
+                    amount={amount?.value}
+                    pct={pct?.value}
+                  />
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="bg-card rounded-xl border border-border p-6">
+        <h3 className="font-heading font-semibold mb-5">Hypotheses bancaires techniques</h3>
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[780px] border-collapse text-sm">
+            <thead className="bg-muted/40">
+              <tr>
+                <TechHeader>Banque</TechHeader>
+                <TechHeader>Type de taux</TechHeader>
+                <TechHeader align="right">Taux base</TechHeader>
+                <TechHeader align="right">Marge SARON</TechHeader>
+                <TechHeader align="right">Amortissement</TechHeader>
+                <TechHeader>Evaluation</TechHeader>
+              </tr>
+            </thead>
+            <tbody>
+              <TechBankSnapshot title="Banque A" analysis={analysis} prefix="banque_a" />
+              <TechBankSnapshot title="Banque B" analysis={analysis} prefix="banque_b" />
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {analysis.sipa_data && analysis.sipa_data.filter((entry) => !entry._custom).length > 0 && (
+        <SipaImportedDataTable analysis={analysis} />
+      )}
+    </div>
+  );
+}
+
+function SipaImportedDataTable({ analysis }) {
+  return (
+    <section className="bg-card rounded-xl border border-border p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <TrendingUp className="h-4 w-4 text-primary" />
+        <h3 className="font-heading font-semibold">Investissement SIPA</h3>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[560px] text-sm">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
+              <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeurs</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/50">
+            {analysis.sipa_data.filter((e) => !e._custom).map((entry, i) => (
+              <tr key={i}>
+                <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">{entry.label}</td>
+                <td className="py-2.5 pl-4 text-sm">
+                  <div className="flex flex-wrap gap-2">
+                    {entry.values.map((v, j) => (
+                      <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
+                    ))}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function TechHeader({ children, align = 'left' }) {
+  return (
+    <th className={`border-b border-r border-border px-3 py-2 ${align === 'right' ? 'text-right' : 'text-left'} text-xs font-semibold uppercase tracking-wide text-muted-foreground last:border-r-0`}>
+      {children}
+    </th>
+  );
+}
+
+function TechCell({ children, align = 'left', className = '' }) {
+  return (
+    <td className={`border-b border-r border-border px-3 py-2 ${align === 'right' ? 'text-right' : 'text-left'} last:border-r-0 ${className}`}>
+      {children}
+    </td>
+  );
+}
+
+function TechReadRow({ section, label, amount, pct }) {
+  return (
+    <tr>
+      <TechCell className="font-medium text-muted-foreground">{section}</TechCell>
+      <TechCell>{label}</TechCell>
+      <TechCell align="right" className="font-mono">{formatCHF(amount)}</TechCell>
+      <TechCell align="right" className="font-mono">{pct == null ? '-' : formatPercent(pct)}</TechCell>
+      <TechCell />
+    </tr>
+  );
+}
+
+function TechReadComputedRow({ section, label, value, strong = false }) {
+  return (
+    <tr className={strong ? 'bg-primary/5' : 'bg-muted/20'}>
+      <TechCell className="font-medium text-muted-foreground">{section}</TechCell>
+      <TechCell className={strong ? 'font-semibold text-primary' : 'text-muted-foreground'}>{label}</TechCell>
+      <TechCell />
+      <TechCell />
+      <TechCell align="right" className={`font-mono ${strong ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
+        {value}
+      </TechCell>
+    </tr>
+  );
+}
+
+function TechBankSnapshot({ title, analysis, prefix }) {
+  return (
+    <tr>
+      <TechCell className="font-medium text-muted-foreground">{title}</TechCell>
+      <TechCell>{analysis[`${prefix}_type_taux`] || 'fixe'}</TechCell>
+      <TechCell align="right" className="font-mono">{formatPercent(analysis[`${prefix}_taux_hypothecaire`])}</TechCell>
+      <TechCell align="right" className="font-mono">{formatPercent(analysis[`${prefix}_marge_saron`])}</TechCell>
+      <TechCell align="right" className="font-mono">{formatCHF(analysis[`${prefix}_amortissement_annuel`])}</TechCell>
+      <TechCell>{analysis[`${prefix}_evaluation`] || '-'}</TechCell>
+    </tr>
+  );
+}
+
+function percentOf(amount, base) {
+  const numericAmount = Number(amount || 0);
+  const numericBase = Number(base || 0);
+  if (!numericBase) return null;
+  return Math.round((numericAmount / numericBase) * 10000) / 100;
 }
 
 function PropertyPresentation({ property, latest, comments, updateCouleur }) {
