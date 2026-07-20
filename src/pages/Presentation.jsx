@@ -138,7 +138,20 @@ function DealSpotlight({ property }) {
 
   return (
     <Link to={`/property/${property.id}`} className="group block rounded-lg border border-primary/25 bg-card p-5 shadow-sm transition-all hover:border-primary/60 hover:-translate-y-0.5">
-      <div className="mb-5 overflow-hidden rounded-lg border border-border bg-background">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs uppercase tracking-[0.18em] text-primary">Dossier phare</p>
+        <div className="flex items-center gap-2">
+          <span className="rounded-md bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary">Valide</span>
+          <Trophy className="h-4 w-4 text-primary" />
+        </div>
+      </div>
+      <h2 className="mt-4 font-heading text-xl font-semibold group-hover:text-primary">{property.nom_bien}</h2>
+      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+        <MapPin className="h-3 w-3" />
+        {property.ville}{property.canton ? `, ${property.canton}` : ''}
+      </p>
+
+      <div className="mt-4 overflow-hidden rounded-lg border border-border bg-background">
         {property.image_url ? (
           <img
             src={property.image_url}
@@ -152,18 +165,6 @@ function DealSpotlight({ property }) {
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs uppercase tracking-[0.18em] text-primary">Dossier phare</p>
-        <div className="flex items-center gap-2">
-          <span className="rounded-md bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary">Valide</span>
-          <Trophy className="h-4 w-4 text-primary" />
-        </div>
-      </div>
-      <h2 className="mt-4 font-heading text-xl font-semibold group-hover:text-primary">{property.nom_bien}</h2>
-      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-        <MapPin className="h-3 w-3" />
-        {property.ville}{property.canton ? `, ${property.canton}` : ''}
-      </p>
 
       <div className="mt-5 rounded-lg border border-primary/20 bg-primary/10 p-4">
         <div className="flex items-end justify-between gap-4">
