@@ -1032,22 +1032,30 @@ function TechnicalAnalysisView({
           </span>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[1040px] border-collapse text-sm">
-            <thead className="bg-muted/40">
+        <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
+          <table className="w-full min-w-[1040px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
+            <thead>
               <tr>
-                <TechHeader>Bloc</TechHeader>
-                <TechHeader>Rubrique</TechHeader>
-                <TechHeader align="right">Montant CHF</TechHeader>
-                <TechHeader align="right">%</TechHeader>
-                <TechHeader align="right">Calcul</TechHeader>
+                <ExcelCorner />
+                {['A', 'B', 'C', 'D', 'E'].map((letter) => (
+                  <ExcelColumnHeader key={letter}>{letter}</ExcelColumnHeader>
+                ))}
+              </tr>
+              <tr>
+                <ExcelRowNumber>1</ExcelRowNumber>
+                <ExcelHeaderCell>Bloc</ExcelHeaderCell>
+                <ExcelHeaderCell>Rubrique</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">Montant CHF</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">%</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">Calcul</ExcelHeaderCell>
               </tr>
             </thead>
             <tbody>
-              <TechAmountRow section="Acquisition" label="Prix du bien" value={form.prix_bien} onChange={set('prix_bien')} />
-              <TechAmountRow section="Acquisition" label="Versement initial copropriete" value={form.versement_initial} onChange={set('versement_initial')} />
-              <TechAmountRow section="Acquisition" label="Amortissement sur 5 ans" value={form.amortissement_5_ans} onChange={set('amortissement_5_ans')} />
-              <TechPctRow
+              <ExcelAmountRow row={2} section="Acquisition" label="Prix du bien" value={form.prix_bien} onChange={set('prix_bien')} />
+              <ExcelAmountRow row={3} section="Acquisition" label="Versement initial copropriete" value={form.versement_initial} onChange={set('versement_initial')} />
+              <ExcelAmountRow row={4} section="Acquisition" label="Amortissement sur 5 ans" value={form.amortissement_5_ans} onChange={set('amortissement_5_ans')} />
+              <ExcelPctRow
+                row={5}
                 section="Acquisition"
                 label="Honoraires transaction SIPA"
                 amount={form.honoraires_sipa}
@@ -1055,11 +1063,12 @@ function TechnicalAnalysisView({
                 pct={form.honoraires_sipa_pct}
                 onPct={handlers.honoraires.pct}
               />
-              <TechAmountRow section="Acquisition" label="Frais de dossier bancaire" value={form.frais_dossier_bancaire} onChange={set('frais_dossier_bancaire')} />
-              <TechComputedRow section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
+              <ExcelAmountRow row={6} section="Acquisition" label="Frais de dossier bancaire" value={form.frais_dossier_bancaire} onChange={set('frais_dossier_bancaire')} />
+              <ExcelComputedRow row={7} section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
 
-              <TechAmountRow section="Financement" label="Fonds propres" value={form.fonds_propres} onChange={set('fonds_propres')} />
-              <TechPctRow
+              <ExcelAmountRow row={8} section="Financement" label="Fonds propres" value={form.fonds_propres} onChange={set('fonds_propres')} />
+              <ExcelPctRow
+                row={9}
                 section="Financement"
                 label="Hypotheque"
                 amount={form.hypotheque}
@@ -1068,10 +1077,11 @@ function TechnicalAnalysisView({
                 onPct={handlers.hypotheque.pct}
               />
 
-              <TechAmountRow section="Exploitation" label="Revenus locatifs hors charges" value={form.revenus_locatifs} onChange={set('revenus_locatifs')} />
-              <TechComputedRow section="Exploitation" label="Taux de rendement brut" value={formatPercent(calc.rendement_brut)} />
-              <TechAmountRow section="Exploitation" label="Charges operationnelles" value={form.charges_operationnelles} onChange={set('charges_operationnelles')} />
-              <TechPctRow
+              <ExcelAmountRow row={10} section="Exploitation" label="Revenus locatifs hors charges" value={form.revenus_locatifs} onChange={set('revenus_locatifs')} />
+              <ExcelComputedRow row={11} section="Exploitation" label="Taux de rendement brut" value={formatPercent(calc.rendement_brut)} />
+              <ExcelAmountRow row={12} section="Exploitation" label="Charges operationnelles" value={form.charges_operationnelles} onChange={set('charges_operationnelles')} />
+              <ExcelPctRow
+                row={13}
                 section="Exploitation"
                 label="Interet hypothecaire moyen 5 ans"
                 amount={form.interets_hypothecaires}
@@ -1079,7 +1089,8 @@ function TechnicalAnalysisView({
                 pct={form.interets_hypothecaires_pct}
                 onPct={handlers.interets.pct}
               />
-              <TechPctRow
+              <ExcelPctRow
+                row={14}
                 section="Exploitation"
                 label="Honoraires de gestion"
                 amount={form.gestion}
@@ -1087,9 +1098,10 @@ function TechnicalAnalysisView({
                 pct={form.gestion_pct}
                 onPct={handlers.gestion.pct}
               />
-              <TechComputedRow section="Exploitation" label="Revenu net" value={formatCHF(calc.revenu_net)} strong />
-              <TechComputedRow section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(calc.rendement_net_fonds_propres)} />
-              <TechPctRow
+              <ExcelComputedRow row={15} section="Exploitation" label="Revenu net" value={formatCHF(calc.revenu_net)} strong />
+              <ExcelComputedRow row={16} section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(calc.rendement_net_fonds_propres)} />
+              <ExcelPctRow
+                row={17}
                 section="Fiscalite"
                 label="Impot"
                 amount={form.impot}
@@ -1097,13 +1109,14 @@ function TechnicalAnalysisView({
                 pct={form.impot_pct}
                 onPct={handlers.impot.pct}
               />
-              <TechComputedRow section="Distribution" label="Revenu distribue" value={formatCHF(calc.revenu_distribue)} strong />
-              <TechComputedRow section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(calc.revenu_distribue_fonds_propres)} />
+              <ExcelComputedRow row={18} section="Distribution" label="Revenu distribue" value={formatCHF(calc.revenu_distribue)} strong />
+              <ExcelComputedRow row={19} section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(calc.revenu_distribue_fonds_propres)} />
 
               {customFinancialFields.map((cf, index) => (
                 <tr key={cf.id}>
-                  <TechCell className="font-medium text-muted-foreground">Personnalise</TechCell>
-                  <TechCell>
+                  <ExcelRowNumber>{20 + index}</ExcelRowNumber>
+                  <ExcelCell>Personnalise</ExcelCell>
+                  <ExcelCell className="p-0">
                     <input
                       type="text"
                       value={cf.name}
@@ -1112,11 +1125,11 @@ function TechnicalAnalysisView({
                           prev.map((item, itemIndex) => (itemIndex === index ? { ...item, name: event.target.value } : item))
                         )
                       }
-                      className={TECH_TEXT_INPUT_CLASS}
+                      className={EXCEL_TEXT_INPUT_CLASS}
                     />
-                  </TechCell>
-                  <TechCell>
-                    <TechNumberInput
+                  </ExcelCell>
+                  <ExcelCell className="p-0">
+                    <ExcelNumberInput
                       value={cf.amount}
                       onChange={(value) =>
                         setCustomFinancialFields((prev) =>
@@ -1124,9 +1137,9 @@ function TechnicalAnalysisView({
                         )
                       }
                     />
-                  </TechCell>
-                  <TechCell>
-                    <TechNumberInput
+                  </ExcelCell>
+                  <ExcelCell className="p-0">
+                    <ExcelNumberInput
                       value={cf.pct}
                       onChange={(value) =>
                         setCustomFinancialFields((prev) =>
@@ -1134,46 +1147,47 @@ function TechnicalAnalysisView({
                         )
                       }
                     />
-                  </TechCell>
-                  <TechCell align="right">
+                  </ExcelCell>
+                  <ExcelCell align="right">
                     <button
                       type="button"
                       onClick={() => setCustomFinancialFields((prev) => prev.filter((_, itemIndex) => itemIndex !== index))}
-                      className="text-xs text-muted-foreground hover:text-red-500"
+                      className="text-[11px] text-[#666] hover:text-red-600"
                     >
                       Supprimer
                     </button>
-                  </TechCell>
+                  </ExcelCell>
                 </tr>
               ))}
 
-              <tr className="bg-muted/20">
-                <TechCell className="font-medium text-muted-foreground">Nouvelle ligne</TechCell>
-                <TechCell>
+              <tr className="hover:bg-[#fff2cc]">
+                <ExcelRowNumber>{20 + customFinancialFields.length}</ExcelRowNumber>
+                <ExcelCell>Nouvelle ligne</ExcelCell>
+                <ExcelCell className="p-0">
                   <input
                     type="text"
                     value={newCustomFieldName}
                     onChange={(event) => setNewCustomFieldName(event.target.value)}
                     onKeyDown={addOnEnter}
                     placeholder="Nom de la ligne"
-                    className={TECH_TEXT_INPUT_CLASS}
+                    className={EXCEL_TEXT_INPUT_CLASS}
                   />
-                </TechCell>
-                <TechCell>
-                  <TechNumberInput value={newCustomFieldAmount} onChange={setNewCustomFieldAmount} onKeyDown={addOnEnter} />
-                </TechCell>
-                <TechCell>
-                  <TechNumberInput value={newCustomFieldPct} onChange={setNewCustomFieldPct} onKeyDown={addOnEnter} />
-                </TechCell>
-                <TechCell align="right">
+                </ExcelCell>
+                <ExcelCell className="p-0">
+                  <ExcelNumberInput value={newCustomFieldAmount} onChange={setNewCustomFieldAmount} onKeyDown={addOnEnter} />
+                </ExcelCell>
+                <ExcelCell className="p-0">
+                  <ExcelNumberInput value={newCustomFieldPct} onChange={setNewCustomFieldPct} onKeyDown={addOnEnter} />
+                </ExcelCell>
+                <ExcelCell align="right">
                   <button
                     type="button"
                     onClick={addCustomFinancialField}
-                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                    className="rounded-sm border border-[#a6a6a6] bg-white px-2 py-0.5 text-[11px] text-black hover:bg-[#f3f3f3]"
                   >
                     Ajouter
                   </button>
-                </TechCell>
+                </ExcelCell>
               </tr>
             </tbody>
           </table>
@@ -1182,67 +1196,57 @@ function TechnicalAnalysisView({
 
       <section className="bg-card rounded-xl border border-border p-6">
         <h3 className="font-heading font-semibold mb-5">Hypotheses bancaires techniques</h3>
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[980px] border-collapse text-sm">
-            <thead className="bg-muted/40">
+        <div className="overflow-x-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
+          <table className="w-full min-w-[980px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
+            <thead>
               <tr>
-                <TechHeader>Banque</TechHeader>
-                <TechHeader>Type de taux</TechHeader>
-                <TechHeader align="right">Taux base %</TechHeader>
-                <TechHeader align="right">Marge SARON %</TechHeader>
-                <TechHeader align="right">Taux effectif</TechHeader>
-                <TechHeader align="right">Amortissement CHF</TechHeader>
-                <TechHeader>Evaluation</TechHeader>
+                <ExcelCorner />
+                {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((letter) => (
+                  <ExcelColumnHeader key={letter}>{letter}</ExcelColumnHeader>
+                ))}
+              </tr>
+              <tr>
+                <ExcelRowNumber>1</ExcelRowNumber>
+                <ExcelHeaderCell>Banque</ExcelHeaderCell>
+                <ExcelHeaderCell>Type de taux</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">Taux base %</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">Marge SARON %</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">Taux effectif</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">Amortissement CHF</ExcelHeaderCell>
+                <ExcelHeaderCell>Evaluation</ExcelHeaderCell>
               </tr>
             </thead>
             <tbody>
-              <TechBankRow title="Banque A" form={form} set={set} prefix="banque_a" saronRate={saronRate} />
-              <TechBankRow title="Banque B" form={form} set={set} prefix="banque_b" saronRate={saronRate} />
+              <ExcelBankRow row={2} title="Banque A" form={form} set={set} prefix="banque_a" saronRate={saronRate} />
+              <ExcelBankRow row={3} title="Banque B" form={form} set={set} prefix="banque_b" saronRate={saronRate} />
             </tbody>
           </table>
         </div>
       </section>
 
       <section className="bg-card rounded-xl border border-border p-6">
-        <ExcelProjectionTables
-          operatingProjection={form.operating_projection}
-          capitalProjection={form.capital_projection}
-          onOperatingChange={set('operating_projection')}
-          onCapitalChange={set('capital_projection')}
-          editable
-        />
+        <div className="space-y-6">
+          <ExcelProjectionSheet
+            title="Projection exploitation"
+            projection={normalizeProjectionDraft(form.operating_projection, createEmptyExcelProjections().operating_projection)}
+            editable
+            onCellChange={(rowIndex, colIndex, value) => updateProjectionCell(form.operating_projection, rowIndex, colIndex, value, set('operating_projection'), createEmptyExcelProjections().operating_projection)}
+          />
+          <ExcelProjectionSheet
+            title="Dette, valeur et rendement"
+            projection={normalizeProjectionDraft(form.capital_projection, createEmptyExcelProjections().capital_projection)}
+            editable
+            onCellChange={(rowIndex, colIndex, value) => updateProjectionCell(form.capital_projection, rowIndex, colIndex, value, set('capital_projection'), createEmptyExcelProjections().capital_projection)}
+            onAssumptionChange={(key, value) => updateProjectionAssumption(form.capital_projection, key, value, set('capital_projection'), createEmptyExcelProjections().capital_projection)}
+          />
+        </div>
       </section>
 
       {form.sipa_data && form.sipa_data.filter((entry) => !entry._custom).length > 0 && (
-        <section className="bg-card rounded-xl border border-border p-6">
-          <h3 className="font-heading font-semibold mb-4">Donnees SIPA importees</h3>
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full min-w-[720px] border-collapse text-sm">
-              <thead className="bg-muted/40">
-                <tr>
-                  <TechHeader>Rubrique</TechHeader>
-                  <TechHeader>Valeurs</TechHeader>
-                </tr>
-              </thead>
-              <tbody>
-                {form.sipa_data.filter((entry) => !entry._custom).map((entry, index) => (
-                  <tr key={`${entry.label}-${index}`}>
-                    <TechCell className="font-medium">{entry.label}</TechCell>
-                    <TechCell>
-                      <div className="flex flex-wrap gap-2">
-                        {entry.values.map((value, valueIndex) => (
-                          <span key={valueIndex} className="inline-flex rounded bg-muted/30 px-2 py-0.5 text-xs font-mono">
-                            {formatSipaValue(value)}
-                          </span>
-                        ))}
-                      </div>
-                    </TechCell>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <ExcelSipaInvestmentSheet
+          sipaData={form.sipa_data}
+          onChange={(sipaData) => setForm((prev) => ({ ...prev, sipa_data: sipaData }))}
+        />
       )}
 
       <section className="bg-card rounded-xl border border-border p-6">
@@ -1258,113 +1262,334 @@ function TechnicalAnalysisView({
   );
 }
 
-const TECH_TEXT_INPUT_CLASS = 'h-9 w-full bg-transparent px-2 text-sm outline-none focus:bg-background';
+const EXCEL_TEXT_INPUT_CLASS = 'h-6 w-full bg-transparent px-2 text-black outline-none focus:bg-[#fff2cc]';
 
-function TechHeader({ children, align = 'left' }) {
-  const alignClass = align === 'right' ? 'text-right' : 'text-left';
+function ExcelCorner() {
+  return <th className="sticky left-0 z-10 h-6 w-10 border-b border-r border-[#d9d9d9] bg-[#f3f3f3] text-center text-[10px] font-normal text-[#666]">#</th>;
+}
 
+function ExcelColumnHeader({ children }) {
+  return <th className="h-6 border-b border-r border-[#d9d9d9] bg-[#f3f3f3] px-3 text-center text-[10px] font-normal text-[#666] last:border-r-0">{children}</th>;
+}
+
+function ExcelRowNumber({ children }) {
+  return <td className="sticky left-0 z-10 h-6 w-10 border-b border-r border-[#d9d9d9] bg-[#f3f3f3] text-center text-[10px] text-[#666]">{children}</td>;
+}
+
+function ExcelHeaderCell({ children, align = 'left' }) {
   return (
-    <th className={`border-b border-r border-border px-3 py-2 ${alignClass} text-xs font-semibold uppercase tracking-wide text-muted-foreground last:border-r-0`}>
+    <th className={`h-6 border-b border-r border-[#d9d9d9] bg-white px-2 ${align === 'right' ? 'text-right' : 'text-left'} text-[11px] font-bold text-black last:border-r-0`}>
       {children}
     </th>
   );
 }
 
-function TechCell({ children, align = 'left', className = '' }) {
-  const alignClass = align === 'right' ? 'text-right' : 'text-left';
-
+function ExcelCell({ children, align = 'left', className = '' }) {
   return (
-    <td className={`border-b border-r border-border px-2 py-1 ${alignClass} last:border-r-0 ${className}`}>
+    <td className={`h-6 border-b border-r border-[#d9d9d9] bg-white px-2 ${align === 'right' ? 'text-right' : 'text-left'} last:border-r-0 ${className}`}>
       {children}
     </td>
   );
 }
 
-function TechNumberInput({ value, onChange, onKeyDown }) {
+function ExcelNumberInput({ value, onChange, onKeyDown }) {
   return (
     <input
       type="number"
       value={value ?? ''}
       onChange={(event) => onChange?.(event.target.value === '' ? null : parseFloat(event.target.value) || 0)}
       onKeyDown={onKeyDown}
-      className="h-9 w-full bg-transparent px-2 text-right font-mono text-sm outline-none focus:bg-background"
+      className="h-6 w-full bg-transparent px-2 text-right text-black outline-none focus:bg-[#fff2cc]"
     />
   );
 }
 
-function TechAmountRow({ section, label, value, onChange }) {
+function ExcelAmountRow({ row, section, label, value, onChange }) {
   return (
-    <tr>
-      <TechCell className="font-medium text-muted-foreground">{section}</TechCell>
-      <TechCell>{label}</TechCell>
-      <TechCell><TechNumberInput value={value} onChange={onChange} /></TechCell>
-      <TechCell />
-      <TechCell />
+    <tr className="hover:bg-[#fff2cc]">
+      <ExcelRowNumber>{row}</ExcelRowNumber>
+      <ExcelCell>{section}</ExcelCell>
+      <ExcelCell>{label}</ExcelCell>
+      <ExcelCell align="right" className="p-0"><ExcelNumberInput value={value} onChange={onChange} /></ExcelCell>
+      <ExcelCell />
+      <ExcelCell />
     </tr>
   );
 }
 
-function TechPctRow({ section, label, amount, onAmount, pct, onPct }) {
+function ExcelPctRow({ row, section, label, amount, onAmount, pct, onPct }) {
   return (
-    <tr>
-      <TechCell className="font-medium text-muted-foreground">{section}</TechCell>
-      <TechCell>{label}</TechCell>
-      <TechCell><TechNumberInput value={amount} onChange={onAmount} /></TechCell>
-      <TechCell><TechNumberInput value={pct} onChange={onPct} /></TechCell>
-      <TechCell />
+    <tr className="hover:bg-[#fff2cc]">
+      <ExcelRowNumber>{row}</ExcelRowNumber>
+      <ExcelCell>{section}</ExcelCell>
+      <ExcelCell>{label}</ExcelCell>
+      <ExcelCell align="right" className="p-0"><ExcelNumberInput value={amount} onChange={onAmount} /></ExcelCell>
+      <ExcelCell align="right" className="p-0"><ExcelNumberInput value={pct} onChange={onPct} /></ExcelCell>
+      <ExcelCell />
     </tr>
   );
 }
 
-function TechComputedRow({ section, label, value, strong = false }) {
+function ExcelComputedRow({ row, section, label, value, strong = false }) {
   return (
-    <tr className={strong ? 'bg-primary/5' : 'bg-muted/20'}>
-      <TechCell className="font-medium text-muted-foreground">{section}</TechCell>
-      <TechCell className={strong ? 'font-semibold text-primary' : 'text-muted-foreground'}>{label}</TechCell>
-      <TechCell />
-      <TechCell />
-      <TechCell align="right" className={`font-mono ${strong ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
-        {value}
-      </TechCell>
+    <tr className="hover:bg-[#fff2cc]">
+      <ExcelRowNumber>{row}</ExcelRowNumber>
+      <ExcelCell>{section}</ExcelCell>
+      <ExcelCell className={strong ? 'bg-[#e2f0d9] font-bold text-black' : 'bg-white text-black'}>{label}</ExcelCell>
+      <ExcelCell />
+      <ExcelCell />
+      <ExcelCell align="right" className={strong ? 'bg-[#e2f0d9] font-bold text-black' : 'bg-white text-black'}>{value}</ExcelCell>
     </tr>
   );
 }
 
-function TechBankRow({ title, form, set, prefix, saronRate }) {
+function ExcelBankRow({ row, title, form, set, prefix, saronRate }) {
   const typeTaux = form[`${prefix}_type_taux`] || 'fixe';
   const tauxBase = Number(form[`${prefix}_taux_hypothecaire`] || 0);
   const margeSaron = Number(form[`${prefix}_marge_saron`] ?? 0.5);
   const effectiveRate = getEffectiveMortgageRate({ typeTaux, tauxBase, margeSaron, saronRate });
 
   return (
-    <tr>
-      <TechCell className="font-medium text-muted-foreground">{title}</TechCell>
-      <TechCell>
+    <tr className="hover:bg-[#fff2cc]">
+      <ExcelRowNumber>{row}</ExcelRowNumber>
+      <ExcelCell>{title}</ExcelCell>
+      <ExcelCell className="p-0">
         <select
           value={typeTaux}
           onChange={(event) => set(`${prefix}_type_taux`)(event.target.value)}
-          className="h-9 w-full bg-transparent px-2 text-sm outline-none focus:bg-background"
+          className="h-6 w-full bg-transparent px-2 text-black outline-none focus:bg-[#fff2cc]"
         >
           <option value="fixe">Fixe</option>
           <option value="saron">Variable full SARON</option>
           <option value="mixte">Variable base fixe + SARON</option>
         </select>
-      </TechCell>
-      <TechCell><TechNumberInput value={form[`${prefix}_taux_hypothecaire`]} onChange={set(`${prefix}_taux_hypothecaire`)} /></TechCell>
-      <TechCell><TechNumberInput value={form[`${prefix}_marge_saron`]} onChange={set(`${prefix}_marge_saron`)} /></TechCell>
-      <TechCell align="right" className="font-mono text-primary">
+      </ExcelCell>
+      <ExcelCell align="right" className="p-0"><ExcelNumberInput value={form[`${prefix}_taux_hypothecaire`]} onChange={set(`${prefix}_taux_hypothecaire`)} /></ExcelCell>
+      <ExcelCell align="right" className="p-0"><ExcelNumberInput value={form[`${prefix}_marge_saron`]} onChange={set(`${prefix}_marge_saron`)} /></ExcelCell>
+      <ExcelCell align="right">
         {effectiveRate == null ? 'SARON...' : `${effectiveRate.toFixed(3)}%`}
-      </TechCell>
-      <TechCell><TechNumberInput value={form[`${prefix}_amortissement_annuel`]} onChange={set(`${prefix}_amortissement_annuel`)} /></TechCell>
-      <TechCell>
-        <textarea
+      </ExcelCell>
+      <ExcelCell align="right" className="p-0"><ExcelNumberInput value={form[`${prefix}_amortissement_annuel`]} onChange={set(`${prefix}_amortissement_annuel`)} /></ExcelCell>
+      <ExcelCell className="p-0">
+        <input
+          type="text"
           value={form[`${prefix}_evaluation`] || ''}
           onChange={(event) => set(`${prefix}_evaluation`)(event.target.value)}
-          className="min-h-9 w-full resize-y bg-transparent px-2 py-2 text-sm outline-none focus:bg-background"
+          className={EXCEL_TEXT_INPUT_CLASS}
         />
-      </TechCell>
+      </ExcelCell>
     </tr>
   );
+}
+
+function ExcelSipaInvestmentSheet({ sipaData, onChange }) {
+  const rows = sipaData.filter((entry) => !entry._custom);
+  const maxValues = Math.max(1, ...rows.map((entry) => entry.values?.length || 0));
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, maxValues + 1);
+  const updateCell = (entryIndex, valueIndex, field, value) => {
+    const importedCursor = { current: -1 };
+    onChange(
+      sipaData.map((entry) => {
+        if (entry._custom) return entry;
+        importedCursor.current += 1;
+        if (importedCursor.current !== entryIndex) return entry;
+        if (field === 'label') return { ...entry, label: value };
+        return {
+          ...entry,
+          values: (entry.values || []).map((item, index) =>
+            index === valueIndex ? { ...item, value } : item
+          ),
+        };
+      })
+    );
+  };
+
+  return (
+    <section className="bg-card rounded-xl border border-border p-4">
+      <h3 className="font-heading font-semibold mb-5">Investissement SIPA</h3>
+      <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
+        <table className="w-full min-w-[760px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
+          <thead>
+            <tr>
+              <ExcelCorner />
+              {letters.map((letter) => <ExcelColumnHeader key={letter}>{letter}</ExcelColumnHeader>)}
+            </tr>
+            <tr>
+              <ExcelRowNumber>1</ExcelRowNumber>
+              <ExcelHeaderCell>Rubrique</ExcelHeaderCell>
+              {Array.from({ length: maxValues }, (_, index) => (
+                <ExcelHeaderCell key={index} align="right">Valeur {index + 1}</ExcelHeaderCell>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((entry, rowIndex) => (
+              <tr key={`${entry.label}-${rowIndex}`} className="hover:bg-[#fff2cc]">
+                <ExcelRowNumber>{rowIndex + 2}</ExcelRowNumber>
+                <ExcelCell className="p-0">
+                  <input
+                    type="text"
+                    value={entry.label || ''}
+                    onChange={(event) => updateCell(rowIndex, null, 'label', event.target.value)}
+                    className={EXCEL_TEXT_INPUT_CLASS}
+                  />
+                </ExcelCell>
+                {Array.from({ length: maxValues }, (_, valueIndex) => {
+                  const value = entry.values?.[valueIndex];
+                  const isNumeric = value?.type === 'amount' || value?.type === 'pct' || typeof value?.value === 'number';
+                  return (
+                    <ExcelCell key={valueIndex} align={isNumeric ? 'right' : 'left'} className={value ? 'p-0' : ''}>
+                      {value ? (
+                        isNumeric ? (
+                          <ExcelNumberInput value={value.value} onChange={(next) => updateCell(rowIndex, valueIndex, 'value', next)} />
+                        ) : (
+                          <input
+                            type="text"
+                            value={value.value ?? ''}
+                            onChange={(event) => updateCell(rowIndex, valueIndex, 'value', event.target.value)}
+                            className={EXCEL_TEXT_INPUT_CLASS}
+                          />
+                        )
+                      ) : ''}
+                    </ExcelCell>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function ExcelProjectionSheet({ title, projection, editable, onCellChange, onAssumptionChange }) {
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'].slice(0, projection.columns.length + 1);
+  const hasAssumptions = projection.assumptions && Object.keys(projection.assumptions).length > 0;
+
+  return (
+    <section className="bg-card rounded-xl border border-border p-4">
+      <h3 className="font-heading font-semibold mb-5">{title}</h3>
+      <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
+        <table className="w-full min-w-[860px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
+          <thead>
+            <tr>
+              <ExcelCorner />
+              {letters.map((letter) => <ExcelColumnHeader key={letter}>{letter}</ExcelColumnHeader>)}
+            </tr>
+            <tr>
+              <ExcelRowNumber>1</ExcelRowNumber>
+              <ExcelHeaderCell>Rubrique</ExcelHeaderCell>
+              {projection.columns.map((column) => (
+                <ExcelHeaderCell key={column} align="right">{column}</ExcelHeaderCell>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {projection.rows.map((row, rowIndex) => (
+              <tr key={row.key || row.label} className="hover:bg-[#fff2cc]">
+                <ExcelRowNumber>{rowIndex + 2}</ExcelRowNumber>
+                <ExcelCell>{row.label}</ExcelCell>
+                {projection.columns.map((column, colIndex) => (
+                  <ExcelCell key={`${row.key}-${column}`} align="right" className={editable ? 'p-0' : ''}>
+                    {editable ? (
+                      <ExcelNumberInput value={row.values?.[colIndex]} onChange={(value) => onCellChange(rowIndex, colIndex, value)} />
+                    ) : (
+                      formatProjectionValue(row.values?.[colIndex], row.type)
+                    )}
+                  </ExcelCell>
+                ))}
+              </tr>
+            ))}
+            {hasAssumptions && (
+              <>
+                <tr>
+                  <ExcelRowNumber>{projection.rows.length + 2}</ExcelRowNumber>
+                  <ExcelCell className="bg-[#e2f0d9] font-bold">Hypotheses</ExcelCell>
+                  {projection.columns.map((column) => <ExcelCell key={column} className="bg-[#e2f0d9]" />)}
+                </tr>
+                {Object.entries(projection.assumptions).map(([key, value], index) => (
+                  <tr key={key} className="hover:bg-[#fff2cc]">
+                    <ExcelRowNumber>{projection.rows.length + 3 + index}</ExcelRowNumber>
+                    <ExcelCell>{formatAssumptionLabel(key)}</ExcelCell>
+                    <ExcelCell align="right" className={editable ? 'p-0' : ''}>
+                      {editable ? (
+                        <ExcelNumberInput value={value} onChange={(next) => onAssumptionChange?.(key, next)} />
+                      ) : (
+                        formatProjectionValue(value, key.includes('yield') || key.includes('irr') || key.includes('increase') ? 'percent' : 'amount')
+                      )}
+                    </ExcelCell>
+                    {projection.columns.slice(1).map((column) => <ExcelCell key={column} />)}
+                  </tr>
+                ))}
+              </>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function normalizeProjectionDraft(projection, fallback) {
+  const source = projection && typeof projection === 'object' ? projection : fallback;
+  const sourceRows = Array.isArray(source.rows) ? source.rows : [];
+  return {
+    ...fallback,
+    ...source,
+    columns: Array.isArray(source.columns) && source.columns.length ? source.columns : fallback.columns,
+    rows: fallback.rows.map((fallbackRow) => {
+      const existing = sourceRows.find((row) => row.key === fallbackRow.key || row.label === fallbackRow.label);
+      const values = Array.isArray(existing?.values) ? existing.values : [];
+      return {
+        ...fallbackRow,
+        ...existing,
+        values: Array.from({ length: fallback.columns.length }, (_, index) => values[index] ?? null),
+      };
+    }),
+    assumptions: {
+      ...(fallback.assumptions || {}),
+      ...(source.assumptions || {}),
+    },
+  };
+}
+
+function updateProjectionCell(projection, rowIndex, colIndex, value, onChange, fallback) {
+  const normalized = normalizeProjectionDraft(projection, fallback);
+  onChange({
+    ...normalized,
+    rows: normalized.rows.map((row, index) =>
+      index === rowIndex
+        ? { ...row, values: row.values.map((cell, cellIndex) => (cellIndex === colIndex ? value : cell)) }
+        : row
+    ),
+  });
+}
+
+function updateProjectionAssumption(projection, key, value, onChange, fallback) {
+  const normalized = normalizeProjectionDraft(projection, fallback);
+  onChange({
+    ...normalized,
+    assumptions: { ...(normalized.assumptions || {}), [key]: value },
+  });
+}
+
+function formatProjectionValue(value, type) {
+  if (value === null || value === undefined || value === '') return '';
+  if (type === 'percent') return formatPercent(value);
+  return formatCHF(value);
+}
+
+function formatAssumptionLabel(key) {
+  const labels = {
+    price_increase: 'Price increase',
+    sales_price: 'Sales price',
+    exit_debt: 'Debt sortie',
+    net: 'Net',
+    irr: 'IRR',
+    average_dividend_yield: 'Dividend Yield moyen',
+  };
+  return labels[key] || key;
 }
 
 function BankScenario({ title, form, set, prefix, saronRate }) {
