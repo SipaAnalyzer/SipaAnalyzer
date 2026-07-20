@@ -115,7 +115,7 @@ export default function AIAssistant() {
   };
 
   return (
-    <section className="fixed bottom-4 left-4 z-50 w-[min(calc(100vw-2rem),400px)] pointer-events-none">
+    <section className="fixed bottom-4 right-[7.5rem] z-50 w-[min(calc(100vw-2rem),400px)] pointer-events-none">
       {open && (
         <div className="mb-3 overflow-hidden rounded-xl border border-border bg-card/95 text-card-foreground shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-card/90 pointer-events-auto">
           <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
@@ -207,7 +207,7 @@ export default function AIAssistant() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex h-11 items-center gap-2 rounded-full border border-border bg-card/95 px-4 text-sm font-medium text-card-foreground shadow-xl backdrop-blur transition hover:border-primary/50 hover:text-primary pointer-events-auto"
+        className="ml-auto flex h-11 items-center gap-2 rounded-full border border-border bg-card/95 px-4 text-sm font-medium text-card-foreground shadow-xl backdrop-blur transition hover:border-primary/50 hover:text-primary pointer-events-auto"
         aria-expanded={open}
       >
         <Sparkles className="h-4 w-4" />
