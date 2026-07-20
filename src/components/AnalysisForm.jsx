@@ -1115,8 +1115,8 @@ function TechnicalAnalysisView({
               {customFinancialFields.map((cf, index) => (
                 <tr key={cf.id}>
                   <ExcelRowNumber>{20 + index}</ExcelRowNumber>
-                  <ExcelCell>Personnalise</ExcelCell>
-                  <ExcelCell className="p-0">
+                  <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>Personnalise</ExcelCell>
+                  <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                     <input
                       type="text"
                       value={cf.name}
@@ -1128,7 +1128,7 @@ function TechnicalAnalysisView({
                       className={EXCEL_TEXT_INPUT_CLASS}
                     />
                   </ExcelCell>
-                  <ExcelCell className="p-0">
+                  <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                     <ExcelNumberInput
                       value={cf.amount}
                       onChange={(value) =>
@@ -1138,7 +1138,7 @@ function TechnicalAnalysisView({
                       }
                     />
                   </ExcelCell>
-                  <ExcelCell className="p-0">
+                  <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                     <ExcelNumberInput
                       value={cf.pct}
                       onChange={(value) =>
@@ -1148,7 +1148,7 @@ function TechnicalAnalysisView({
                       }
                     />
                   </ExcelCell>
-                  <ExcelCell align="right">
+                  <ExcelCell align="right" className={EXCEL_LOCKED_CELL_CLASS}>
                     <button
                       type="button"
                       onClick={() => setCustomFinancialFields((prev) => prev.filter((_, itemIndex) => itemIndex !== index))}
@@ -1162,8 +1162,8 @@ function TechnicalAnalysisView({
 
               <tr className="hover:bg-[#fff2cc]">
                 <ExcelRowNumber>{20 + customFinancialFields.length}</ExcelRowNumber>
-                <ExcelCell>Nouvelle ligne</ExcelCell>
-                <ExcelCell className="p-0">
+                <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>Nouvelle ligne</ExcelCell>
+                <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                   <input
                     type="text"
                     value={newCustomFieldName}
@@ -1173,13 +1173,13 @@ function TechnicalAnalysisView({
                     className={EXCEL_TEXT_INPUT_CLASS}
                   />
                 </ExcelCell>
-                <ExcelCell className="p-0">
+                <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                   <ExcelNumberInput value={newCustomFieldAmount} onChange={setNewCustomFieldAmount} onKeyDown={addOnEnter} />
                 </ExcelCell>
-                <ExcelCell className="p-0">
+                <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                   <ExcelNumberInput value={newCustomFieldPct} onChange={setNewCustomFieldPct} onKeyDown={addOnEnter} />
                 </ExcelCell>
-                <ExcelCell align="right">
+                <ExcelCell align="right" className={EXCEL_LOCKED_CELL_CLASS}>
                   <button
                     type="button"
                     onClick={addCustomFinancialField}
@@ -1262,23 +1262,26 @@ function TechnicalAnalysisView({
   );
 }
 
-const EXCEL_TEXT_INPUT_CLASS = 'h-6 w-full bg-transparent px-2 text-black outline-none focus:bg-[#fff2cc]';
+const EXCEL_EDITABLE_CELL_CLASS = 'p-0 bg-primary/10';
+const EXCEL_LOCKED_CELL_CLASS = 'bg-[#f3f4f6] text-[#6b7280]';
+const EXCEL_TEXT_INPUT_CLASS = 'h-6 w-full bg-primary/10 px-2 text-black outline-none ring-1 ring-inset ring-primary/25 transition focus:bg-primary/20 focus:ring-primary/70';
+const EXCEL_SELECT_CLASS = 'h-6 w-full bg-primary/10 px-2 text-black outline-none ring-1 ring-inset ring-primary/25 transition focus:bg-primary/20 focus:ring-primary/70';
 
 function ExcelCorner() {
-  return <th className="sticky left-0 z-10 h-6 w-10 border-b border-r border-[#d9d9d9] bg-[#f3f3f3] text-center text-[10px] font-normal text-[#666]">#</th>;
+  return <th className="sticky left-0 z-10 h-6 w-10 border-b border-r border-[#cfd5dc] bg-[#e9edf1] text-center text-[10px] font-normal text-[#5f6b76]">#</th>;
 }
 
 function ExcelColumnHeader({ children }) {
-  return <th className="h-6 border-b border-r border-[#d9d9d9] bg-[#f3f3f3] px-3 text-center text-[10px] font-normal text-[#666] last:border-r-0">{children}</th>;
+  return <th className="h-6 border-b border-r border-[#cfd5dc] bg-[#e9edf1] px-3 text-center text-[10px] font-semibold text-[#5f6b76] last:border-r-0">{children}</th>;
 }
 
 function ExcelRowNumber({ children }) {
-  return <td className="sticky left-0 z-10 h-6 w-10 border-b border-r border-[#d9d9d9] bg-[#f3f3f3] text-center text-[10px] text-[#666]">{children}</td>;
+  return <td className="sticky left-0 z-10 h-6 w-10 border-b border-r border-[#cfd5dc] bg-[#e9edf1] text-center text-[10px] text-[#5f6b76]">{children}</td>;
 }
 
 function ExcelHeaderCell({ children, align = 'left' }) {
   return (
-    <th className={`h-6 border-b border-r border-[#d9d9d9] bg-white px-2 ${align === 'right' ? 'text-right' : 'text-left'} text-[11px] font-bold text-black last:border-r-0`}>
+    <th className={`h-6 border-b border-r border-[#cfd5dc] bg-white px-2 ${align === 'right' ? 'text-right' : 'text-left'} text-[11px] font-bold text-black last:border-r-0`}>
       {children}
     </th>
   );
@@ -1299,7 +1302,7 @@ function ExcelNumberInput({ value, onChange, onKeyDown }) {
       value={value ?? ''}
       onChange={(event) => onChange?.(event.target.value === '' ? null : parseFloat(event.target.value) || 0)}
       onKeyDown={onKeyDown}
-      className="h-6 w-full bg-transparent px-2 text-right text-black outline-none focus:bg-[#fff2cc]"
+      className="h-6 w-full bg-primary/10 px-2 text-right text-black outline-none ring-1 ring-inset ring-primary/25 transition focus:bg-primary/20 focus:ring-primary/70"
     />
   );
 }
@@ -1308,11 +1311,11 @@ function ExcelAmountRow({ row, section, label, value, onChange }) {
   return (
     <tr className="hover:bg-[#fff2cc]">
       <ExcelRowNumber>{row}</ExcelRowNumber>
-      <ExcelCell>{section}</ExcelCell>
-      <ExcelCell>{label}</ExcelCell>
-      <ExcelCell align="right" className="p-0"><ExcelNumberInput value={value} onChange={onChange} /></ExcelCell>
-      <ExcelCell />
-      <ExcelCell />
+      <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>{section}</ExcelCell>
+      <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>{label}</ExcelCell>
+      <ExcelCell align="right" className={EXCEL_EDITABLE_CELL_CLASS}><ExcelNumberInput value={value} onChange={onChange} /></ExcelCell>
+      <ExcelCell className={EXCEL_LOCKED_CELL_CLASS} />
+      <ExcelCell className={EXCEL_LOCKED_CELL_CLASS} />
     </tr>
   );
 }
@@ -1321,11 +1324,11 @@ function ExcelPctRow({ row, section, label, amount, onAmount, pct, onPct }) {
   return (
     <tr className="hover:bg-[#fff2cc]">
       <ExcelRowNumber>{row}</ExcelRowNumber>
-      <ExcelCell>{section}</ExcelCell>
-      <ExcelCell>{label}</ExcelCell>
-      <ExcelCell align="right" className="p-0"><ExcelNumberInput value={amount} onChange={onAmount} /></ExcelCell>
-      <ExcelCell align="right" className="p-0"><ExcelNumberInput value={pct} onChange={onPct} /></ExcelCell>
-      <ExcelCell />
+      <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>{section}</ExcelCell>
+      <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>{label}</ExcelCell>
+      <ExcelCell align="right" className={EXCEL_EDITABLE_CELL_CLASS}><ExcelNumberInput value={amount} onChange={onAmount} /></ExcelCell>
+      <ExcelCell align="right" className={EXCEL_EDITABLE_CELL_CLASS}><ExcelNumberInput value={pct} onChange={onPct} /></ExcelCell>
+      <ExcelCell className={EXCEL_LOCKED_CELL_CLASS} />
     </tr>
   );
 }
@@ -1334,11 +1337,11 @@ function ExcelComputedRow({ row, section, label, value, strong = false }) {
   return (
     <tr className="hover:bg-[#fff2cc]">
       <ExcelRowNumber>{row}</ExcelRowNumber>
-      <ExcelCell>{section}</ExcelCell>
-      <ExcelCell className={strong ? 'bg-[#e2f0d9] font-bold text-black' : 'bg-white text-black'}>{label}</ExcelCell>
-      <ExcelCell />
-      <ExcelCell />
-      <ExcelCell align="right" className={strong ? 'bg-[#e2f0d9] font-bold text-black' : 'bg-white text-black'}>{value}</ExcelCell>
+      <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>{section}</ExcelCell>
+      <ExcelCell className={`${EXCEL_LOCKED_CELL_CLASS} ${strong ? 'font-bold text-black' : ''}`}>{label}</ExcelCell>
+      <ExcelCell className={EXCEL_LOCKED_CELL_CLASS} />
+      <ExcelCell className={EXCEL_LOCKED_CELL_CLASS} />
+      <ExcelCell align="right" className={`${EXCEL_LOCKED_CELL_CLASS} ${strong ? 'font-bold text-black' : ''}`}>{value}</ExcelCell>
     </tr>
   );
 }
@@ -1352,25 +1355,25 @@ function ExcelBankRow({ row, title, form, set, prefix, saronRate }) {
   return (
     <tr className="hover:bg-[#fff2cc]">
       <ExcelRowNumber>{row}</ExcelRowNumber>
-      <ExcelCell>{title}</ExcelCell>
-      <ExcelCell className="p-0">
+      <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>{title}</ExcelCell>
+      <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
         <select
           value={typeTaux}
           onChange={(event) => set(`${prefix}_type_taux`)(event.target.value)}
-          className="h-6 w-full bg-transparent px-2 text-black outline-none focus:bg-[#fff2cc]"
+          className={EXCEL_SELECT_CLASS}
         >
           <option value="fixe">Fixe</option>
           <option value="saron">Variable full SARON</option>
           <option value="mixte">Variable base fixe + SARON</option>
         </select>
       </ExcelCell>
-      <ExcelCell align="right" className="p-0"><ExcelNumberInput value={form[`${prefix}_taux_hypothecaire`]} onChange={set(`${prefix}_taux_hypothecaire`)} /></ExcelCell>
-      <ExcelCell align="right" className="p-0"><ExcelNumberInput value={form[`${prefix}_marge_saron`]} onChange={set(`${prefix}_marge_saron`)} /></ExcelCell>
-      <ExcelCell align="right">
+      <ExcelCell align="right" className={EXCEL_EDITABLE_CELL_CLASS}><ExcelNumberInput value={form[`${prefix}_taux_hypothecaire`]} onChange={set(`${prefix}_taux_hypothecaire`)} /></ExcelCell>
+      <ExcelCell align="right" className={EXCEL_EDITABLE_CELL_CLASS}><ExcelNumberInput value={form[`${prefix}_marge_saron`]} onChange={set(`${prefix}_marge_saron`)} /></ExcelCell>
+      <ExcelCell align="right" className={EXCEL_LOCKED_CELL_CLASS}>
         {effectiveRate == null ? 'SARON...' : `${effectiveRate.toFixed(3)}%`}
       </ExcelCell>
-      <ExcelCell align="right" className="p-0"><ExcelNumberInput value={form[`${prefix}_amortissement_annuel`]} onChange={set(`${prefix}_amortissement_annuel`)} /></ExcelCell>
-      <ExcelCell className="p-0">
+      <ExcelCell align="right" className={EXCEL_EDITABLE_CELL_CLASS}><ExcelNumberInput value={form[`${prefix}_amortissement_annuel`]} onChange={set(`${prefix}_amortissement_annuel`)} /></ExcelCell>
+      <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
         <input
           type="text"
           value={form[`${prefix}_evaluation`] || ''}
@@ -1426,7 +1429,7 @@ function ExcelSipaInvestmentSheet({ sipaData, onChange }) {
             {rows.map((entry, rowIndex) => (
               <tr key={`${entry.label}-${rowIndex}`} className="hover:bg-[#fff2cc]">
                 <ExcelRowNumber>{rowIndex + 2}</ExcelRowNumber>
-                <ExcelCell className="p-0">
+                <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                   <input
                     type="text"
                     value={entry.label || ''}
@@ -1438,7 +1441,11 @@ function ExcelSipaInvestmentSheet({ sipaData, onChange }) {
                   const value = entry.values?.[valueIndex];
                   const isNumeric = value?.type === 'amount' || value?.type === 'pct' || typeof value?.value === 'number';
                   return (
-                    <ExcelCell key={valueIndex} align={isNumeric ? 'right' : 'left'} className={value ? 'p-0' : ''}>
+                    <ExcelCell
+                      key={valueIndex}
+                      align={isNumeric ? 'right' : 'left'}
+                      className={value ? EXCEL_EDITABLE_CELL_CLASS : EXCEL_LOCKED_CELL_CLASS}
+                    >
                       {value ? (
                         isNumeric ? (
                           <ExcelNumberInput value={value.value} onChange={(next) => updateCell(rowIndex, valueIndex, 'value', next)} />
@@ -1489,9 +1496,9 @@ function ExcelProjectionSheet({ title, projection, editable, onCellChange, onAss
             {projection.rows.map((row, rowIndex) => (
               <tr key={row.key || row.label} className="hover:bg-[#fff2cc]">
                 <ExcelRowNumber>{rowIndex + 2}</ExcelRowNumber>
-                <ExcelCell>{row.label}</ExcelCell>
+                <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>{row.label}</ExcelCell>
                 {projection.columns.map((column, colIndex) => (
-                  <ExcelCell key={`${row.key}-${column}`} align="right" className={editable ? 'p-0' : ''}>
+                  <ExcelCell key={`${row.key}-${column}`} align="right" className={editable ? EXCEL_EDITABLE_CELL_CLASS : EXCEL_LOCKED_CELL_CLASS}>
                     {editable ? (
                       <ExcelNumberInput value={row.values?.[colIndex]} onChange={(value) => onCellChange(rowIndex, colIndex, value)} />
                     ) : (
@@ -1505,21 +1512,21 @@ function ExcelProjectionSheet({ title, projection, editable, onCellChange, onAss
               <>
                 <tr>
                   <ExcelRowNumber>{projection.rows.length + 2}</ExcelRowNumber>
-                  <ExcelCell className="bg-[#e2f0d9] font-bold">Hypotheses</ExcelCell>
-                  {projection.columns.map((column) => <ExcelCell key={column} className="bg-[#e2f0d9]" />)}
+                  <ExcelCell className={`${EXCEL_LOCKED_CELL_CLASS} font-bold text-black`}>Hypotheses</ExcelCell>
+                  {projection.columns.map((column) => <ExcelCell key={column} className={EXCEL_LOCKED_CELL_CLASS} />)}
                 </tr>
                 {Object.entries(projection.assumptions).map(([key, value], index) => (
                   <tr key={key} className="hover:bg-[#fff2cc]">
                     <ExcelRowNumber>{projection.rows.length + 3 + index}</ExcelRowNumber>
-                    <ExcelCell>{formatAssumptionLabel(key)}</ExcelCell>
-                    <ExcelCell align="right" className={editable ? 'p-0' : ''}>
+                    <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>{formatAssumptionLabel(key)}</ExcelCell>
+                    <ExcelCell align="right" className={editable ? EXCEL_EDITABLE_CELL_CLASS : EXCEL_LOCKED_CELL_CLASS}>
                       {editable ? (
                         <ExcelNumberInput value={value} onChange={(next) => onAssumptionChange?.(key, next)} />
                       ) : (
                         formatProjectionValue(value, key.includes('yield') || key.includes('irr') || key.includes('increase') ? 'percent' : 'amount')
                       )}
                     </ExcelCell>
-                    {projection.columns.slice(1).map((column) => <ExcelCell key={column} />)}
+                    {projection.columns.slice(1).map((column) => <ExcelCell key={column} className={EXCEL_LOCKED_CELL_CLASS} />)}
                   </tr>
                 ))}
               </>
