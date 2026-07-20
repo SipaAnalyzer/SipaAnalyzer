@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import QuickNotes from '@/components/QuickNotes';
+import AIAssistant from '@/components/AIAssistant';
 import { buildSmartAlerts } from '@/utils/smartAlerts';
 import { listAuditLogs } from '@/utils/auditLogs';
 import { filterHiddenAlerts, readHiddenAlertIds } from '@/utils/alertVisibility';
@@ -294,6 +295,7 @@ export default function Layout() {
       </div>
 
       <QuickNotes />
+      <AIAssistant />
     </div>
   );
 }
