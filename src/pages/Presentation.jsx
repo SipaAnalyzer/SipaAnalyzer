@@ -319,7 +319,7 @@ export default function Presentation() {
               Selection presentation investisseur
             </div>
             <h1 className="font-display text-3xl font-bold tracking-tight md:text-5xl">
-              Portefeuille SIPA
+              Portefeuille <span className="text-primary">SIPA</span>
             </h1>
           </div>
           <Button variant="outline" className="w-full gap-2 self-start sm:w-auto xl:self-auto" onClick={() => window.print()}>
