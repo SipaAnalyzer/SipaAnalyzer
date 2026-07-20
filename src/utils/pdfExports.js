@@ -10,7 +10,14 @@ const PAGE = {
 
 const STATUS_LABELS = {
   brouillon: 'Brouillon',
-  en_cours: 'En cours',
+  en_cours: "En cours d'analyse",
+  demande_complementaire: 'Demande complementaire',
+  visite_sipa: 'Visite SIPA',
+  demande_rapport_expertise_externe: 'Demande rapport expertise externe',
+  proposition_achat: "Proposition d'achat",
+  negociation: 'Negociation',
+  proposition_acceptee: 'Proposition acceptee',
+  commercialise: 'Commercialise',
   valide: 'Valide',
   abandonne: 'Abandonne',
 };

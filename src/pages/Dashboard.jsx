@@ -5,7 +5,7 @@ import TopOpportunities from '../components/TopOpportunities';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
-import { normalizeAnalysis } from '../utils/calculations';
+import { isActivePropertyStatus, isFinalizedPropertyStatus, normalizeAnalysis } from '../utils/calculations';
 
 export default function Dashboard() {
   const { data: analyses = [], isLoading: la } = useQuery({
@@ -35,8 +35,8 @@ const { data: properties = [], isLoading: lp } = useQuery({
   );
 
   const total = properties.length;
-  const enCours = properties.filter(p => p.statut === 'en_cours').length;
-  const valides = properties.filter(p => p.statut === 'valide').length;
+  const enCours = properties.filter(p => isActivePropertyStatus(p.statut)).length;
+  const valides = properties.filter(p => isFinalizedPropertyStatus(p.statut)).length;
   const abandonnes = properties.filter(p => p.statut === 'abandonne').length;
 
   const latestPerProperty = Object.values(
@@ -56,7 +56,7 @@ const { data: properties = [], isLoading: lp } = useQuery({
     .filter(a => a.property);
 
   const top5 = [...enriched]
-    .filter(a => a.property?.statut === 'en_cours' && a.statut !== 'valide')
+    .filter(a => isActivePropertyStatus(a.property?.statut) && !isFinalizedPropertyStatus(a.statut))
     .sort((a, b) => (b.score_global || 0) - (a.score_global || 0))
     .slice(0, 5);
 

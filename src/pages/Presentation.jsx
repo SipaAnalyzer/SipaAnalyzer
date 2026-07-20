@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { base44 } from '@/api/base44Client';
-import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
+import { formatCHF, formatPercent, isActivePropertyStatus, isFinalizedPropertyStatus, normalizeAnalysis } from '../utils/calculations';
 import ScoreBadge from '../components/ScoreBadge';
 import { geocodeProperties } from '../utils/geocode';
 import {
@@ -208,7 +208,7 @@ export default function Presentation() {
 
   const enCours = useMemo(() => {
     return properties
-      .filter((property) => property.statut === 'en_cours')
+      .filter((property) => isActivePropertyStatus(property.statut))
       .map((property) => {
         const latest = analyses
           .filter((analysis) => analysis.property_id === property.id)
@@ -220,7 +220,7 @@ export default function Presentation() {
 
   const valides = useMemo(() => {
     return properties
-      .filter((property) => property.statut === 'valide')
+      .filter((property) => isFinalizedPropertyStatus(property.statut))
       .map((property) => {
         const latest = analyses
           .filter((analysis) => analysis.property_id === property.id)

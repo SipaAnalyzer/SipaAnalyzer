@@ -106,24 +106,52 @@ export function formatPercent(value) {
 }
 
 export const STATUS_CONFIG = {
+  en_cours: { label: "En cours d'analyse", class: 'bg-blue-500/20 text-blue-400' },
+  demande_complementaire: { label: 'Demande complementaire', class: 'bg-cyan-500/20 text-cyan-400' },
+  visite_sipa: { label: 'Visite SIPA', class: 'bg-violet-500/20 text-violet-400' },
+  demande_rapport_expertise_externe: { label: 'Demande rapport expertise externe', class: 'bg-indigo-500/20 text-indigo-400' },
+  proposition_achat: { label: "Proposition d'achat", class: 'bg-amber-500/20 text-amber-400' },
+  negociation: { label: 'Negociation', class: 'bg-orange-500/20 text-orange-400' },
+  proposition_acceptee: { label: 'Proposition acceptee', class: 'bg-emerald-500/20 text-emerald-400' },
+  commercialise: { label: 'Commercialise', class: 'bg-lime-500/20 text-lime-400' },
+  abandonne: { label: 'Abandonne', class: 'bg-red-500/20 text-red-400' },
   brouillon: { label: 'Brouillon', class: 'bg-zinc-500/20 text-zinc-400' },
-  en_cours: { label: 'En analyse', class: 'bg-blue-500/20 text-blue-400' },
   attente_direction: { label: 'Attente direction', class: 'bg-amber-500/20 text-amber-400' },
   valide: { label: 'Valide', class: 'bg-emerald-500/20 text-emerald-400' },
   refuse: { label: 'Refuse', class: 'bg-red-500/20 text-red-400' },
   surveillance: { label: 'Surveillance', class: 'bg-violet-500/20 text-violet-400' },
-  abandonne: { label: 'Abandonne', class: 'bg-red-500/20 text-red-400' },
 };
 
 export const WORKFLOW_STATUSES = [
-  { value: 'brouillon', label: 'Brouillon' },
-  { value: 'en_cours', label: 'En analyse' },
-  { value: 'attente_direction', label: 'Attente direction' },
-  { value: 'valide', label: 'Valide' },
-  { value: 'refuse', label: 'Refuse' },
-  { value: 'surveillance', label: 'Surveillance' },
+  { value: 'en_cours', label: "En cours d'analyse" },
+  { value: 'demande_complementaire', label: 'Demande complementaire' },
+  { value: 'visite_sipa', label: 'Visite SIPA' },
+  { value: 'demande_rapport_expertise_externe', label: 'Demande rapport expertise externe' },
+  { value: 'proposition_achat', label: "Proposition d'achat" },
+  { value: 'negociation', label: 'Negociation' },
+  { value: 'proposition_acceptee', label: 'Proposition acceptee' },
+  { value: 'commercialise', label: 'Commercialise' },
   { value: 'abandonne', label: 'Abandonne' },
 ];
+
+export const ACTIVE_PROPERTY_STATUSES = [
+  'en_cours',
+  'demande_complementaire',
+  'visite_sipa',
+  'demande_rapport_expertise_externe',
+  'proposition_achat',
+  'negociation',
+];
+
+export const FINALIZED_PROPERTY_STATUSES = ['proposition_acceptee', 'commercialise', 'valide'];
+
+export function isActivePropertyStatus(status) {
+  return ACTIVE_PROPERTY_STATUSES.includes(status);
+}
+
+export function isFinalizedPropertyStatus(status) {
+  return FINALIZED_PROPERTY_STATUSES.includes(status);
+}
 export function solveRateFromAmort(amort, pv, n) {
   if (!amort || amort <= 0 || !pv || pv <= 0 || !n || n <= 0) return null;
   const target = amort / pv;

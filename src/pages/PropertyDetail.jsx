@@ -1419,7 +1419,7 @@ function AnalysisSummary({ property, selected, selectedAnalysisId, canEdit, isUp
         </div>
 
         <QuickPropertyStatusSelect
-          status={property?.statut || 'brouillon'}
+          status={property?.statut || 'en_cours'}
           canEdit={canEdit}
           disabled={isUpdatingStatus}
           onChange={onStatusChange}

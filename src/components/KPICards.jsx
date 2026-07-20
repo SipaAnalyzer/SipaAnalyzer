@@ -1,4 +1,4 @@
-import { Building2, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Building2, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const cards = [
@@ -11,21 +11,21 @@ const cards = [
   },
   {
     key: 'enCours',
-    label: 'En cours',
+    label: 'Pipeline actif',
     icon: Clock,
     color: 'text-blue-400',
     filter: 'en_cours',
   },
   {
     key: 'valides',
-    label: 'Validés',
+    label: 'Finalises',
     icon: CheckCircle2,
     color: 'text-emerald-400',
-    filter: 'valide',
+    filter: 'proposition_acceptee',
   },
   {
     key: 'abandonnes',
-    label: 'Abandonnés',
+    label: 'Abandonnes',
     icon: XCircle,
     color: 'text-red-400',
     filter: 'abandonne',

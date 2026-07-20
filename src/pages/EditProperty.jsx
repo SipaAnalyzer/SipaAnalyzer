@@ -106,7 +106,7 @@ export default function EditProperty() {
       nom_bien: property.nom_bien || '', adresse: property.adresse || '', ville: property.ville || '',
       canton: property.canton || '', pays: property.pays || 'Suisse',
       annee_construction: property.annee_construction ?? '', surface: property.surface ?? '',
-      nombre_logements: property.nombre_logements ?? '', nombre_bureaux: property.nombre_bureaux ?? '', nombre_parkings: property.nombre_parkings ?? '', statut: property.statut || 'brouillon',
+      nombre_logements: property.nombre_logements ?? '', nombre_bureaux: property.nombre_bureaux ?? '', nombre_parkings: property.nombre_parkings ?? '', statut: property.statut || 'en_cours',
       lien_annonce: property.lien_annonce || '', lien_piece_jointe: property.lien_piece_jointe || '',
       image_url: property.image_url || '', latitude: property.latitude ?? '', longitude: property.longitude ?? '',
     });
@@ -240,7 +240,7 @@ export default function EditProperty() {
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Latitude (GPS)</Label><Input type="number" value={form.latitude || ''} onChange={set('latitude')} placeholder="46.5197" className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Longitude (GPS)</Label><Input type="number" value={form.longitude || ''} onChange={set('longitude')} placeholder="6.6323" className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Statut</Label>
-            <Select value={form.statut || 'brouillon'} onValueChange={set('statut')}>
+            <Select value={form.statut || 'en_cours'} onValueChange={set('statut')}>
               <SelectTrigger className="bg-background border-border"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {WORKFLOW_STATUSES.map((status) => (

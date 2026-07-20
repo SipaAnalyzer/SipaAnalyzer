@@ -19,7 +19,7 @@ export default function AddProperty() {
   const [imageUploading, setImageUploading] = useState(false);
   const [form, setForm] = useState({
     nom_bien: '', adresse: '', ville: '', canton: '', pays: 'Suisse',
-    annee_construction: '', surface: '', nombre_logements: '', nombre_bureaux: '', nombre_parkings: '', statut: 'brouillon',
+    annee_construction: '', surface: '', nombre_logements: '', nombre_bureaux: '', nombre_parkings: '', statut: 'en_cours',
     lien_annonce: '', lien_piece_jointe: '', image_url: '', latitude: '', longitude: '',
   });
 
