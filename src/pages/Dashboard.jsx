@@ -56,7 +56,7 @@ const { data: properties = [], isLoading: lp } = useQuery({
     .filter(a => a.property);
 
   const top5 = [...enriched]
-    .filter(a => a.property?.statut === 'en_cours')
+    .filter(a => a.property?.statut === 'en_cours' && a.statut !== 'valide')
     .sort((a, b) => (b.score_global || 0) - (a.score_global || 0))
     .slice(0, 5);
 
