@@ -35,22 +35,29 @@ const average = (items, selector) => {
 
 const createScoreIcon = (property) => {
   const markerColor = property.couleur === 'vert' ? '#22c55e' : '#ef4444';
+  const score = property.analysis?.score_global ? Math.round(property.analysis.score_global) : '';
 
   return L.divIcon({
     className: 'portfolio-marker',
     html: `
       <div style="
-        width: 23px;
-        height: 23px;
+        width: 44px;
+        height: 44px;
         border-radius: 999px;
         background: ${markerColor};
-        border: 3px solid white;
-        box-shadow: 0 1px 4px rgba(0,0,0,.15);
-      "></div>
+        border: 4px solid white;
+        box-shadow: 0 12px 28px rgba(0,0,0,.32), 0 0 0 8px rgba(34,197,94,.18);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font: 700 12px Inter, Arial, sans-serif;
+        letter-spacing: -.02em;
+      ">${score}</div>
     `,
-    iconSize: [23, 23],
-    iconAnchor: [11.5, 11.5],
-    popupAnchor: [0, -16],
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    popupAnchor: [0, -26],
   });
 };
 
@@ -358,8 +365,8 @@ export default function Presentation() {
         )}
       </div>
 
-      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+      <section className="overflow-hidden rounded-lg border border-primary/20 bg-card shadow-lg">
+        <div className="flex flex-col gap-3 border-b border-border bg-background/60 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-heading font-semibold">Carte des biens retenus</h2>
             <p className="mt-1 text-xs text-muted-foreground">Uniquement les biens valides avec pastille verte</p>
@@ -369,7 +376,7 @@ export default function Presentation() {
             Bassin lemanique
           </div>
         </div>
-        <div className="map-container" style={{ height: 'clamp(560px, 78vh, 920px)' }}>
+        <div className="map-container relative" style={{ height: 'clamp(640px, 82vh, 980px)' }}>
         {withCoords.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
             <MapPin className="h-10 w-10" />
@@ -418,7 +425,33 @@ export default function Presentation() {
             ))}
           </MapContainer>
         )}
-      </div>
+          <div className="pointer-events-none absolute left-4 top-4 z-[400] hidden max-w-[360px] rounded-lg border border-border bg-card/95 p-4 shadow-2xl backdrop-blur md:block">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-primary">Tableau de bord live</p>
+            <h3 className="mt-2 font-heading text-lg font-semibold">Selection cartographique</h3>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <Metric label="Biens visibles" value={withCoords.length} highlight />
+              <Metric label="Valides verts" value={greenValides.length} highlight />
+              <Metric label="Top score" value={summary.best?.analysis ? `${summary.best.analysis.score_global}/100` : '-'} />
+              <Metric label="Net/FP moyen" value={formatPercent(summary.avgNetEquityYield)} />
+            </div>
+          </div>
+          {rankedValides.length > 0 && (
+            <div className="pointer-events-none absolute bottom-4 left-4 right-4 z-[400] hidden rounded-lg border border-border bg-card/95 p-3 shadow-2xl backdrop-blur lg:block">
+              <div className="grid grid-cols-4 gap-3">
+                {rankedValides.slice(0, 4).map((property, index) => (
+                  <div key={property.id} className="rounded-md border border-border/70 bg-background/80 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-mono text-primary">#{index + 1}</span>
+                      {property.analysis && <span className="text-[10px] font-mono text-primary">{property.analysis.score_global}/100</span>}
+                    </div>
+                    <p className="mt-2 truncate text-xs font-medium">{property.nom_bien}</p>
+                    <p className="mt-1 text-[10px] text-muted-foreground">{formatPercent(property.analysis?.rendement_net_fonds_propres)} net/FP</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[390px_minmax(0,1fr)]">
@@ -438,11 +471,11 @@ export default function Presentation() {
           ) : (
             <div className="space-y-3">
               {rankedValides.slice(0, 5).map((property, index) => (
-                <div key={property.id} className="rounded-lg border border-border/60 p-4 bg-background/60">
+                <div key={property.id} className={`rounded-lg border p-4 transition-all ${index === 0 ? 'border-primary/40 bg-primary/10 shadow-sm' : 'border-border/60 bg-background/60'}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-muted-foreground">#{index + 1}</span>
+                        <span className={`rounded-md px-2 py-1 text-xs font-mono ${index === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>#{index + 1}</span>
                         <Link to={`/property/${property.id}`} className="text-sm font-medium hover:text-primary truncate">
                           {property.nom_bien}
                         </Link>
@@ -496,14 +529,14 @@ export default function Presentation() {
         </div>
       )}
 
-      <div className="pt-2">
+      <div className="hidden">
         <h2 className="font-heading font-semibold text-sm mb-4 flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-400" />
           Top {Math.min(5, rankedValides.length)} — Biens validés ({valides.length})
         </h2>
       </div>
       {rankedValides.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="hidden">
           {rankedValides.slice(0, 5).map((property) => (
             <div key={property.id} className="bg-card rounded-lg border border-border p-5 hover:border-primary/30 transition-all">
               <div className="flex items-start justify-between mb-3">
