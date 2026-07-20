@@ -370,12 +370,12 @@ function TechnicalAnalysisSnapshot({ analysis, canEditAnalysis }) {
 
   return (
     <div className="space-y-6">
-      <section className="bg-card rounded-xl border border-border p-6">
+      <section className="bg-card rounded-xl border border-border p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
           <div>
             <h3 className="font-heading font-semibold">Vue technique</h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Lecture type Excel de l'analyse selectionnee.
+              Classeur technique de l'analyse selectionnee.
             </p>
           </div>
           {canEditAnalysis && (
@@ -388,42 +388,50 @@ function TechnicalAnalysisSnapshot({ analysis, canEditAnalysis }) {
           )}
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[980px] border-collapse text-sm">
-            <thead className="bg-muted/40">
+        <div className="overflow-auto rounded-md border border-border bg-background shadow-inner">
+          <table className="w-full min-w-[1040px] border-collapse font-mono text-[12px]">
+            <thead>
               <tr>
-                <TechHeader>Bloc</TechHeader>
-                <TechHeader>Rubrique</TechHeader>
-                <TechHeader align="right">Montant CHF</TechHeader>
-                <TechHeader align="right">%</TechHeader>
-                <TechHeader align="right">Calcul</TechHeader>
+                <ExcelCorner />
+                {['A', 'B', 'C', 'D', 'E'].map((letter) => (
+                  <ExcelColumnHeader key={letter}>{letter}</ExcelColumnHeader>
+                ))}
+              </tr>
+              <tr>
+                <ExcelRowNumber>1</ExcelRowNumber>
+                <ExcelHeaderCell>Bloc</ExcelHeaderCell>
+                <ExcelHeaderCell>Rubrique</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">Montant CHF</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">%</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">Calcul</ExcelHeaderCell>
               </tr>
             </thead>
             <tbody>
-              <TechReadRow section="Acquisition" label="Prix du bien" amount={analysis.prix_bien} />
-              <TechReadRow section="Acquisition" label="Versement initial copropriete" amount={analysis.versement_initial} />
-              <TechReadRow section="Acquisition" label="Amortissement sur 5 ans" amount={analysis.amortissement_5_ans} />
-              <TechReadRow section="Acquisition" label="Honoraires transaction SIPA" amount={analysis.honoraires_sipa} pct={percentOf(analysis.honoraires_sipa, analysis.prix_bien)} />
-              <TechReadRow section="Acquisition" label="Frais de dossier bancaire" amount={analysis.frais_dossier_bancaire} />
-              <TechReadComputedRow section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
-              <TechReadRow section="Financement" label="Fonds propres" amount={analysis.fonds_propres} />
-              <TechReadRow section="Financement" label="Hypotheque" amount={analysis.hypotheque} pct={percentOf(analysis.hypotheque, prixTotal)} />
-              <TechReadRow section="Exploitation" label="Revenus locatifs hors charges" amount={analysis.revenus_locatifs} />
-              <TechReadComputedRow section="Exploitation" label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} />
-              <TechReadRow section="Exploitation" label="Charges operationnelles" amount={analysis.charges_operationnelles} />
-              <TechReadRow section="Exploitation" label="Interet hypothecaire moyen 5 ans" amount={analysis.interets_hypothecaires} pct={percentOf(analysis.interets_hypothecaires, analysis.hypotheque)} />
-              <TechReadRow section="Exploitation" label="Honoraires de gestion" amount={analysis.gestion} pct={percentOf(analysis.gestion, analysis.revenus_locatifs)} />
-              <TechReadComputedRow section="Exploitation" label="Revenu net" value={formatCHF(analysis.revenu_net)} strong />
-              <TechReadComputedRow section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(analysis.rendement_net_fonds_propres)} />
-              <TechReadRow section="Fiscalite" label="Impot" amount={analysis.impot} pct={percentOf(analysis.impot, analysis.revenu_net)} />
-              <TechReadComputedRow section="Distribution" label="Revenu distribue" value={formatCHF(analysis.revenu_distribue)} strong />
-              <TechReadComputedRow section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(analysis.revenu_distribue_fonds_propres)} />
+              <ExcelReadRow row={2} section="Acquisition" label="Prix du bien" amount={analysis.prix_bien} />
+              <ExcelReadRow row={3} section="Acquisition" label="Versement initial copropriete" amount={analysis.versement_initial} />
+              <ExcelReadRow row={4} section="Acquisition" label="Amortissement sur 5 ans" amount={analysis.amortissement_5_ans} />
+              <ExcelReadRow row={5} section="Acquisition" label="Honoraires transaction SIPA" amount={analysis.honoraires_sipa} pct={percentOf(analysis.honoraires_sipa, analysis.prix_bien)} />
+              <ExcelReadRow row={6} section="Acquisition" label="Frais de dossier bancaire" amount={analysis.frais_dossier_bancaire} />
+              <ExcelComputedRow row={7} section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} formula="=SOMME(C2:C6)" strong />
+              <ExcelReadRow row={8} section="Financement" label="Fonds propres" amount={analysis.fonds_propres} />
+              <ExcelReadRow row={9} section="Financement" label="Hypotheque" amount={analysis.hypotheque} pct={percentOf(analysis.hypotheque, prixTotal)} />
+              <ExcelReadRow row={10} section="Exploitation" label="Revenus locatifs hors charges" amount={analysis.revenus_locatifs} />
+              <ExcelComputedRow row={11} section="Exploitation" label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} formula="=C10/C7" />
+              <ExcelReadRow row={12} section="Exploitation" label="Charges operationnelles" amount={analysis.charges_operationnelles} />
+              <ExcelReadRow row={13} section="Exploitation" label="Interet hypothecaire moyen 5 ans" amount={analysis.interets_hypothecaires} pct={percentOf(analysis.interets_hypothecaires, analysis.hypotheque)} />
+              <ExcelReadRow row={14} section="Exploitation" label="Honoraires de gestion" amount={analysis.gestion} pct={percentOf(analysis.gestion, analysis.revenus_locatifs)} />
+              <ExcelComputedRow row={15} section="Exploitation" label="Revenu net" value={formatCHF(analysis.revenu_net)} formula="=C10-C12-C13-C14" strong />
+              <ExcelComputedRow row={16} section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(analysis.rendement_net_fonds_propres)} formula="=E15/C8" />
+              <ExcelReadRow row={17} section="Fiscalite" label="Impot" amount={analysis.impot} pct={percentOf(analysis.impot, analysis.revenu_net)} />
+              <ExcelComputedRow row={18} section="Distribution" label="Revenu distribue" value={formatCHF(analysis.revenu_distribue)} formula="=C15-C17" strong />
+              <ExcelComputedRow row={19} section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(analysis.revenu_distribue_fonds_propres)} formula="=E18/C8" />
               {customFields.map((entry, index) => {
                 const amount = entry.values?.find((value) => value.type === 'amount');
                 const pct = entry.values?.find((value) => value.type === 'pct');
                 return (
-                  <TechReadRow
+                  <ExcelReadRow
                     key={`${entry.label}-${index}`}
+                    row={20 + index}
                     section="Personnalise"
                     label={entry.label}
                     amount={amount?.value}
@@ -436,23 +444,30 @@ function TechnicalAnalysisSnapshot({ analysis, canEditAnalysis }) {
         </div>
       </section>
 
-      <section className="bg-card rounded-xl border border-border p-6">
+      <section className="bg-card rounded-xl border border-border p-4">
         <h3 className="font-heading font-semibold mb-5">Hypotheses bancaires techniques</h3>
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[780px] border-collapse text-sm">
-            <thead className="bg-muted/40">
+        <div className="overflow-x-auto rounded-md border border-border bg-background shadow-inner">
+          <table className="w-full min-w-[860px] border-collapse font-mono text-[12px]">
+            <thead>
               <tr>
-                <TechHeader>Banque</TechHeader>
-                <TechHeader>Type de taux</TechHeader>
-                <TechHeader align="right">Taux base</TechHeader>
-                <TechHeader align="right">Marge SARON</TechHeader>
-                <TechHeader align="right">Amortissement</TechHeader>
-                <TechHeader>Evaluation</TechHeader>
+                <ExcelCorner />
+                {['A', 'B', 'C', 'D', 'E', 'F'].map((letter) => (
+                  <ExcelColumnHeader key={letter}>{letter}</ExcelColumnHeader>
+                ))}
+              </tr>
+              <tr>
+                <ExcelRowNumber>1</ExcelRowNumber>
+                <ExcelHeaderCell>Banque</ExcelHeaderCell>
+                <ExcelHeaderCell>Type de taux</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">Taux base</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">Marge SARON</ExcelHeaderCell>
+                <ExcelHeaderCell align="right">Amortissement</ExcelHeaderCell>
+                <ExcelHeaderCell>Evaluation</ExcelHeaderCell>
               </tr>
             </thead>
             <tbody>
-              <TechBankSnapshot title="Banque A" analysis={analysis} prefix="banque_a" />
-              <TechBankSnapshot title="Banque B" analysis={analysis} prefix="banque_b" />
+              <ExcelBankSnapshot row={2} title="Banque A" analysis={analysis} prefix="banque_a" />
+              <ExcelBankSnapshot row={3} title="Banque B" analysis={analysis} prefix="banque_b" />
             </tbody>
           </table>
         </div>
@@ -500,57 +515,85 @@ function SipaImportedDataTable({ analysis }) {
   );
 }
 
-function TechHeader({ children, align = 'left' }) {
+function ExcelCorner() {
   return (
-    <th className={`border-b border-r border-border px-3 py-2 ${align === 'right' ? 'text-right' : 'text-left'} text-xs font-semibold uppercase tracking-wide text-muted-foreground last:border-r-0`}>
+    <th className="sticky left-0 z-10 h-7 w-10 border-b border-r border-border bg-muted/60 text-center text-[11px] text-muted-foreground">
+      #
+    </th>
+  );
+}
+
+function ExcelColumnHeader({ children }) {
+  return (
+    <th className="h-7 border-b border-r border-border bg-muted/60 px-3 text-center text-[11px] font-semibold text-muted-foreground last:border-r-0">
       {children}
     </th>
   );
 }
 
-function TechCell({ children, align = 'left', className = '' }) {
+function ExcelRowNumber({ children }) {
   return (
-    <td className={`border-b border-r border-border px-3 py-2 ${align === 'right' ? 'text-right' : 'text-left'} last:border-r-0 ${className}`}>
+    <td className="sticky left-0 z-10 h-8 w-10 border-b border-r border-border bg-muted/50 text-center text-[11px] text-muted-foreground">
       {children}
     </td>
   );
 }
 
-function TechReadRow({ section, label, amount, pct }) {
+function ExcelHeaderCell({ children, align = 'left' }) {
   return (
-    <tr>
-      <TechCell className="font-medium text-muted-foreground">{section}</TechCell>
-      <TechCell>{label}</TechCell>
-      <TechCell align="right" className="font-mono">{formatCHF(amount)}</TechCell>
-      <TechCell align="right" className="font-mono">{pct == null ? '-' : formatPercent(pct)}</TechCell>
-      <TechCell />
+    <th className={`h-8 border-b border-r border-border bg-emerald-950/30 px-2 ${align === 'right' ? 'text-right' : 'text-left'} text-[11px] font-semibold uppercase text-emerald-200 last:border-r-0`}>
+      {children}
+    </th>
+  );
+}
+
+function ExcelCell({ children, align = 'left', className = '' }) {
+  return (
+    <td className={`h-8 border-b border-r border-border bg-background px-2 ${align === 'right' ? 'text-right' : 'text-left'} last:border-r-0 ${className}`}>
+      {children}
+    </td>
+  );
+}
+
+function ExcelReadRow({ row, section, label, amount, pct }) {
+  return (
+    <tr className="hover:bg-primary/5">
+      <ExcelRowNumber>{row}</ExcelRowNumber>
+      <ExcelCell className="bg-muted/20 font-semibold text-muted-foreground">{section}</ExcelCell>
+      <ExcelCell>{label}</ExcelCell>
+      <ExcelCell align="right">{formatCHF(amount)}</ExcelCell>
+      <ExcelCell align="right">{pct == null ? '-' : formatPercent(pct)}</ExcelCell>
+      <ExcelCell className="bg-sky-500/5 text-sky-300" />
     </tr>
   );
 }
 
-function TechReadComputedRow({ section, label, value, strong = false }) {
+function ExcelComputedRow({ row, section, label, value, formula, strong = false }) {
   return (
-    <tr className={strong ? 'bg-primary/5' : 'bg-muted/20'}>
-      <TechCell className="font-medium text-muted-foreground">{section}</TechCell>
-      <TechCell className={strong ? 'font-semibold text-primary' : 'text-muted-foreground'}>{label}</TechCell>
-      <TechCell />
-      <TechCell />
-      <TechCell align="right" className={`font-mono ${strong ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
+    <tr className={strong ? 'bg-primary/5 hover:bg-primary/10' : 'hover:bg-primary/5'}>
+      <ExcelRowNumber>{row}</ExcelRowNumber>
+      <ExcelCell className="bg-muted/20 font-semibold text-muted-foreground">{section}</ExcelCell>
+      <ExcelCell className={strong ? 'bg-primary/10 font-semibold text-primary' : 'bg-muted/20 text-muted-foreground'}>{label}</ExcelCell>
+      <ExcelCell className="bg-muted/20" />
+      <ExcelCell className="bg-muted/20" />
+      <ExcelCell align="right" className={`${strong ? 'bg-primary/10 font-bold text-primary' : 'bg-sky-500/10 text-sky-300'}`}>
         {value}
-      </TechCell>
+        {formula && <span className="ml-2 text-[10px] text-muted-foreground">{formula}</span>}
+      </ExcelCell>
     </tr>
   );
 }
 
-function TechBankSnapshot({ title, analysis, prefix }) {
+function ExcelBankSnapshot({ row, title, analysis, prefix }) {
   return (
-    <tr>
-      <TechCell className="font-medium text-muted-foreground">{title}</TechCell>
-      <TechCell>{analysis[`${prefix}_type_taux`] || 'fixe'}</TechCell>
-      <TechCell align="right" className="font-mono">{formatPercent(analysis[`${prefix}_taux_hypothecaire`])}</TechCell>
-      <TechCell align="right" className="font-mono">{formatPercent(analysis[`${prefix}_marge_saron`])}</TechCell>
-      <TechCell align="right" className="font-mono">{formatCHF(analysis[`${prefix}_amortissement_annuel`])}</TechCell>
-      <TechCell>{analysis[`${prefix}_evaluation`] || '-'}</TechCell>
+    <tr className="hover:bg-primary/5">
+      <ExcelRowNumber>{row}</ExcelRowNumber>
+      <ExcelCell className="bg-muted/20 font-semibold text-muted-foreground">{title}</ExcelCell>
+      <ExcelCell>{analysis[`${prefix}_type_taux`] || 'fixe'}</ExcelCell>
+      <ExcelCell align="right">{formatPercent(analysis[`${prefix}_taux_hypothecaire`])}</ExcelCell>
+      <ExcelCell align="right">{formatPercent(analysis[`${prefix}_marge_saron`])}</ExcelCell>
+      <ExcelCell align="right">{formatCHF(analysis[`${prefix}_amortissement_annuel`])}</ExcelCell>
+      <ExcelCell>{analysis[`${prefix}_evaluation`] || '-'}</ExcelCell>
     </tr>
   );
 }
