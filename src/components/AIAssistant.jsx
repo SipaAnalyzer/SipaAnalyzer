@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
 const MODEL = 'deepseek/deepseek-v4-flash';
+const PUTER_SCRIPT_SRC = 'https://js.puter.com/v2/';
 
 const SYSTEM_PROMPT = `Tu es l'assistant IA de SIPA Analyzer.
 Tu aides un utilisateur a comprendre et utiliser l'application: biens immobiliers, analyses financieres, comparaison, presentation, alertes, favoris, exports PDF et administration.
@@ -35,6 +36,44 @@ function readPuterContent(response) {
   );
 }
 
+function loadPuter() {
+  if (window.puter?.ai?.chat) {
+    return Promise.resolve(window.puter);
+  }
+
+  return new Promise((resolve, reject) => {
+    const existingScript = document.querySelector(`script[src="${PUTER_SCRIPT_SRC}"]`);
+
+    const waitForPuter = () => {
+      const startedAt = Date.now();
+      const interval = window.setInterval(() => {
+        if (window.puter?.ai?.chat) {
+          window.clearInterval(interval);
+          resolve(window.puter);
+          return;
+        }
+
+        if (Date.now() - startedAt > 10000) {
+          window.clearInterval(interval);
+          reject(new Error("Le service IA n'a pas pu se charger. Verifie la connexion puis reessaie."));
+        }
+      }, 100);
+    };
+
+    if (existingScript) {
+      waitForPuter();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = PUTER_SCRIPT_SRC;
+    script.async = true;
+    script.onload = waitForPuter;
+    script.onerror = () => reject(new Error("Impossible de charger le service IA Puter."));
+    document.body.appendChild(script);
+  });
+}
+
 export default function AIAssistant() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
@@ -57,11 +96,9 @@ export default function AIAssistant() {
     setMessages(nextMessages);
 
     try {
-      if (!window.puter?.ai?.chat) {
-        throw new Error("Le service IA n'est pas encore charge. Recharge la page puis reessaie.");
-      }
+      const puter = await loadPuter();
 
-      const response = await window.puter.ai.chat(buildPrompt(messages, question), {
+      const response = await puter.ai.chat(buildPrompt(messages, question), {
         model: MODEL,
       });
 
