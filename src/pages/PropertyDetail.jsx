@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as XLSX from 'xlsx';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -311,6 +312,7 @@ export default function PropertyDetail() {
                 </>
               ) : (
                 <TechnicalAnalysisSnapshot
+                  property={property}
                   analysis={displayedAnalysis}
                   draft={technicalDraft || displayedAnalysis}
                   setDraft={setTechnicalDraft}
@@ -400,7 +402,7 @@ function AnalysisViewModeToggle({ value, onChange }) {
   );
 }
 
-function TechnicalAnalysisSnapshot({ analysis, draft, setDraft, canEditAnalysis, isSaving, onSave }) {
+function TechnicalAnalysisSnapshot({ property, analysis, draft, setDraft, canEditAnalysis, isSaving, onSave }) {
   const prixTotal = Math.round(
     Number(analysis.prix_bien || 0) +
     Number(analysis.versement_initial || 0) +
@@ -410,6 +412,9 @@ function TechnicalAnalysisSnapshot({ analysis, draft, setDraft, canEditAnalysis,
   );
   const customFields = analysis.sipa_data ? analysis.sipa_data.filter((entry) => entry._custom) : [];
   const canEdit = canEditAnalysis && !!draft;
+  const exportBaseName = `${propertySafeName(property?.titre || property?.adresse || property?.ville || 'bien')}-${analysis.created_date ? moment(analysis.created_date).format('YYYY-MM-DD') : 'analyse'}`;
+  const financialExportRows = buildFinancialExportRows(analysis, customFields, prixTotal);
+  const bankExportRows = buildBankExportRows(analysis);
   const updateDraftField = (key, value) => {
     if (!canEdit) return;
     setDraft((current) => ({ ...(current || analysis), [key]: value }));
@@ -497,12 +502,12 @@ function TechnicalAnalysisSnapshot({ analysis, draft, setDraft, canEditAnalysis,
     <div className="space-y-6">
       <section className="bg-card rounded-xl border border-border p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
-          <div>
-            <h3 className="font-heading font-semibold">Vue technique</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Classeur technique de l'analyse selectionnee.
-            </p>
-          </div>
+          <SectionHeading
+            title="Vue technique"
+            description="Classeur technique de l'analyse selectionnee."
+            rows={financialExportRows}
+            filename={`${exportBaseName}-vue-technique`}
+          />
           {canEditAnalysis && (
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" className="gap-2" onClick={onSave} disabled={isSaving}>
@@ -578,7 +583,12 @@ function TechnicalAnalysisSnapshot({ analysis, draft, setDraft, canEditAnalysis,
       </section>
 
       <section className="bg-card rounded-xl border border-border p-4">
-        <h3 className="font-heading font-semibold mb-5">Hypotheses bancaires techniques</h3>
+        <SectionHeading
+          title="Hypotheses bancaires techniques"
+          rows={bankExportRows}
+          filename={`${exportBaseName}-hypotheses-bancaires`}
+          className="mb-5"
+        />
         <div className="overflow-x-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
           <table className="w-full min-w-[860px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
             <thead>
@@ -611,6 +621,7 @@ function TechnicalAnalysisSnapshot({ analysis, draft, setDraft, canEditAnalysis,
           analysis={analysis}
           editable={canEdit}
           onCellChange={updateSipaImportedCell}
+          exportBaseName={exportBaseName}
         />
       )}
 
@@ -619,6 +630,8 @@ function TechnicalAnalysisSnapshot({ analysis, draft, setDraft, canEditAnalysis,
         projection={normalizeProjectionDraft(analysis.operating_projection, createEmptyExcelProjections().operating_projection)}
         editable={canEdit}
         onCellChange={(rowIndex, colIndex, value) => updateProjectionCell('operating_projection', rowIndex, colIndex, value)}
+        exportBaseName={exportBaseName}
+        exportSlug="projection-exploitation"
       />
 
       <ExcelProjectionSheet
@@ -627,6 +640,8 @@ function TechnicalAnalysisSnapshot({ analysis, draft, setDraft, canEditAnalysis,
         editable={canEdit}
         onCellChange={(rowIndex, colIndex, value) => updateProjectionCell('capital_projection', rowIndex, colIndex, value)}
         onAssumptionChange={(key, value) => updateProjectionAssumption('capital_projection', key, value)}
+        exportBaseName={exportBaseName}
+        exportSlug="dette-valeur-rendement"
       />
     </div>
   );
@@ -667,14 +682,61 @@ function SipaImportedDataTable({ analysis }) {
   );
 }
 
-function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange }) {
+function SectionHeading({ title, description, rows, filename, className = '' }) {
+  return (
+    <div className={`flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between ${className}`}>
+      <div>
+        <h3 className="font-heading font-semibold">{title}</h3>
+        {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+      </div>
+      <TableExportButtons rows={rows} filename={filename} />
+    </div>
+  );
+}
+
+function TableExportButtons({ rows, filename }) {
+  if (!rows?.length) return null;
+
+  return (
+    <div className="flex shrink-0 items-center gap-1.5">
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="h-7 gap-1.5 px-2 text-[11px]"
+        onClick={() => downloadRowsAsCsv(rows, filename)}
+      >
+        <Download className="h-3 w-3" />
+        CSV
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="h-7 gap-1.5 px-2 text-[11px]"
+        onClick={() => downloadRowsAsXlsx(rows, filename)}
+      >
+        <Download className="h-3 w-3" />
+        Excel
+      </Button>
+    </div>
+  );
+}
+
+function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBaseName }) {
   const rows = analysis.sipa_data.filter((entry) => !entry._custom);
   const maxValues = Math.max(1, ...rows.map((entry) => entry.values?.length || 0));
   const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, maxValues + 1);
+  const exportRows = buildSipaExportRows(rows, maxValues);
 
   return (
     <section className="bg-card rounded-xl border border-border p-4">
-      <h3 className="font-heading font-semibold mb-5">Investissement SIPA</h3>
+      <SectionHeading
+        title="Investissement SIPA"
+        rows={exportRows}
+        filename={`${exportBaseName}-investissement-sipa`}
+        className="mb-5"
+      />
       <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
         <table className="w-full min-w-[760px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
           <thead>
@@ -737,14 +799,20 @@ function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange }) {
   );
 }
 
-function ExcelProjectionSheet({ title, projection, editable, onCellChange, onAssumptionChange }) {
+function ExcelProjectionSheet({ title, projection, editable, onCellChange, onAssumptionChange, exportBaseName, exportSlug }) {
   if (!projection?.rows?.length) return null;
   const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'].slice(0, projection.columns.length + 1);
   const hasAssumptions = projection.assumptions && Object.keys(projection.assumptions).length > 0;
+  const exportRows = buildProjectionExportRows(projection);
 
   return (
     <section className="bg-card rounded-xl border border-border p-4">
-      <h3 className="font-heading font-semibold mb-5">{title}</h3>
+      <SectionHeading
+        title={title}
+        rows={exportRows}
+        filename={`${exportBaseName}-${exportSlug || propertySafeName(title)}`}
+        className="mb-5"
+      />
       <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
         <table className="w-full min-w-[860px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
           <thead>
@@ -945,6 +1013,111 @@ function ExcelNumberInput({ value, onChange, suffix = '' }) {
       title={suffix ? `Valeur${suffix}` : 'Valeur'}
     />
   );
+}
+
+function buildFinancialExportRows(analysis, customFields, prixTotal) {
+  const rows = [
+    ['Bloc', 'Rubrique', 'Montant CHF', '%', 'Calcul'],
+    ['Acquisition', 'Prix du bien', analysis.prix_bien ?? '', '', ''],
+    ['Acquisition', 'Versement initial copropriete', analysis.versement_initial ?? '', '', ''],
+    ['Acquisition', 'Amortissement sur 5 ans', analysis.amortissement_5_ans ?? '', '', ''],
+    ['Acquisition', 'Honoraires transaction SIPA', analysis.honoraires_sipa ?? '', percentOf(analysis.honoraires_sipa, analysis.prix_bien) ?? '', ''],
+    ['Acquisition', 'Frais de dossier bancaire', analysis.frais_dossier_bancaire ?? '', '', ''],
+    ['Acquisition', 'Prix total', '', '', prixTotal ?? ''],
+    ['Financement', 'Fonds propres', analysis.fonds_propres ?? '', '', ''],
+    ['Financement', 'Hypotheque', analysis.hypotheque ?? '', percentOf(analysis.hypotheque, prixTotal) ?? '', ''],
+    ['Exploitation', 'Revenus locatifs hors charges', analysis.revenus_locatifs ?? '', '', ''],
+    ['Exploitation', 'Taux de rendement brut', '', '', analysis.rendement_brut ?? ''],
+    ['Exploitation', 'Charges operationnelles', analysis.charges_operationnelles ?? '', '', ''],
+    ['Exploitation', 'Interet hypothecaire moyen 5 ans', analysis.interets_hypothecaires ?? '', percentOf(analysis.interets_hypothecaires, analysis.hypotheque) ?? '', ''],
+    ['Exploitation', 'Honoraires de gestion', analysis.gestion ?? '', percentOf(analysis.gestion, analysis.revenus_locatifs) ?? '', ''],
+    ['Exploitation', 'Revenu net', '', '', analysis.revenu_net ?? ''],
+    ['Exploitation', 'Rendement net sur fonds propres', '', '', analysis.rendement_net_fonds_propres ?? ''],
+    ['Fiscalite', 'Impot', analysis.impot ?? '', percentOf(analysis.impot, analysis.revenu_net) ?? '', ''],
+    ['Distribution', 'Revenu distribue', '', '', analysis.revenu_distribue ?? ''],
+    ['Distribution', 'Revenu distribue / fonds propres', '', '', analysis.revenu_distribue_fonds_propres ?? ''],
+  ];
+
+  customFields.forEach((entry) => {
+    const amount = entry.values?.find((value) => value.type === 'amount');
+    const pct = entry.values?.find((value) => value.type === 'pct');
+    rows.push(['Personnalise', entry.label || '', amount?.value ?? '', pct?.value ?? '', '']);
+  });
+
+  return rows;
+}
+
+function buildBankExportRows(analysis) {
+  return [
+    ['Banque', 'Type de taux', 'Taux base', 'Marge SARON', 'Amortissement', 'Evaluation'],
+    ['Banque A', analysis.banque_a_type_taux || 'fixe', analysis.banque_a_taux_hypothecaire ?? '', analysis.banque_a_marge_saron ?? '', analysis.banque_a_amortissement_annuel ?? '', analysis.banque_a_evaluation || ''],
+    ['Banque B', analysis.banque_b_type_taux || 'fixe', analysis.banque_b_taux_hypothecaire ?? '', analysis.banque_b_marge_saron ?? '', analysis.banque_b_amortissement_annuel ?? '', analysis.banque_b_evaluation || ''],
+  ];
+}
+
+function buildSipaExportRows(rows, maxValues) {
+  return [
+    ['Rubrique', ...Array.from({ length: maxValues }, (_, index) => `Valeur ${index + 1}`)],
+    ...rows.map((entry) => [
+      entry.label || '',
+      ...Array.from({ length: maxValues }, (_, index) => entry.values?.[index]?.value ?? ''),
+    ]),
+  ];
+}
+
+function buildProjectionExportRows(projection) {
+  const rows = [
+    ['Rubrique', ...(projection.columns || [])],
+    ...(projection.rows || []).map((row) => [row.label || '', ...(row.values || [])]),
+  ];
+
+  if (projection.assumptions && Object.keys(projection.assumptions).length > 0) {
+    rows.push([]);
+    rows.push(['Hypotheses', 'Valeur']);
+    Object.entries(projection.assumptions).forEach(([key, value]) => {
+      rows.push([formatAssumptionLabel(key), value ?? '']);
+    });
+  }
+
+  return rows;
+}
+
+function downloadRowsAsCsv(rows, filename) {
+  const csv = rows.map((row) => row.map(escapeCsvCell).join(';')).join('\r\n');
+  downloadBlob(`${propertySafeName(filename)}.csv`, `\ufeff${csv}`, 'text/csv;charset=utf-8');
+}
+
+function downloadRowsAsXlsx(rows, filename) {
+  const worksheet = XLSX.utils.aoa_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Export');
+  XLSX.writeFile(workbook, `${propertySafeName(filename)}.xlsx`);
+}
+
+function downloadBlob(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function escapeCsvCell(value) {
+  const text = value === null || value === undefined ? '' : String(value);
+  return /[;"\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function propertySafeName(value) {
+  return String(value || 'export')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9-_]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase();
 }
 
 function normalizeAnalysisDraft(draft, property) {
