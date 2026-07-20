@@ -435,17 +435,19 @@ export default function Presentation() {
               <Metric label="Net/FP moyen" value={formatPercent(summary.avgNetEquityYield)} />
             </div>
           </div>
-          {rankedValides.length > 0 && (
+          {withCoords.length > 0 && (
             <div className="pointer-events-none absolute bottom-4 left-4 right-4 z-[400] hidden rounded-lg border border-border bg-card/95 p-3 shadow-2xl backdrop-blur lg:block">
               <div className="grid grid-cols-4 gap-3">
-                {rankedValides.slice(0, 4).map((property, index) => (
+                {withCoords.slice(0, 4).map((property) => (
                   <div key={property.id} className="rounded-md border border-border/70 bg-background/80 p-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-mono text-primary">#{index + 1}</span>
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">Valide</span>
                       {property.analysis && <span className="text-[10px] font-mono text-primary">{property.analysis.score_global}/100</span>}
                     </div>
                     <p className="mt-2 truncate text-xs font-medium">{property.nom_bien}</p>
-                    <p className="mt-1 text-[10px] text-muted-foreground">{formatPercent(property.analysis?.rendement_net_fonds_propres)} net/FP</p>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      {property.ville}{property.canton ? `, ${property.canton}` : ''}
+                    </p>
                   </div>
                 ))}
               </div>
