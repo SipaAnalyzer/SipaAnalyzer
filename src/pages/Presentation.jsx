@@ -134,21 +134,47 @@ function DealSpotlight({ property }) {
     );
   }
 
+  const analysis = property.analysis;
+
   return (
     <Link to={`/property/${property.id}`} className="group block rounded-lg border border-primary/25 bg-card p-5 shadow-sm transition-all hover:border-primary/60 hover:-translate-y-0.5">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs uppercase tracking-[0.18em] text-primary">Dossier phare</p>
-        <Trophy className="h-4 w-4 text-primary" />
+        <div className="flex items-center gap-2">
+          <span className="rounded-md bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary">Valide</span>
+          <Trophy className="h-4 w-4 text-primary" />
+        </div>
       </div>
       <h2 className="mt-4 font-heading text-xl font-semibold group-hover:text-primary">{property.nom_bien}</h2>
       <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
         <MapPin className="h-3 w-3" />
         {property.ville}{property.canton ? `, ${property.canton}` : ''}
       </p>
-      <div className="mt-5 grid grid-cols-3 gap-3">
-        <Metric label="Score" value={`${property.analysis.score_global}/100`} highlight />
-        <Metric label="Rdt. net/FP" value={formatPercent(property.analysis.rendement_net_fonds_propres)} highlight />
-        <Metric label="Prix total" value={formatCHF(property.analysis.prix_total)} />
+
+      <div className="mt-5 rounded-lg border border-primary/20 bg-primary/10 p-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-primary">Score global</p>
+            <p className="mt-1 font-heading text-4xl font-bold text-primary">{analysis.score_global}/100</p>
+          </div>
+          <ScoreBadge note={analysis.note} />
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <Metric label="Prix total" value={formatCHF(analysis.prix_total)} />
+        <Metric label="Fonds propres" value={formatCHF(analysis.fonds_propres)} />
+        <Metric label="Hypotheque" value={formatCHF(analysis.hypotheque)} />
+        <Metric label="Revenu distribue" value={formatCHF(analysis.revenu_distribue)} highlight />
+        <Metric label="Rdt. brut" value={formatPercent(analysis.rendement_brut)} />
+        <Metric label="Rdt. net/FP" value={formatPercent(analysis.rendement_net_fonds_propres)} highlight />
+      </div>
+
+      <div className="mt-5 border-t border-border/60 pt-4">
+        <div className="flex items-center justify-between gap-3 text-xs">
+          <span className="text-muted-foreground">Ouvrir la fiche complete</span>
+          <span className="font-medium text-primary group-hover:translate-x-0.5 transition-transform">Consulter</span>
+        </div>
       </div>
     </Link>
   );
