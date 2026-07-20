@@ -205,6 +205,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const selectedProperty = properties.find((p) => p.id === form.property_id);
 
   const [activeTab, setActiveTab] = useState('financial');
+  const [analysisViewMode, setAnalysisViewMode] = useState('simplified');
   const [excelImportState, setExcelImportState] = useState({
     loading: false,
     message: '',
@@ -365,6 +366,23 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     }
   };
 
+  const addCustomFinancialField = () => {
+    if (!newCustomFieldName.trim() || !Number(newCustomFieldAmount)) return;
+
+    setCustomFinancialFields((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: newCustomFieldName.trim(),
+        amount: Number(newCustomFieldAmount),
+        pct: newCustomFieldPct !== '' ? parseFloat(newCustomFieldPct) : null,
+      },
+    ]);
+    setNewCustomFieldName('');
+    setNewCustomFieldAmount('');
+    setNewCustomFieldPct('');
+  };
+
   return (
     <div className="space-y-8">
       <section className="bg-card rounded-xl border border-border p-6">
@@ -420,6 +438,42 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         </div>
       </section>
 
+      <section className="bg-card rounded-xl border border-border p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="font-heading font-semibold text-sm">Vue d'analyse</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Basculez entre la vue actuelle et une grille technique editable.
+            </p>
+          </div>
+          <div className="inline-flex rounded-lg border border-border bg-background p-1">
+            <button
+              type="button"
+              onClick={() => setAnalysisViewMode('simplified')}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                analysisViewMode === 'simplified'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Simplifie
+            </button>
+            <button
+              type="button"
+              onClick={() => setAnalysisViewMode('technical')}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                analysisViewMode === 'technical'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Technique
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {analysisViewMode === 'simplified' ? (
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full justify-start gap-1 bg-background border border-border rounded-xl p-1">
           <TabsTrigger value="financial" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
@@ -878,6 +932,26 @@ Courtier : UBS, Valérie Zuber"
           </section>
         </TabsContent>
       </Tabs>
+      ) : (
+        <TechnicalAnalysisView
+          form={form}
+          set={set}
+          setForm={setForm}
+          handlers={handlers}
+          calc={calc}
+          prixTotal={prixTotal}
+          saronRate={saronRate}
+          customFinancialFields={customFinancialFields}
+          setCustomFinancialFields={setCustomFinancialFields}
+          newCustomFieldName={newCustomFieldName}
+          setNewCustomFieldName={setNewCustomFieldName}
+          newCustomFieldAmount={newCustomFieldAmount}
+          setNewCustomFieldAmount={setNewCustomFieldAmount}
+          newCustomFieldPct={newCustomFieldPct}
+          setNewCustomFieldPct={setNewCustomFieldPct}
+          addCustomFinancialField={addCustomFinancialField}
+        />
+      )}
 
       <section className="bg-card rounded-xl border border-primary/30 p-6">
         <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
@@ -916,6 +990,380 @@ Courtier : UBS, Valérie Zuber"
         </Button>
       </div>
     </div>
+  );
+}
+
+function TechnicalAnalysisView({
+  form,
+  set,
+  setForm,
+  handlers,
+  calc,
+  prixTotal,
+  saronRate,
+  customFinancialFields,
+  setCustomFinancialFields,
+  newCustomFieldName,
+  setNewCustomFieldName,
+  newCustomFieldAmount,
+  setNewCustomFieldAmount,
+  newCustomFieldPct,
+  setNewCustomFieldPct,
+  addCustomFinancialField,
+}) {
+  const addOnEnter = (event) => {
+    if (event.key === 'Enter') {
+      addCustomFinancialField();
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <section className="bg-card rounded-xl border border-border p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5">
+          <div>
+            <h3 className="font-heading font-semibold">Vue technique</h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Grille editable type Excel. Les cellules calculees se mettent a jour automatiquement.
+            </p>
+          </div>
+          <span className="rounded-md border border-border bg-background px-3 py-1 text-xs font-mono text-muted-foreground">
+            Mode edition directe
+          </span>
+        </div>
+
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[1040px] border-collapse text-sm">
+            <thead className="bg-muted/40">
+              <tr>
+                <TechHeader>Bloc</TechHeader>
+                <TechHeader>Rubrique</TechHeader>
+                <TechHeader align="right">Montant CHF</TechHeader>
+                <TechHeader align="right">%</TechHeader>
+                <TechHeader align="right">Calcul</TechHeader>
+              </tr>
+            </thead>
+            <tbody>
+              <TechAmountRow section="Acquisition" label="Prix du bien" value={form.prix_bien} onChange={set('prix_bien')} />
+              <TechAmountRow section="Acquisition" label="Versement initial copropriete" value={form.versement_initial} onChange={set('versement_initial')} />
+              <TechAmountRow section="Acquisition" label="Amortissement sur 5 ans" value={form.amortissement_5_ans} onChange={set('amortissement_5_ans')} />
+              <TechPctRow
+                section="Acquisition"
+                label="Honoraires transaction SIPA"
+                amount={form.honoraires_sipa}
+                onAmount={handlers.honoraires.amount}
+                pct={form.honoraires_sipa_pct}
+                onPct={handlers.honoraires.pct}
+              />
+              <TechAmountRow section="Acquisition" label="Frais de dossier bancaire" value={form.frais_dossier_bancaire} onChange={set('frais_dossier_bancaire')} />
+              <TechComputedRow section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
+
+              <TechAmountRow section="Financement" label="Fonds propres" value={form.fonds_propres} onChange={set('fonds_propres')} />
+              <TechPctRow
+                section="Financement"
+                label="Hypotheque"
+                amount={form.hypotheque}
+                onAmount={handlers.hypotheque.amount}
+                pct={form.hypotheque_pct}
+                onPct={handlers.hypotheque.pct}
+              />
+
+              <TechAmountRow section="Exploitation" label="Revenus locatifs hors charges" value={form.revenus_locatifs} onChange={set('revenus_locatifs')} />
+              <TechComputedRow section="Exploitation" label="Taux de rendement brut" value={formatPercent(calc.rendement_brut)} />
+              <TechAmountRow section="Exploitation" label="Charges operationnelles" value={form.charges_operationnelles} onChange={set('charges_operationnelles')} />
+              <TechPctRow
+                section="Exploitation"
+                label="Interet hypothecaire moyen 5 ans"
+                amount={form.interets_hypothecaires}
+                onAmount={handlers.interets.amount}
+                pct={form.interets_hypothecaires_pct}
+                onPct={handlers.interets.pct}
+              />
+              <TechPctRow
+                section="Exploitation"
+                label="Honoraires de gestion"
+                amount={form.gestion}
+                onAmount={handlers.gestion.amount}
+                pct={form.gestion_pct}
+                onPct={handlers.gestion.pct}
+              />
+              <TechComputedRow section="Exploitation" label="Revenu net" value={formatCHF(calc.revenu_net)} strong />
+              <TechComputedRow section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(calc.rendement_net_fonds_propres)} />
+              <TechPctRow
+                section="Fiscalite"
+                label="Impot"
+                amount={form.impot}
+                onAmount={handlers.impot.amount}
+                pct={form.impot_pct}
+                onPct={handlers.impot.pct}
+              />
+              <TechComputedRow section="Distribution" label="Revenu distribue" value={formatCHF(calc.revenu_distribue)} strong />
+              <TechComputedRow section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(calc.revenu_distribue_fonds_propres)} />
+
+              {customFinancialFields.map((cf, index) => (
+                <tr key={cf.id}>
+                  <TechCell className="font-medium text-muted-foreground">Personnalise</TechCell>
+                  <TechCell>
+                    <input
+                      type="text"
+                      value={cf.name}
+                      onChange={(event) =>
+                        setCustomFinancialFields((prev) =>
+                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, name: event.target.value } : item))
+                        )
+                      }
+                      className={TECH_TEXT_INPUT_CLASS}
+                    />
+                  </TechCell>
+                  <TechCell>
+                    <TechNumberInput
+                      value={cf.amount}
+                      onChange={(value) =>
+                        setCustomFinancialFields((prev) =>
+                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, amount: value ?? 0 } : item))
+                        )
+                      }
+                    />
+                  </TechCell>
+                  <TechCell>
+                    <TechNumberInput
+                      value={cf.pct}
+                      onChange={(value) =>
+                        setCustomFinancialFields((prev) =>
+                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, pct: value } : item))
+                        )
+                      }
+                    />
+                  </TechCell>
+                  <TechCell align="right">
+                    <button
+                      type="button"
+                      onClick={() => setCustomFinancialFields((prev) => prev.filter((_, itemIndex) => itemIndex !== index))}
+                      className="text-xs text-muted-foreground hover:text-red-500"
+                    >
+                      Supprimer
+                    </button>
+                  </TechCell>
+                </tr>
+              ))}
+
+              <tr className="bg-muted/20">
+                <TechCell className="font-medium text-muted-foreground">Nouvelle ligne</TechCell>
+                <TechCell>
+                  <input
+                    type="text"
+                    value={newCustomFieldName}
+                    onChange={(event) => setNewCustomFieldName(event.target.value)}
+                    onKeyDown={addOnEnter}
+                    placeholder="Nom de la ligne"
+                    className={TECH_TEXT_INPUT_CLASS}
+                  />
+                </TechCell>
+                <TechCell>
+                  <TechNumberInput value={newCustomFieldAmount} onChange={setNewCustomFieldAmount} onKeyDown={addOnEnter} />
+                </TechCell>
+                <TechCell>
+                  <TechNumberInput value={newCustomFieldPct} onChange={setNewCustomFieldPct} onKeyDown={addOnEnter} />
+                </TechCell>
+                <TechCell align="right">
+                  <button
+                    type="button"
+                    onClick={addCustomFinancialField}
+                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  >
+                    Ajouter
+                  </button>
+                </TechCell>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="bg-card rounded-xl border border-border p-6">
+        <h3 className="font-heading font-semibold mb-5">Hypotheses bancaires techniques</h3>
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[980px] border-collapse text-sm">
+            <thead className="bg-muted/40">
+              <tr>
+                <TechHeader>Banque</TechHeader>
+                <TechHeader>Type de taux</TechHeader>
+                <TechHeader align="right">Taux base %</TechHeader>
+                <TechHeader align="right">Marge SARON %</TechHeader>
+                <TechHeader align="right">Taux effectif</TechHeader>
+                <TechHeader align="right">Amortissement CHF</TechHeader>
+                <TechHeader>Evaluation</TechHeader>
+              </tr>
+            </thead>
+            <tbody>
+              <TechBankRow title="Banque A" form={form} set={set} prefix="banque_a" saronRate={saronRate} />
+              <TechBankRow title="Banque B" form={form} set={set} prefix="banque_b" saronRate={saronRate} />
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="bg-card rounded-xl border border-border p-6">
+        <ExcelProjectionTables
+          operatingProjection={form.operating_projection}
+          capitalProjection={form.capital_projection}
+          onOperatingChange={set('operating_projection')}
+          onCapitalChange={set('capital_projection')}
+          editable
+        />
+      </section>
+
+      {form.sipa_data && form.sipa_data.filter((entry) => !entry._custom).length > 0 && (
+        <section className="bg-card rounded-xl border border-border p-6">
+          <h3 className="font-heading font-semibold mb-4">Donnees SIPA importees</h3>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full min-w-[720px] border-collapse text-sm">
+              <thead className="bg-muted/40">
+                <tr>
+                  <TechHeader>Rubrique</TechHeader>
+                  <TechHeader>Valeurs</TechHeader>
+                </tr>
+              </thead>
+              <tbody>
+                {form.sipa_data.filter((entry) => !entry._custom).map((entry, index) => (
+                  <tr key={`${entry.label}-${index}`}>
+                    <TechCell className="font-medium">{entry.label}</TechCell>
+                    <TechCell>
+                      <div className="flex flex-wrap gap-2">
+                        {entry.values.map((value, valueIndex) => (
+                          <span key={valueIndex} className="inline-flex rounded bg-muted/30 px-2 py-0.5 text-xs font-mono">
+                            {formatSipaValue(value)}
+                          </span>
+                        ))}
+                      </div>
+                    </TechCell>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      <section className="bg-card rounded-xl border border-border p-6">
+        <h3 className="font-heading font-semibold mb-4">Informations complementaires</h3>
+        <textarea
+          value={form.notes || ''}
+          onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+          className="w-full min-h-[140px] rounded-lg border border-border bg-background p-3 font-mono text-sm"
+          placeholder="Notes techniques, banque, CECB, chauffage, courtier..."
+        />
+      </section>
+    </div>
+  );
+}
+
+const TECH_TEXT_INPUT_CLASS = 'h-9 w-full bg-transparent px-2 text-sm outline-none focus:bg-background';
+
+function TechHeader({ children, align = 'left' }) {
+  const alignClass = align === 'right' ? 'text-right' : 'text-left';
+
+  return (
+    <th className={`border-b border-r border-border px-3 py-2 ${alignClass} text-xs font-semibold uppercase tracking-wide text-muted-foreground last:border-r-0`}>
+      {children}
+    </th>
+  );
+}
+
+function TechCell({ children, align = 'left', className = '' }) {
+  const alignClass = align === 'right' ? 'text-right' : 'text-left';
+
+  return (
+    <td className={`border-b border-r border-border px-2 py-1 ${alignClass} last:border-r-0 ${className}`}>
+      {children}
+    </td>
+  );
+}
+
+function TechNumberInput({ value, onChange, onKeyDown }) {
+  return (
+    <input
+      type="number"
+      value={value ?? ''}
+      onChange={(event) => onChange?.(event.target.value === '' ? null : parseFloat(event.target.value) || 0)}
+      onKeyDown={onKeyDown}
+      className="h-9 w-full bg-transparent px-2 text-right font-mono text-sm outline-none focus:bg-background"
+    />
+  );
+}
+
+function TechAmountRow({ section, label, value, onChange }) {
+  return (
+    <tr>
+      <TechCell className="font-medium text-muted-foreground">{section}</TechCell>
+      <TechCell>{label}</TechCell>
+      <TechCell><TechNumberInput value={value} onChange={onChange} /></TechCell>
+      <TechCell />
+      <TechCell />
+    </tr>
+  );
+}
+
+function TechPctRow({ section, label, amount, onAmount, pct, onPct }) {
+  return (
+    <tr>
+      <TechCell className="font-medium text-muted-foreground">{section}</TechCell>
+      <TechCell>{label}</TechCell>
+      <TechCell><TechNumberInput value={amount} onChange={onAmount} /></TechCell>
+      <TechCell><TechNumberInput value={pct} onChange={onPct} /></TechCell>
+      <TechCell />
+    </tr>
+  );
+}
+
+function TechComputedRow({ section, label, value, strong = false }) {
+  return (
+    <tr className={strong ? 'bg-primary/5' : 'bg-muted/20'}>
+      <TechCell className="font-medium text-muted-foreground">{section}</TechCell>
+      <TechCell className={strong ? 'font-semibold text-primary' : 'text-muted-foreground'}>{label}</TechCell>
+      <TechCell />
+      <TechCell />
+      <TechCell align="right" className={`font-mono ${strong ? 'font-bold text-primary' : 'text-muted-foreground'}`}>
+        {value}
+      </TechCell>
+    </tr>
+  );
+}
+
+function TechBankRow({ title, form, set, prefix, saronRate }) {
+  const typeTaux = form[`${prefix}_type_taux`] || 'fixe';
+  const tauxBase = Number(form[`${prefix}_taux_hypothecaire`] || 0);
+  const margeSaron = Number(form[`${prefix}_marge_saron`] ?? 0.5);
+  const effectiveRate = getEffectiveMortgageRate({ typeTaux, tauxBase, margeSaron, saronRate });
+
+  return (
+    <tr>
+      <TechCell className="font-medium text-muted-foreground">{title}</TechCell>
+      <TechCell>
+        <select
+          value={typeTaux}
+          onChange={(event) => set(`${prefix}_type_taux`)(event.target.value)}
+          className="h-9 w-full bg-transparent px-2 text-sm outline-none focus:bg-background"
+        >
+          <option value="fixe">Fixe</option>
+          <option value="saron">Variable full SARON</option>
+          <option value="mixte">Variable base fixe + SARON</option>
+        </select>
+      </TechCell>
+      <TechCell><TechNumberInput value={form[`${prefix}_taux_hypothecaire`]} onChange={set(`${prefix}_taux_hypothecaire`)} /></TechCell>
+      <TechCell><TechNumberInput value={form[`${prefix}_marge_saron`]} onChange={set(`${prefix}_marge_saron`)} /></TechCell>
+      <TechCell align="right" className="font-mono text-primary">
+        {effectiveRate == null ? 'SARON...' : `${effectiveRate.toFixed(3)}%`}
+      </TechCell>
+      <TechCell><TechNumberInput value={form[`${prefix}_amortissement_annuel`]} onChange={set(`${prefix}_amortissement_annuel`)} /></TechCell>
+      <TechCell>
+        <textarea
+          value={form[`${prefix}_evaluation`] || ''}
+          onChange={(event) => set(`${prefix}_evaluation`)(event.target.value)}
+          className="min-h-9 w-full resize-y bg-transparent px-2 py-2 text-sm outline-none focus:bg-background"
+        />
+      </TechCell>
+    </tr>
   );
 }
 
