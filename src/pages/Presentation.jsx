@@ -319,11 +319,8 @@ export default function Presentation() {
               Selection presentation investisseur
             </div>
             <h1 className="font-display text-3xl font-bold tracking-tight md:text-5xl">
-              Portefeuille valide, opportunites visibles.
+              Portefeuille Sipa
             </h1>
-            <p className="mt-3 text-sm text-muted-foreground md:text-base">
-              Carte comite des biens valides avec pastille verte, classement par score et lecture rapide des rendements.
-            </p>
           </div>
           <Button variant="outline" className="w-full gap-2 self-start sm:w-auto xl:self-auto" onClick={() => window.print()}>
             <Printer className="h-4 w-4" />
