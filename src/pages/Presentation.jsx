@@ -138,6 +138,20 @@ function DealSpotlight({ property }) {
 
   return (
     <Link to={`/property/${property.id}`} className="group block rounded-lg border border-primary/25 bg-card p-5 shadow-sm transition-all hover:border-primary/60 hover:-translate-y-0.5">
+      <div className="mb-5 overflow-hidden rounded-lg border border-border bg-background">
+        {property.image_url ? (
+          <img
+            src={property.image_url}
+            alt={property.nom_bien}
+            className="h-44 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-44 w-full flex-col items-center justify-center gap-2 bg-primary/10 text-primary">
+            <MapPin className="h-8 w-8" />
+            <span className="text-xs font-medium">Photo du bien</span>
+          </div>
+        )}
+      </div>
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs uppercase tracking-[0.18em] text-primary">Dossier phare</p>
         <div className="flex items-center gap-2">
