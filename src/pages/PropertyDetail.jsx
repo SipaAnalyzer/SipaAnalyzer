@@ -12,6 +12,7 @@ import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
 import Projection5Ans from '../components/Projection5Ans';
 import FinancialTable from '../components/FinancialTable';
+import { createEmptyExcelProjections } from '../components/ExcelProjectionTables';
 import CommentSection from '../components/CommentSection';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
@@ -319,7 +320,7 @@ export default function PropertyDetail() {
                 />
               )}
               
-              <Projection5Ans analysis={displayedAnalysis} />
+              {analysisViewMode === 'simplified' && <Projection5Ans analysis={displayedAnalysis} />}
               <AnalysisHistory
                 property={property}
                 analyses={normalizedAnalyses}
@@ -443,6 +444,54 @@ function TechnicalAnalysisSnapshot({ analysis, draft, setDraft, canEditAnalysis,
       return { ...base, sipa_data: sipaData };
     });
   };
+  const updateSipaImportedCell = (entryIndex, valueIndex, field, value) => {
+    if (!canEdit) return;
+    setDraft((current) => {
+      const base = current || analysis;
+      const importedCursor = { current: -1 };
+      const sipaData = (base.sipa_data || []).map((entry) => {
+        if (entry._custom) return entry;
+        importedCursor.current += 1;
+        if (importedCursor.current !== entryIndex) return entry;
+        if (field === 'label') return { ...entry, label: value };
+
+        const values = (entry.values || []).map((item, index) =>
+          index === valueIndex ? { ...item, value } : item
+        );
+        return { ...entry, values };
+      });
+      return { ...base, sipa_data: sipaData };
+    });
+  };
+  const updateProjectionCell = (projectionKey, rowIndex, colIndex, value) => {
+    if (!canEdit) return;
+    setDraft((current) => {
+      const base = current || analysis;
+      const fallback = createEmptyExcelProjections()[projectionKey];
+      const projection = normalizeProjectionDraft(base[projectionKey], fallback);
+      const rows = projection.rows.map((row, index) =>
+        index === rowIndex
+          ? { ...row, values: row.values.map((cell, cellIndex) => (cellIndex === colIndex ? value : cell)) }
+          : row
+      );
+      return { ...base, [projectionKey]: { ...projection, rows } };
+    });
+  };
+  const updateProjectionAssumption = (projectionKey, key, value) => {
+    if (!canEdit) return;
+    setDraft((current) => {
+      const base = current || analysis;
+      const fallback = createEmptyExcelProjections()[projectionKey];
+      const projection = normalizeProjectionDraft(base[projectionKey], fallback);
+      return {
+        ...base,
+        [projectionKey]: {
+          ...projection,
+          assumptions: { ...(projection.assumptions || {}), [key]: value },
+        },
+      };
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -493,19 +542,19 @@ function TechnicalAnalysisSnapshot({ analysis, draft, setDraft, canEditAnalysis,
               <ExcelReadRow row={4} section="Acquisition" label="Amortissement sur 5 ans" amount={analysis.amortissement_5_ans} editable={canEdit} onAmountChange={(value) => updateDraftField('amortissement_5_ans', value)} />
               <ExcelReadRow row={5} section="Acquisition" label="Honoraires transaction SIPA" amount={analysis.honoraires_sipa} pct={percentOf(analysis.honoraires_sipa, analysis.prix_bien)} editable={canEdit} onAmountChange={(value) => updateDraftField('honoraires_sipa', value)} onPctChange={updatePctField('honoraires_sipa', 'honoraires_sipa_pct', analysis.prix_bien)} />
               <ExcelReadRow row={6} section="Acquisition" label="Frais de dossier bancaire" amount={analysis.frais_dossier_bancaire} editable={canEdit} onAmountChange={(value) => updateDraftField('frais_dossier_bancaire', value)} />
-              <ExcelComputedRow row={7} section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} formula="=SOMME(C2:C6)" strong />
+              <ExcelComputedRow row={7} section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
               <ExcelReadRow row={8} section="Financement" label="Fonds propres" amount={analysis.fonds_propres} editable={canEdit} onAmountChange={(value) => updateDraftField('fonds_propres', value)} />
               <ExcelReadRow row={9} section="Financement" label="Hypotheque" amount={analysis.hypotheque} pct={percentOf(analysis.hypotheque, prixTotal)} editable={canEdit} onAmountChange={(value) => updateDraftField('hypotheque', value)} onPctChange={updatePctField('hypotheque', 'hypotheque_pct', prixTotal)} />
               <ExcelReadRow row={10} section="Exploitation" label="Revenus locatifs hors charges" amount={analysis.revenus_locatifs} editable={canEdit} onAmountChange={(value) => updateDraftField('revenus_locatifs', value)} />
-              <ExcelComputedRow row={11} section="Exploitation" label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} formula="=C10/C7" />
+              <ExcelComputedRow row={11} section="Exploitation" label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} />
               <ExcelReadRow row={12} section="Exploitation" label="Charges operationnelles" amount={analysis.charges_operationnelles} editable={canEdit} onAmountChange={(value) => updateDraftField('charges_operationnelles', value)} />
               <ExcelReadRow row={13} section="Exploitation" label="Interet hypothecaire moyen 5 ans" amount={analysis.interets_hypothecaires} pct={percentOf(analysis.interets_hypothecaires, analysis.hypotheque)} editable={canEdit} onAmountChange={(value) => updateDraftField('interets_hypothecaires', value)} onPctChange={updatePctField('interets_hypothecaires', 'interets_hypothecaires_pct', analysis.hypotheque)} />
               <ExcelReadRow row={14} section="Exploitation" label="Honoraires de gestion" amount={analysis.gestion} pct={percentOf(analysis.gestion, analysis.revenus_locatifs)} editable={canEdit} onAmountChange={(value) => updateDraftField('gestion', value)} onPctChange={updatePctField('gestion', 'gestion_pct', analysis.revenus_locatifs)} />
-              <ExcelComputedRow row={15} section="Exploitation" label="Revenu net" value={formatCHF(analysis.revenu_net)} formula="=C10-C12-C13-C14" strong />
-              <ExcelComputedRow row={16} section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(analysis.rendement_net_fonds_propres)} formula="=E15/C8" />
+              <ExcelComputedRow row={15} section="Exploitation" label="Revenu net" value={formatCHF(analysis.revenu_net)} strong />
+              <ExcelComputedRow row={16} section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(analysis.rendement_net_fonds_propres)} />
               <ExcelReadRow row={17} section="Fiscalite" label="Impot" amount={analysis.impot} pct={percentOf(analysis.impot, analysis.revenu_net)} editable={canEdit} onAmountChange={(value) => updateDraftField('impot', value)} onPctChange={updatePctField('impot', 'impot_pct', analysis.revenu_net)} />
-              <ExcelComputedRow row={18} section="Distribution" label="Revenu distribue" value={formatCHF(analysis.revenu_distribue)} formula="=C15-C17" strong />
-              <ExcelComputedRow row={19} section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(analysis.revenu_distribue_fonds_propres)} formula="=E18/C8" />
+              <ExcelComputedRow row={18} section="Distribution" label="Revenu distribue" value={formatCHF(analysis.revenu_distribue)} strong />
+              <ExcelComputedRow row={19} section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(analysis.revenu_distribue_fonds_propres)} />
               {customFields.map((entry, index) => {
                 const amount = entry.values?.find((value) => value.type === 'amount');
                 const pct = entry.values?.find((value) => value.type === 'pct');
@@ -558,8 +607,27 @@ function TechnicalAnalysisSnapshot({ analysis, draft, setDraft, canEditAnalysis,
       </section>
 
       {analysis.sipa_data && analysis.sipa_data.filter((entry) => !entry._custom).length > 0 && (
-        <SipaImportedDataTable analysis={analysis} />
+        <ExcelSipaInvestmentSheet
+          analysis={analysis}
+          editable={canEdit}
+          onCellChange={updateSipaImportedCell}
+        />
       )}
+
+      <ExcelProjectionSheet
+        title="Projection exploitation"
+        projection={normalizeProjectionDraft(analysis.operating_projection, createEmptyExcelProjections().operating_projection)}
+        editable={canEdit}
+        onCellChange={(rowIndex, colIndex, value) => updateProjectionCell('operating_projection', rowIndex, colIndex, value)}
+      />
+
+      <ExcelProjectionSheet
+        title="Dette, valeur et rendement"
+        projection={normalizeProjectionDraft(analysis.capital_projection, createEmptyExcelProjections().capital_projection)}
+        editable={canEdit}
+        onCellChange={(rowIndex, colIndex, value) => updateProjectionCell('capital_projection', rowIndex, colIndex, value)}
+        onAssumptionChange={(key, value) => updateProjectionAssumption('capital_projection', key, value)}
+      />
     </div>
   );
 }
@@ -592,6 +660,148 @@ function SipaImportedDataTable({ analysis }) {
                 </td>
               </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange }) {
+  const rows = analysis.sipa_data.filter((entry) => !entry._custom);
+  const maxValues = Math.max(1, ...rows.map((entry) => entry.values?.length || 0));
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, maxValues + 1);
+
+  return (
+    <section className="bg-card rounded-xl border border-border p-4">
+      <h3 className="font-heading font-semibold mb-5">Investissement SIPA</h3>
+      <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
+        <table className="w-full min-w-[760px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
+          <thead>
+            <tr>
+              <ExcelCorner />
+              {letters.map((letter) => <ExcelColumnHeader key={letter}>{letter}</ExcelColumnHeader>)}
+            </tr>
+            <tr>
+              <ExcelRowNumber>1</ExcelRowNumber>
+              <ExcelHeaderCell>Rubrique</ExcelHeaderCell>
+              {Array.from({ length: maxValues }, (_, index) => (
+                <ExcelHeaderCell key={index} align="right">Valeur {index + 1}</ExcelHeaderCell>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((entry, rowIndex) => (
+              <tr key={`${entry.label}-${rowIndex}`} className="hover:bg-[#fff2cc]">
+                <ExcelRowNumber>{rowIndex + 2}</ExcelRowNumber>
+                <ExcelCell className={editable ? 'p-0' : ''}>
+                  {editable ? (
+                    <input
+                      type="text"
+                      value={entry.label || ''}
+                      onChange={(event) => onCellChange(rowIndex, null, 'label', event.target.value)}
+                      className="h-6 w-full bg-transparent px-2 text-black outline-none focus:bg-[#fff2cc]"
+                    />
+                  ) : (
+                    entry.label
+                  )}
+                </ExcelCell>
+                {Array.from({ length: maxValues }, (_, valueIndex) => {
+                  const value = entry.values?.[valueIndex];
+                  const isNumeric = value?.type === 'amount' || value?.type === 'pct' || typeof value?.value === 'number';
+                  return (
+                    <ExcelCell key={valueIndex} align={isNumeric ? 'right' : 'left'} className={editable && value ? 'p-0' : ''}>
+                      {editable && value ? (
+                        isNumeric ? (
+                          <ExcelNumberInput value={value.value} onChange={(next) => onCellChange(rowIndex, valueIndex, 'value', next)} />
+                        ) : (
+                          <input
+                            type="text"
+                            value={value.value ?? ''}
+                            onChange={(event) => onCellChange(rowIndex, valueIndex, 'value', event.target.value)}
+                            className="h-6 w-full bg-transparent px-2 text-black outline-none focus:bg-[#fff2cc]"
+                          />
+                        )
+                      ) : (
+                        value ? formatSipaValue(value) : ''
+                      )}
+                    </ExcelCell>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function ExcelProjectionSheet({ title, projection, editable, onCellChange, onAssumptionChange }) {
+  if (!projection?.rows?.length) return null;
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'].slice(0, projection.columns.length + 1);
+  const hasAssumptions = projection.assumptions && Object.keys(projection.assumptions).length > 0;
+
+  return (
+    <section className="bg-card rounded-xl border border-border p-4">
+      <h3 className="font-heading font-semibold mb-5">{title}</h3>
+      <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
+        <table className="w-full min-w-[860px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
+          <thead>
+            <tr>
+              <ExcelCorner />
+              {letters.map((letter) => <ExcelColumnHeader key={letter}>{letter}</ExcelColumnHeader>)}
+            </tr>
+            <tr>
+              <ExcelRowNumber>1</ExcelRowNumber>
+              <ExcelHeaderCell>Rubrique</ExcelHeaderCell>
+              {projection.columns.map((column) => (
+                <ExcelHeaderCell key={column} align="right">{column}</ExcelHeaderCell>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {projection.rows.map((row, rowIndex) => (
+              <tr key={row.key || row.label} className="hover:bg-[#fff2cc]">
+                <ExcelRowNumber>{rowIndex + 2}</ExcelRowNumber>
+                <ExcelCell>{row.label}</ExcelCell>
+                {projection.columns.map((column, colIndex) => (
+                  <ExcelCell key={`${row.key}-${column}`} align="right" className={editable ? 'p-0' : ''}>
+                    {editable ? (
+                      <ExcelNumberInput
+                        value={row.values?.[colIndex]}
+                        onChange={(value) => onCellChange(rowIndex, colIndex, value)}
+                      />
+                    ) : (
+                      formatProjectionValue(row.values?.[colIndex], row.type)
+                    )}
+                  </ExcelCell>
+                ))}
+              </tr>
+            ))}
+            {hasAssumptions && (
+              <>
+                <tr>
+                  <ExcelRowNumber>{projection.rows.length + 2}</ExcelRowNumber>
+                  <ExcelCell className="bg-[#e2f0d9] font-bold">Hypotheses</ExcelCell>
+                  {projection.columns.map((column) => <ExcelCell key={column} className="bg-[#e2f0d9]" />)}
+                </tr>
+                {Object.entries(projection.assumptions).map(([key, value], index) => (
+                  <tr key={key} className="hover:bg-[#fff2cc]">
+                    <ExcelRowNumber>{projection.rows.length + 3 + index}</ExcelRowNumber>
+                    <ExcelCell>{formatAssumptionLabel(key)}</ExcelCell>
+                    <ExcelCell align="right" className={editable ? 'p-0' : ''}>
+                      {editable ? (
+                        <ExcelNumberInput value={value} onChange={(next) => onAssumptionChange?.(key, next)} />
+                      ) : (
+                        formatProjectionValue(value, key.includes('yield') || key.includes('irr') || key.includes('increase') ? 'percent' : 'amount')
+                      )}
+                    </ExcelCell>
+                    {projection.columns.slice(1).map((column) => <ExcelCell key={column} />)}
+                  </tr>
+                ))}
+              </>
+            )}
           </tbody>
         </table>
       </div>
@@ -805,6 +1015,51 @@ function buildTechnicalAnalysisPayload(analysis) {
     score_global: analysis.score_global,
     note: analysis.note,
   };
+}
+
+function normalizeProjectionDraft(projection, fallback) {
+  const source = projection && typeof projection === 'object' ? projection : fallback;
+  const sourceRows = Array.isArray(source.rows) ? source.rows : [];
+
+  return {
+    ...fallback,
+    ...source,
+    columns: Array.isArray(source.columns) && source.columns.length ? source.columns : fallback.columns,
+    rows: fallback.rows.map((fallbackRow) => {
+      const existing = sourceRows.find((row) => row.key === fallbackRow.key || row.label === fallbackRow.label);
+      const values = Array.isArray(existing?.values) ? existing.values : [];
+      return {
+        ...fallbackRow,
+        ...existing,
+        values: Array.from(
+          { length: fallback.columns.length },
+          (_, index) => values[index] ?? null
+        ),
+      };
+    }),
+    assumptions: {
+      ...(fallback.assumptions || {}),
+      ...(source.assumptions || {}),
+    },
+  };
+}
+
+function formatProjectionValue(value, type) {
+  if (value === null || value === undefined || value === '') return '';
+  if (type === 'percent') return formatPercent(value);
+  return formatCHF(value);
+}
+
+function formatAssumptionLabel(key) {
+  const labels = {
+    price_increase: 'Price increase',
+    sales_price: 'Sales price',
+    exit_debt: 'Debt sortie',
+    net: 'Net',
+    irr: 'IRR',
+    average_dividend_yield: 'Dividend Yield moyen',
+  };
+  return labels[key] || key;
 }
 
 function percentOf(amount, base) {
