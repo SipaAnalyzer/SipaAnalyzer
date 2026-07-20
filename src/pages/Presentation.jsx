@@ -15,7 +15,9 @@ import {
   ExternalLink,
   Loader2,
   MapPin,
+  Navigation,
   Printer,
+  Sparkles,
   Trophy,
   Wallet,
 } from 'lucide-react';
@@ -81,7 +83,7 @@ function FitMapToProperties({ properties }) {
 
 function KpiTile({ icon: Icon, label, value, detail, clickable }) {
   return (
-    <div className={`bg-card rounded-lg border border-border p-4 min-h-[104px] ${clickable ? 'hover:border-primary/50 transition-colors cursor-pointer' : ''}`}>
+    <div className={`bg-card rounded-lg border border-border p-4 min-h-[104px] shadow-sm ${clickable ? 'hover:border-primary/50 hover:-translate-y-0.5 transition-all cursor-pointer' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs text-muted-foreground">{label}</p>
@@ -96,12 +98,52 @@ function KpiTile({ icon: Icon, label, value, detail, clickable }) {
   );
 }
 
+function HeroStat({ label, value, detail }) {
+  return (
+    <div className="border-l border-primary/30 pl-4">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="mt-1 font-heading text-2xl font-semibold text-foreground">{value}</p>
+      {detail && <p className="mt-1 text-xs text-muted-foreground">{detail}</p>}
+    </div>
+  );
+}
+
 function Metric({ label, value, highlight = false }) {
   return (
     <div>
       <p className="text-[10px] text-muted-foreground">{label}</p>
       <p className={`text-xs font-mono font-medium ${highlight ? 'text-primary' : ''}`}>{value}</p>
     </div>
+  );
+}
+
+function DealSpotlight({ property }) {
+  if (!property?.analysis) {
+    return (
+      <div className="rounded-lg border border-border bg-card p-5">
+        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Dossier phare</p>
+        <p className="mt-6 text-sm text-muted-foreground">Aucun bien valide avec analyse disponible.</p>
+      </div>
+    );
+  }
+
+  return (
+    <Link to={`/property/${property.id}`} className="group block rounded-lg border border-primary/25 bg-card p-5 shadow-sm transition-all hover:border-primary/60 hover:-translate-y-0.5">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs uppercase tracking-[0.18em] text-primary">Dossier phare</p>
+        <Trophy className="h-4 w-4 text-primary" />
+      </div>
+      <h2 className="mt-4 font-heading text-xl font-semibold group-hover:text-primary">{property.nom_bien}</h2>
+      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+        <MapPin className="h-3 w-3" />
+        {property.ville}{property.canton ? `, ${property.canton}` : ''}
+      </p>
+      <div className="mt-5 grid grid-cols-3 gap-3">
+        <Metric label="Score" value={`${property.analysis.score_global}/100`} highlight />
+        <Metric label="Rdt. net/FP" value={formatPercent(property.analysis.rendement_net_fonds_propres)} highlight />
+        <Metric label="Prix total" value={formatCHF(property.analysis.prix_total)} />
+      </div>
+    </Link>
   );
 }
 
@@ -235,8 +277,36 @@ export default function Presentation() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
+      <section className="rounded-lg border border-border bg-card p-5 shadow-sm md:p-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-md border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+              Selection presentation investisseur
+            </div>
+            <h1 className="font-display text-3xl font-bold tracking-tight md:text-5xl">
+              Portefeuille valide, opportunites visibles.
+            </h1>
+            <p className="mt-3 text-sm text-muted-foreground md:text-base">
+              Carte comite des biens valides avec pastille verte, classement par score et lecture rapide des rendements.
+            </p>
+          </div>
+          <Button variant="outline" className="w-full gap-2 self-start sm:w-auto xl:self-auto" onClick={() => window.print()}>
+            <Printer className="h-4 w-4" />
+            Exporter
+          </Button>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <HeroStat label="Biens sur la carte" value={withCoords.length} detail={`${greenValides.length} biens valides verts`} />
+          <HeroStat label="Dossiers en cours" value={enCours.length} detail={`${summary.withAnalysis} analyses disponibles`} />
+          <HeroStat label="Valeur analysee" value={formatCHF(summary.totalValue)} detail={`Fonds propres ${formatCHF(summary.totalEquity)}`} />
+          <HeroStat label="Rendement moyen" value={formatPercent(summary.avgNetEquityYield)} detail={`Brut ${formatPercent(summary.avgGrossYield)}`} />
+        </div>
+      </section>
+
+      <div className="hidden">
         <div>
           <h1 className="font-display text-2xl font-bold">Présentation</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -249,7 +319,7 @@ export default function Presentation() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="hidden">
         <KpiTile
           icon={MapPin}
           label="En cours d'analyse"
@@ -288,7 +358,18 @@ export default function Presentation() {
         )}
       </div>
 
-      <div className="map-container bg-card rounded-lg border border-border overflow-hidden" style={{ height: 'clamp(500px, 88vh, 850px)' }}>
+      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-heading font-semibold">Carte des biens retenus</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Uniquement les biens valides avec pastille verte</p>
+          </div>
+          <div className="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+            <Navigation className="h-3.5 w-3.5" />
+            Bassin lemanique
+          </div>
+        </div>
+        <div className="map-container" style={{ height: 'clamp(560px, 78vh, 920px)' }}>
         {withCoords.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
             <MapPin className="h-10 w-10" />
@@ -338,8 +419,12 @@ export default function Presentation() {
           </MapContainer>
         )}
       </div>
+      </section>
 
-      <div className="bg-card rounded-lg border border-border p-5">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[390px_minmax(0,1fr)]">
+        <DealSpotlight property={summary.best} />
+
+      <div className="bg-card rounded-lg border border-border p-5 shadow-sm">
         <div className="flex items-center justify-between gap-3 mb-4">
             <div>
               <h2 className="font-heading font-semibold text-sm">Top opportunités</h2>
@@ -385,6 +470,7 @@ export default function Presentation() {
             </div>
           )}
         </div>
+      </div>
 
       {withoutCoords.length > 0 && (
         <div className="bg-card rounded-lg border border-border p-5">
