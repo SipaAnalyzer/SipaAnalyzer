@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { supabase } from '@/api/supabaseClient';
-import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star, Sun, Moon, Bell } from 'lucide-react';
+import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star, Sun, Moon, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import { listAuditLogs } from '@/utils/auditLogs';
 import { filterHiddenAlerts, readHiddenAlertIds } from '@/utils/alertVisibility';
 
 const SEEN_ALERTS_KEY = 'sipa_seen_alert_ids';
+const SIDEBAR_COLLAPSED_KEY = 'sipa_sidebar_collapsed';
 const NAV_ALERT_QUERY_OPTIONS = {
   staleTime: 0,
   refetchInterval: 30000,
@@ -35,6 +36,16 @@ function readSeenAlertIds() {
 function writeSeenAlertIds(ids) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(SEEN_ALERTS_KEY, JSON.stringify(ids.slice(0, 250)));
+}
+
+function readSidebarCollapsed() {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
+}
+
+function writeSidebarCollapsed(value) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(value));
 }
 
 const LogoSipaCrochet = () => (
@@ -56,7 +67,7 @@ const navItems = [
   { path: '/presentation', label: 'Présentation', icon: Presentation },
 ];
 
-function SidebarContent({ location, user, onNavigate }) {
+function SidebarContent({ location, user, onNavigate, collapsed = false, onToggleCollapse }) {
   const { permissions, isAdmin } = usePermissions();
   const { theme, setTheme } = useTheme();
   const [seenAlertIds, setSeenAlertIds] = useState(readSeenAlertIds);
@@ -143,17 +154,32 @@ function SidebarContent({ location, user, onNavigate }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-6 pb-4">
+      <div className={`p-4 pb-3 ${collapsed ? 'px-2' : 'px-6'}`}>
         <div className="flex items-center justify-center">
           <LogoSipaCrochet />
         </div>
+        {onToggleCollapse && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="mt-3 hidden h-8 w-full items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground lg:flex"
+            title={collapsed ? 'Afficher le menu' : 'Reduire le menu'}
+            aria-label={collapsed ? 'Afficher le menu' : 'Reduire le menu'}
+          >
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
+        )}
       </div>
 
       {(isAdmin || permissions.can_create_analysis) && (
         <div className="px-3 mb-4">
           <Link to="/new-analysis" onClick={onNavigate}>
-            <Button className="w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground" size="sm">
-              <Plus className="h-4 w-4" /> Nouvelle analyse
+            <Button
+              className={`w-full gap-2 bg-primary hover:bg-primary/90 text-primary-foreground ${collapsed ? 'px-0' : ''}`}
+              size="sm"
+              title="Nouvelle analyse"
+            >
+              <Plus className="h-4 w-4 shrink-0" /> {!collapsed && 'Nouvelle analyse'}
             </Button>
           </Link>
         </div>
@@ -165,14 +191,15 @@ function SidebarContent({ location, user, onNavigate }) {
             key={item.path}
             to={item.path}
             onClick={onNavigate}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${
+            title={collapsed ? item.label : undefined}
+            className={`flex items-center ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-lg text-sm transition-all duration-200 ${
               location.pathname === item.path
                 ? 'bg-sidebar-accent text-primary font-medium'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground'
             }`}
           >
-            <item.icon className="h-4 w-4" />
-            {item.label}
+            <item.icon className="h-4 w-4 shrink-0" />
+            {!collapsed && item.label}
           </Link>
         ))}
 
@@ -182,16 +209,17 @@ function SidebarContent({ location, user, onNavigate }) {
             markAlertsSeen();
             onNavigate?.();
           }}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${
+          title={collapsed ? 'Alertes' : undefined}
+          className={`relative flex items-center ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-lg text-sm transition-all duration-200 ${
             location.pathname === '/alerts'
               ? 'bg-sidebar-accent text-primary font-medium'
               : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground'
           }`}
         >
-          <Bell className="h-4 w-4" />
-          <span className="flex-1">Alertes</span>
+          <Bell className="h-4 w-4 shrink-0" />
+          {!collapsed && <span className="flex-1">Alertes</span>}
           {unseenAlertCount > 0 && (
-            <span className="ml-auto inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold leading-none text-white">
+            <span className={`${collapsed ? 'absolute right-1 top-1' : 'ml-auto'} inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold leading-none text-white`}>
               {unseenAlertCount > 9 ? '9+' : unseenAlertCount}
             </span>
           )}
@@ -201,45 +229,48 @@ function SidebarContent({ location, user, onNavigate }) {
           <Link
             to="/admin"
             onClick={onNavigate}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${
+            title={collapsed ? 'Administration' : undefined}
+            className={`flex items-center ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'} py-2.5 rounded-lg text-sm transition-all duration-200 ${
               location.pathname === '/admin'
                 ? 'bg-sidebar-accent text-primary font-medium'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground'
             }`}
           >
-            <Shield className="h-4 w-4" />
-            Administration
+            <Shield className="h-4 w-4 shrink-0" />
+            {!collapsed && 'Administration'}
           </Link>
         )}
       </nav>
 
-      <div className="p-4 border-t border-sidebar-border space-y-2">
-        <div className="flex items-center gap-3 mb-3">
+      <div className={`${collapsed ? 'p-2' : 'p-4'} border-t border-sidebar-border space-y-2`}>
+        <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} mb-3`}>
           <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
             {user?.email?.[0]?.toUpperCase() || 'U'}
           </div>
 
-          <div className="flex-1 min-w-0">
+          {!collapsed && <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate text-foreground">
               {user?.email || 'Utilisateur'}
             </p>
             <p className="text-xs text-muted-foreground">
               {isAdmin ? 'Administrateur' : 'Utilisateur'}
             </p>
-          </div>
+          </div>}
         </div>
 
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground w-full px-2 py-1.5 rounded transition-colors"
+          className={`flex items-center ${collapsed ? 'justify-center px-0 text-[0px] [&>svg]:h-3.5 [&>svg]:w-3.5' : 'gap-2 px-2 text-xs'} text-muted-foreground hover:text-foreground w-full py-1.5 rounded transition-colors`}
+          title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
         >
           {theme === 'dark' ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-          {theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
+          {!collapsed && (theme === 'dark' ? 'Mode clair' : 'Mode sombre')}
         </button>
 
         <button
           onClick={() => base44.auth.logout()}
-          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground w-full px-2 py-1.5 rounded transition-colors"
+          className={`flex items-center ${collapsed ? 'justify-center px-0 text-[0px] [&>svg]:h-3.5 [&>svg]:w-3.5' : 'gap-2 px-2 text-xs'} text-muted-foreground hover:text-foreground w-full py-1.5 rounded transition-colors`}
+          title="Deconnexion"
         >
           <LogOut className="h-3.5 w-3.5" /> Déconnexion
         </button>
@@ -253,6 +284,15 @@ export default function Layout() {
   const { user } = useAuth();
   const { isLoading, hasAssignedRole } = usePermissions();
   const [open, setOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
+
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed((current) => {
+      const next = !current;
+      writeSidebarCollapsed(next);
+      return next;
+    });
+  };
 
   if (isLoading) {
     return (
@@ -268,8 +308,14 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen bg-transparent overflow-hidden relative z-10">
-      <aside className="hidden lg:flex w-64 border-r border-border bg-sidebar flex-col flex-shrink-0">
-        <SidebarContent location={location} user={user} onNavigate={() => {}} />
+      <aside className={`hidden lg:flex ${sidebarCollapsed ? 'w-16' : 'w-64'} border-r border-border bg-sidebar flex-col flex-shrink-0 transition-[width] duration-300`}>
+        <SidebarContent
+          location={location}
+          user={user}
+          onNavigate={() => {}}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={toggleSidebarCollapsed}
+        />
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
