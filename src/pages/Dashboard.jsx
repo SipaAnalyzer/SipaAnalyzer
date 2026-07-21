@@ -5,7 +5,7 @@ import TopOpportunities from '../components/TopOpportunities';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
-import { isActivePropertyStatus, isFinalizedPropertyStatus, normalizeAnalysis } from '../utils/calculations';
+import { WORKFLOW_STATUSES, isActivePropertyStatus, isFinalizedPropertyStatus, normalizeAnalysis } from '../utils/calculations';
 
 export default function Dashboard() {
   const { data: analyses = [], isLoading: la } = useQuery({
@@ -35,9 +35,10 @@ const { data: properties = [], isLoading: lp } = useQuery({
   );
 
   const total = properties.length;
-  const enCours = properties.filter(p => isActivePropertyStatus(p.statut)).length;
-  const valides = properties.filter(p => isFinalizedPropertyStatus(p.statut)).length;
-  const abandonnes = properties.filter(p => p.statut === 'abandonne').length;
+  const statusCounts = WORKFLOW_STATUSES.reduce((acc, status) => {
+    acc[status.value] = properties.filter(p => p.statut === status.value).length;
+    return acc;
+  }, {});
 
   const latestPerProperty = Object.values(
     analyses.reduce((acc, a) => {
@@ -72,7 +73,7 @@ const { data: properties = [], isLoading: lp } = useQuery({
         </Link>
       </div>
 
-      <KPICards total={total} enCours={enCours} valides={valides} abandonnes={abandonnes} />
+      <KPICards total={total} statusCounts={statusCounts} />
 
       <TopOpportunities items={top5} />
     </div>
