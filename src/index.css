@@ -137,15 +137,20 @@
     box-shadow: 0 0 22px hsl(var(--primary) / 0.16);
   }
 
+  .sipa-card-motion.sipa-dashboard-card::after {
+    display: none;
+  }
+
   .sipa-card-waves {
     position: absolute;
-    right: -1px;
-    bottom: -1px;
-    left: -1px;
-    height: 54px;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 62px;
     pointer-events: none;
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(22px);
     transition: opacity 220ms ease, transform 260ms ease;
     color: hsl(var(--primary));
     z-index: 0;
