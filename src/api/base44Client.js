@@ -195,6 +195,27 @@ const buildAuditChanges = (table, before = {}, after = {}, submitted = {}) => {
     );
 };
 
+const buildSaronAuditContext = (table, after = {}, changes = []) => {
+  if (table !== TABLES.Analysis) return null;
+
+  const bankAType = String(after?.banque_a_type_taux || "").toLowerCase();
+  const bankBType = String(after?.banque_b_type_taux || "").toLowerCase();
+  const hasSaronRateType = [bankAType, bankBType].some((type) =>
+    ["saron", "mixte"].includes(type)
+  );
+  const hasSaronFieldChange = changes.some((change) =>
+    String(change.field || "").toLowerCase().includes("saron")
+  );
+
+  return {
+    is_saron_related: hasSaronRateType || hasSaronFieldChange,
+    banque_a_type_taux: after?.banque_a_type_taux || null,
+    banque_a_marge_saron: after?.banque_a_marge_saron ?? null,
+    banque_b_type_taux: after?.banque_b_type_taux || null,
+    banque_b_marge_saron: after?.banque_b_marge_saron ?? null,
+  };
+};
+
 const recordAuditChanges = async ({ table, id, before, after, submitted }) => {
   const changes = buildAuditChanges(table, before, after, submitted);
   if (changes.length === 0) return;
@@ -213,6 +234,10 @@ const recordAuditChanges = async ({ table, id, before, after, submitted }) => {
     actor_name: user?.user_metadata?.full_name || user?.email || "Utilisateur",
     changes,
   };
+  const saronContext = buildSaronAuditContext(table, after, changes);
+  if (saronContext) {
+    payload.saron_context = saronContext;
+  }
 
   const commentPayload = {
     property_id: propertyId,

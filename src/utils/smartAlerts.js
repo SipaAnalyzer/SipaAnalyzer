@@ -137,6 +137,8 @@ function buildPriceDrop(changes) {
 
 function hasSaronSignal(log, changes) {
   const metadata = log.metadata || {};
+  if (metadata.saron_context?.is_saron_related) return true;
+
   const metadataText = JSON.stringify(metadata).toLowerCase();
 
   return metadataText.includes('saron') ||
