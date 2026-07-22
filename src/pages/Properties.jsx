@@ -30,7 +30,7 @@ const SORT_OPTIONS = [
 ];
 
 function getPropertyAccentColor(couleur) {
-  if (couleur === 'rouge') return '#ef4444';
+  if (couleur === 'rouge') return '#dc2626';
   if (couleur === 'orange') return '#f97316';
   if (couleur === 'vert') return '#22c55e';
   return 'hsl(var(--primary))';
