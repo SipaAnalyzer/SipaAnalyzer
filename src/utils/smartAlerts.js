@@ -37,14 +37,14 @@ export function buildSmartAlerts({ auditLogs = [], comments = [] } = {}) {
       return;
     }
 
-    const saronPriceDrop = getSaronPriceDrop(log);
-    if (saronPriceDrop) {
+    const priceDrop = getPriceDropAlert(log);
+    if (priceDrop) {
       alerts.push({
-        id: `saron-price-drop-${log.id || log.created_at}`,
+        id: `price-drop-${log.id || log.created_at}`,
         severity: 'warning',
-        category: 'SARON',
-        title: 'Prix en baisse après actualisation SARON',
-        description: `${log.target_label || 'Un bien'} passe de ${formatCHF(saronPriceDrop.before)} à ${formatCHF(saronPriceDrop.after)} (${formatDelta(saronPriceDrop.deltaPct)}).`,
+        category: priceDrop.isSaronRelated ? 'SARON' : 'Prix',
+        title: priceDrop.isSaronRelated ? 'Prix en baisse après actualisation SARON' : 'Prix en baisse',
+        description: `${log.target_label || 'Un bien'} passe de ${formatCHF(priceDrop.before)} à ${formatCHF(priceDrop.after)} (${formatDelta(priceDrop.deltaPct)}).`,
         link: metadata.property_id ? `/property/${metadata.property_id}` : undefined,
       });
     }
@@ -55,27 +55,20 @@ export function buildSmartAlerts({ auditLogs = [], comments = [] } = {}) {
     .slice(0, 12);
 }
 
-function getSaronPriceDrop(log) {
+function getPriceDropAlert(log) {
   if (log.event_type !== 'analysis_update') return null;
 
   const metadata = log.metadata || {};
   const changes = Array.isArray(metadata.changes) ? metadata.changes : [];
-  if (!changes.length || !hasSaronSignal(log, changes)) return null;
+  if (!changes.length) return null;
 
-  return changes
-    .map((change) => ({
-      ...change,
-      beforeNumber: toNumber(change.before),
-      afterNumber: toNumber(change.after),
-    }))
-    .find((change) =>
-      PRICE_FIELDS.has(change.field) &&
-      Number.isFinite(change.beforeNumber) &&
-      Number.isFinite(change.afterNumber) &&
-      change.afterNumber < change.beforeNumber
-    )
-    ? buildPriceDrop(changes)
-    : null;
+  const priceDrop = buildPriceDrop(changes);
+  if (!priceDrop) return null;
+
+  return {
+    ...priceDrop,
+    isSaronRelated: hasSaronSignal(log, changes),
+  };
 }
 
 function normalizeAuditLog(log) {
