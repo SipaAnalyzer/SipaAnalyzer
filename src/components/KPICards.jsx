@@ -60,7 +60,6 @@ export default function KPICards({
           >
             <div className="sipa-card-waves" aria-hidden="true">
               <svg
-                className="waves"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 24 150 28"
                 preserveAspectRatio="none"
@@ -73,10 +72,10 @@ export default function KPICards({
                   />
                 </defs>
                 <g className="parallax">
-                  <use href={`#${waveId}`} x="48" y="0" fill="currentColor" opacity="0.72" />
-                  <use href={`#${waveId}`} x="48" y="3" fill="currentColor" opacity="0.50" />
-                  <use href={`#${waveId}`} x="48" y="5" fill="currentColor" opacity="0.32" />
-                  <use href={`#${waveId}`} x="48" y="7" fill="currentColor" opacity="0.18" />
+                  <use href={`#${waveId}`} x="48" y="0" fill="currentColor" opacity="0.30" />
+                  <use href={`#${waveId}`} x="48" y="3" fill="currentColor" opacity="0.22" />
+                  <use href={`#${waveId}`} x="48" y="5" fill="currentColor" opacity="0.15" />
+                  <use href={`#${waveId}`} x="48" y="7" fill="currentColor" opacity="0.10" />
                 </g>
               </svg>
             </div>
