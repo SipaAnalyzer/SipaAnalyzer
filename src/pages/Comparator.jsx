@@ -76,7 +76,7 @@ export default function Comparator() {
 
       return {
         ...property,
-        analysis: normalizeAnalysis(latest, property.ville),
+        analysis: normalizeAnalysis(latest, property),
       };
     });
   }, [properties, analyses]);
@@ -96,7 +96,13 @@ export default function Comparator() {
   const getEffectiveAnalysis = (property) => {
     const base = property.analysis ? { ...property.analysis } : {};
     const ovr = overrides[property.id];
-    const merged = { ...base, ...ovr, ville: property.ville };
+    const merged = {
+      ...base,
+      ...ovr,
+      ville: property.ville,
+      canton: property.canton,
+      surface: property.surface,
+    };
     return { ...merged, ...calculateAnalysis(merged) };
   };
 

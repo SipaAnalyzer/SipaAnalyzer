@@ -52,7 +52,7 @@ const { data: properties = [], isLoading: lp } = useQuery({
   const enriched = latestPerProperty
     .map(a => {
       const prop = properties.find(p => p.id === a.property_id);
-      return { ...normalizeAnalysis(a, prop?.ville), property: prop };
+      return { ...normalizeAnalysis(a, prop), property: prop };
     })
     .filter(a => a.property);
 

@@ -1147,6 +1147,8 @@ function normalizeAnalysisDraft(draft, property) {
   const calc = calculateAnalysis({
     ...draft,
     ville: property?.ville,
+    canton: property?.canton,
+    surface: property?.surface,
     annee_construction: property?.annee_construction,
   });
 

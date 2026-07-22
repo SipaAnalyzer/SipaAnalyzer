@@ -28,7 +28,7 @@ export default function ViewAnalysis() {
     enabled: !!analysisRaw?.property_id,
   });
 
-  const analysis = normalizeAnalysis(analysisRaw, property?.ville);
+  const analysis = normalizeAnalysis(analysisRaw, property);
 
   if (isLoading) {
     return (

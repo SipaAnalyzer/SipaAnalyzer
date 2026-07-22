@@ -16,13 +16,74 @@ const LOCATION_SCORES = {
   'Sainte-Croix': 7, 'Ste-Croix': 7,
 };
 
-function getLocationScore(ville) {
+// Market price/m2 benchmarks are indicative public 2026 values from RealAdvisor/Acheteur/Homegate.
+const MARKET_PRICE_M2_BENCHMARKS = {
+  lausanne: { priceM2: 11567, score: 15 },
+  'yverdon-les-bains': { priceM2: 7785, score: 12 },
+  yverdon: { priceM2: 7785, score: 12 },
+  boudry: { priceM2: 6763, score: 10 },
+};
+
+const REGIONAL_MARKET_BENCHMARKS = {
+  Vaud: { priceM2: 8500, score: 11 },
+  Neuchatel: { priceM2: 6900, score: 10 },
+  'Neuchâtel': { priceM2: 6900, score: 10 },
+  Valais: { priceM2: 6200, score: 9 },
+  Fribourg: { priceM2: 6500, score: 9 },
+  Geneve: { priceM2: 12500, score: 13 },
+  Genève: { priceM2: 12500, score: 13 },
+};
+
+function normalizeLocationName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function getLegacyLocationScore(ville) {
   if (!ville) return 5;
-  const normalized = ville.trim().toLowerCase();
+  const normalized = normalizeLocationName(ville);
   for (const [city, score] of Object.entries(LOCATION_SCORES)) {
-    if (city.toLowerCase() === normalized) return score;
+    if (normalizeLocationName(city) === normalized) return score;
   }
   return 5;
+}
+
+function getMarketBenchmark(ville, canton) {
+  const cityKey = normalizeLocationName(ville);
+  if (MARKET_PRICE_M2_BENCHMARKS[cityKey]) return MARKET_PRICE_M2_BENCHMARKS[cityKey];
+
+  const cantonKey = Object.keys(REGIONAL_MARKET_BENCHMARKS).find(
+    (key) => normalizeLocationName(key) === normalizeLocationName(canton)
+  );
+  return cantonKey ? REGIONAL_MARKET_BENCHMARKS[cantonKey] : null;
+}
+
+function getPriceM2ScoreAdjustment(priceM2, benchmarkPriceM2) {
+  if (!priceM2 || !benchmarkPriceM2) return 0;
+
+  const ratio = priceM2 / benchmarkPriceM2;
+  if (ratio <= 0.75) return 3;
+  if (ratio <= 0.9) return 2;
+  if (ratio <= 1.05) return 1;
+  if (ratio <= 1.2) return 0;
+  if (ratio <= 1.35) return -1;
+  return -2;
+}
+
+function getLocationScore(data) {
+  const ville = typeof data === 'string' ? data : data?.ville;
+  const canton = typeof data === 'string' ? null : data?.canton;
+  const prixBien = Number(typeof data === 'string' ? 0 : data?.prix_bien || 0);
+  const surface = Number(typeof data === 'string' ? 0 : data?.surface || 0);
+  const benchmark = getMarketBenchmark(ville, canton);
+  const baseScore = benchmark?.score ?? getLegacyLocationScore(ville);
+  const priceM2 = prixBien > 0 && surface > 0 ? prixBien / surface : 0;
+  const priceAdjustment = getPriceM2ScoreAdjustment(priceM2, benchmark?.priceM2);
+
+  return Math.min(Math.max(baseScore + priceAdjustment, 1), 15);
 }
 
 export function calculateAnalysis(data) {
@@ -51,7 +112,7 @@ export function calculateAnalysis(data) {
     ? rendementBrut / 4 * 60
     : 60 + (rendementBrut - 4) / 4 * 25;
   const scoreRendementNetFP = Math.min(Math.max(rendementNetFP / 15 * 5, 0), 5);
-  const scoreEmplacement = getLocationScore(data.ville);
+  const scoreEmplacement = getLocationScore(data);
   const scoreEtat = valEtat(data.etat_batiment);
 
   let scoreGlobal = Math.min(round2(
@@ -86,15 +147,23 @@ function round2(v) { return Math.round(v * 100) / 100; }
 
 export function normalizeAnalysis(analysis, ville) {
   if (!analysis) return analysis;
+  const context = typeof ville === 'string'
+    ? { ville }
+    : {
+      ville: ville?.ville,
+      canton: ville?.canton,
+      surface: ville?.surface,
+      annee_construction: ville?.annee_construction,
+    };
+
   return {
     ...analysis,
-    ...calculateAnalysis(ville ? { ...analysis, ville } : analysis),
+    ...calculateAnalysis(ville ? { ...analysis, ...context } : analysis),
   };
 }
 
 export function normalizeAnalyses(analyses = [], property) {
-  const ville = property?.ville;
-  return analyses.map((a) => normalizeAnalysis(a, ville));
+  return analyses.map((a) => normalizeAnalysis(a, property));
 }
 
 export function formatCHF(amount) {

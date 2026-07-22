@@ -231,6 +231,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const calc = useMemo(() => calculateAnalysis({
     ...form,
     ville: selectedProperty?.ville,
+    canton: selectedProperty?.canton,
+    surface: selectedProperty?.surface,
     annee_construction: selectedProperty?.annee_construction,
   }), [form, selectedProperty]);
 
