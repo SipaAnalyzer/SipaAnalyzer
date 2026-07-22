@@ -73,17 +73,34 @@ function getPriceM2ScoreAdjustment(priceM2, benchmarkPriceM2) {
   return -2;
 }
 
+export function getMarketPriceM2Comparison(data = {}) {
+  const ville = data?.ville;
+  const canton = data?.canton;
+  const prixBien = Number(data?.prix_bien || 0);
+  const surface = Number(data?.surface || 0);
+  const benchmark = getMarketBenchmark(ville, canton);
+  const priceM2 = prixBien > 0 && surface > 0 ? prixBien / surface : 0;
+  const adjustment = getPriceM2ScoreAdjustment(priceM2, benchmark?.priceM2);
+
+  return {
+    priceM2: priceM2 ? Math.round(priceM2) : null,
+    benchmarkPriceM2: benchmark?.priceM2 || null,
+    benchmarkScore: benchmark?.score || null,
+    adjustment,
+    deltaPct: priceM2 && benchmark?.priceM2 ? round2(((priceM2 / benchmark.priceM2) - 1) * 100) : null,
+    hasBenchmark: Boolean(benchmark),
+    hasSurface: surface > 0,
+  };
+}
+
 function getLocationScore(data) {
   const ville = typeof data === 'string' ? data : data?.ville;
   const canton = typeof data === 'string' ? null : data?.canton;
-  const prixBien = Number(typeof data === 'string' ? 0 : data?.prix_bien || 0);
-  const surface = Number(typeof data === 'string' ? 0 : data?.surface || 0);
+  const comparison = getMarketPriceM2Comparison(data);
   const benchmark = getMarketBenchmark(ville, canton);
   const baseScore = benchmark?.score ?? getLegacyLocationScore(ville);
-  const priceM2 = prixBien > 0 && surface > 0 ? prixBien / surface : 0;
-  const priceAdjustment = getPriceM2ScoreAdjustment(priceM2, benchmark?.priceM2);
 
-  return Math.min(Math.max(baseScore + priceAdjustment, 1), 15);
+  return Math.min(Math.max(baseScore + comparison.adjustment, 1), 15);
 }
 
 export function calculateAnalysis(data) {
@@ -114,6 +131,7 @@ export function calculateAnalysis(data) {
   const scoreRendementNetFP = Math.min(Math.max(rendementNetFP / 15 * 5, 0), 5);
   const scoreEmplacement = getLocationScore(data);
   const scoreEtat = valEtat(data.etat_batiment);
+  const marketPriceM2 = getMarketPriceM2Comparison(data);
 
   let scoreGlobal = Math.min(round2(
     Math.min(scoreRendementBrut, 85) + scoreRendementNetFP + scoreEmplacement + scoreEtat
@@ -139,6 +157,10 @@ export function calculateAnalysis(data) {
     score_global: scoreGlobal,
     score_emplacement: scoreEmplacement,
     score_etat: scoreEtat,
+    prix_m2_bien: marketPriceM2.priceM2,
+    prix_m2_marche: marketPriceM2.benchmarkPriceM2,
+    ecart_prix_m2_marche: marketPriceM2.deltaPct,
+    impact_score_prix_m2: marketPriceM2.adjustment,
     note,
   };
 }

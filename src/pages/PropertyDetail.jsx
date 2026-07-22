@@ -1163,6 +1163,10 @@ function normalizeAnalysisDraft(draft, property) {
     score_global: calc.score_global,
     note: calc.note,
     score_emplacement: calc.score_emplacement,
+    prix_m2_bien: calc.prix_m2_bien,
+    prix_m2_marche: calc.prix_m2_marche,
+    ecart_prix_m2_marche: calc.ecart_prix_m2_marche,
+    impact_score_prix_m2: calc.impact_score_prix_m2,
   };
 }
 
@@ -1434,6 +1438,18 @@ function AnalysisSummary({ property, selected, selectedAnalysisId, canEdit, isUp
           <MetricCard label="Rdt. brut" value={formatPercent(selected.rendement_brut)} />
           <MetricCard label="Rdt. net / FP" value={formatPercent(selected.rendement_net_fonds_propres)} highlight />
           <MetricCard label="Rdt. dist. / FP" value={formatPercent(selected.revenu_distribue_fonds_propres)} highlight />
+          <MetricCard label="Prix / m²" value={selected.prix_m2_bien ? formatCHF(selected.prix_m2_bien) : 'Surface manquante'} />
+          <MetricCard label="Marché zone" value={selected.prix_m2_marche ? formatCHF(selected.prix_m2_marche) : 'Référence indisponible'} />
+          <MetricCard
+            label="Écart marché"
+            value={selected.ecart_prix_m2_marche != null ? `${selected.ecart_prix_m2_marche > 0 ? '+' : ''}${selected.ecart_prix_m2_marche}%` : 'N/A'}
+            highlight={selected.ecart_prix_m2_marche != null && selected.ecart_prix_m2_marche <= 0}
+          />
+          <MetricCard
+            label="Impact zone"
+            value={`${selected.impact_score_prix_m2 > 0 ? '+' : ''}${selected.impact_score_prix_m2 || 0} pt`}
+            highlight={selected.impact_score_prix_m2 > 0}
+          />
         </div>
       </div>
     </div>

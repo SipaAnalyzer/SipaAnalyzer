@@ -978,6 +978,18 @@ Courtier : UBS, Valérie Zuber"
             <Metric label="Rdt. distribué / FP" value={formatPercent(calc.revenu_distribue_fonds_propres)} highlight />
             <Metric label="Rendement brut" value={formatPercent(calc.rendement_brut)} />
             <Metric label="Score" value={`${calc.score_global}/100`} />
+            <Metric label="Prix / m²" value={calc.prix_m2_bien ? formatCHF(calc.prix_m2_bien) : 'Surface manquante'} />
+            <Metric label="Marché zone" value={calc.prix_m2_marche ? formatCHF(calc.prix_m2_marche) : 'Référence indisponible'} />
+            <Metric
+              label="Écart marché"
+              value={calc.ecart_prix_m2_marche != null ? `${calc.ecart_prix_m2_marche > 0 ? '+' : ''}${calc.ecart_prix_m2_marche}%` : 'N/A'}
+              highlight={calc.ecart_prix_m2_marche != null && calc.ecart_prix_m2_marche <= 0}
+            />
+            <Metric
+              label="Impact zone"
+              value={`${calc.impact_score_prix_m2 > 0 ? '+' : ''}${calc.impact_score_prix_m2 || 0} pt`}
+              highlight={calc.impact_score_prix_m2 > 0}
+            />
           </div>
         </div>
       </section>
