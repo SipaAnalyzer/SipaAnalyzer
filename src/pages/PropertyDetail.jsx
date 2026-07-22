@@ -1382,15 +1382,11 @@ function PropertyPresentation({ property, latest, comments, updateCouleur }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <MetricCard label="Prix total" value={formatCHF(latest.prix_total)} />
-              <MetricCard label="Rdt. brut" value={formatPercent(latest.rendement_brut)} />
-              <MetricCard label="Revenu net" value={formatCHF(latest.revenu_net)} />
-              <MetricCard label="Revenu distribué" value={formatCHF(latest.revenu_distribue)} />
-              <MetricCard label="Rdt. net / FP" value={formatPercent(latest.rendement_net_fonds_propres)} highlight />
-              {property.ville && latest.etat_batiment && (
-                <MetricCard label="Localisation / État" value={`${property.ville} (${latest.score_emplacement ?? '?'}/15) / ${latest.etat_batiment}`} />
-              )}
+              <MetricCard label="Rdt. distribue / FP" value={formatPercent(latest.revenu_distribue_fonds_propres)} highlight />
+              <MetricCard label="Prix d'achat" value={formatCHF(latest.prix_bien)} />
+              <MetricCard label="SIPA total income" value={formatCHF(getSipaTotalIncome(latest))} highlight emphasis />
             </div>
 
             <div className="mt-6 pt-5 border-t border-border">
