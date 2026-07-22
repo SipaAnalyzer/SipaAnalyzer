@@ -136,6 +136,58 @@
     transform: translateY(-1px);
     box-shadow: 0 0 22px hsl(var(--primary) / 0.16);
   }
+
+  .sipa-dashboard-card::before {
+    content: '';
+    position: absolute;
+    right: -42px;
+    bottom: -46px;
+    width: 138px;
+    height: 138px;
+    border-radius: 999px;
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0.78);
+    background:
+      radial-gradient(circle at 52% 50%, hsl(var(--primary) / 0.32) 0 3px, transparent 4px),
+      radial-gradient(circle at 48% 50%, transparent 0 18px, hsl(var(--primary) / 0.18) 19px 21px, transparent 22px),
+      conic-gradient(
+        from 30deg,
+        transparent 0deg,
+        hsl(var(--primary) / 0.28) 32deg,
+        transparent 58deg,
+        hsl(var(--primary) / 0.18) 126deg,
+        transparent 160deg,
+        hsl(var(--primary) / 0.24) 238deg,
+        transparent 290deg,
+        hsl(var(--primary) / 0.16) 330deg,
+        transparent 360deg
+      );
+    filter: blur(0.2px);
+    transition: opacity 220ms ease, transform 220ms ease;
+  }
+
+  .sipa-dashboard-card:hover::before {
+    opacity: 1;
+    transform: scale(1);
+    animation: sipa-plasma-pulse 2.8s ease-in-out infinite;
+  }
+
+  .sipa-dashboard-card > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+@keyframes sipa-plasma-pulse {
+  0%, 100% {
+    filter: hue-rotate(0deg) blur(0.2px);
+    rotate: 0deg;
+  }
+  50% {
+    filter: hue-rotate(12deg) blur(0.4px);
+    rotate: 16deg;
+  }
 }
 
 /* Background animé - pattern CodePen adapté */
