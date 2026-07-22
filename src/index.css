@@ -137,55 +137,53 @@
     box-shadow: 0 0 22px hsl(var(--primary) / 0.16);
   }
 
-  .sipa-dashboard-card::before {
-    content: '';
+  .sipa-card-waves {
     position: absolute;
-    right: -34px;
-    bottom: -52px;
-    width: 154px;
-    height: 118px;
-    border-radius: 48% 52% 42% 58% / 58% 44% 56% 42%;
+    right: -1px;
+    bottom: -1px;
+    left: -1px;
+    height: 54px;
     pointer-events: none;
     opacity: 0;
-    transform: translateY(14px) scale(0.84);
-    background:
-      radial-gradient(circle at 24% 32%, hsl(var(--primary) / 0.42) 0 6px, transparent 7px),
-      radial-gradient(circle at 58% 22%, hsl(var(--primary) / 0.30) 0 4px, transparent 5px),
-      radial-gradient(circle at 74% 54%, hsl(var(--primary) / 0.24) 0 7px, transparent 8px),
-      radial-gradient(ellipse at 48% 64%, hsl(var(--primary) / 0.22) 0 34%, transparent 66%),
-      linear-gradient(135deg, hsl(var(--primary) / 0.05), hsl(var(--primary) / 0.22));
-    filter: blur(0.15px);
-    transition: opacity 220ms ease, transform 240ms ease;
+    transform: translateY(18px);
+    transition: opacity 220ms ease, transform 260ms ease;
+    color: hsl(var(--primary));
+    z-index: 0;
   }
 
-  .sipa-dashboard-card::after {
-    content: '';
-    position: absolute;
-    right: -26px;
-    bottom: -18px;
-    width: 142px;
-    height: 46px;
-    border-radius: 50%;
-    pointer-events: none;
-    opacity: 0;
-    transform: translateY(16px) rotate(-8deg);
-    background:
-      radial-gradient(ellipse at 18% 46%, transparent 0 20px, hsl(var(--primary) / 0.18) 21px 24px, transparent 25px),
-      radial-gradient(ellipse at 58% 54%, transparent 0 26px, hsl(var(--primary) / 0.14) 27px 30px, transparent 31px),
-      linear-gradient(90deg, transparent, hsl(var(--primary) / 0.18), transparent);
-    transition: opacity 220ms ease, transform 240ms ease;
-  }
-
-  .sipa-dashboard-card:hover::before {
+  .sipa-dashboard-card:hover .sipa-card-waves {
     opacity: 1;
-    transform: translateY(0) scale(1);
-    animation: sipa-liquid-blob 3.4s ease-in-out infinite;
+    transform: translateY(0);
   }
 
-  .sipa-dashboard-card:hover::after {
-    opacity: 1;
-    transform: translateY(0) rotate(-8deg);
-    animation: sipa-liquid-wave 2.8s ease-in-out infinite;
+  .sipa-card-waves svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .sipa-card-waves .parallax > use {
+    animation: sipa-wave-move 25s cubic-bezier(.55,.5,.45,.5) infinite;
+  }
+
+  .sipa-card-waves .parallax > use:nth-child(1) {
+    animation-delay: -2s;
+    animation-duration: 7s;
+  }
+
+  .sipa-card-waves .parallax > use:nth-child(2) {
+    animation-delay: -3s;
+    animation-duration: 10s;
+  }
+
+  .sipa-card-waves .parallax > use:nth-child(3) {
+    animation-delay: -4s;
+    animation-duration: 13s;
+  }
+
+  .sipa-card-waves .parallax > use:nth-child(4) {
+    animation-delay: -5s;
+    animation-duration: 20s;
   }
 
   .sipa-dashboard-card > * {
@@ -194,25 +192,12 @@
   }
 }
 
-@keyframes sipa-liquid-blob {
-  0%, 100% {
-    border-radius: 48% 52% 42% 58% / 58% 44% 56% 42%;
-    translate: 0 0;
+@keyframes sipa-wave-move {
+  0% {
+    transform: translate3d(-90px, 0, 0);
   }
-  50% {
-    border-radius: 42% 58% 54% 46% / 46% 58% 42% 54%;
-    translate: -4px -3px;
-  }
-}
-
-@keyframes sipa-liquid-wave {
-  0%, 100% {
-    scale: 1 1;
-    translate: 0 0;
-  }
-  50% {
-    scale: 1.06 0.92;
-    translate: -5px -2px;
+  100% {
+    transform: translate3d(85px, 0, 0);
   }
 }
 
