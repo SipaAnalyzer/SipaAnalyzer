@@ -61,14 +61,14 @@ export default function KPICards({
             <div className="sipa-card-waves" aria-hidden="true">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 24 150 28"
+                viewBox="0 -2 150 22"
                 preserveAspectRatio="none"
                 shapeRendering="auto"
               >
                 <defs>
                   <path
                     id={waveId}
-                    d="M-160 44c30 0 58-18 88-18s58 18 88 18 58-18 88-18 58 18 88 18v44h-352z"
+                    d="M-160 0c30 0 58 14 88 14s58-14 88-14 58 14 88 14 58-14 88-14v-44h-352z"
                   />
                 </defs>
                 <g className="parallax">
