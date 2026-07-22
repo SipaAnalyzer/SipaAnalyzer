@@ -143,10 +143,10 @@
 
   .sipa-card-waves {
     position: absolute;
-    right: 0;
+    right: 5px;
     top: 0;
-    left: 0;
-    width: 100%;
+    left: 5px;
+    width: calc(100% - 10px);
     height: 18px;
     pointer-events: none;
     opacity: 0;
