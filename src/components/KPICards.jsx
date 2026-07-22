@@ -30,6 +30,7 @@ const totalCard = {
   label: 'Total biens',
   icon: ClipboardList,
   className: 'bg-primary/15 text-primary',
+  href: '/properties',
 };
 
 export default function KPICards({
@@ -51,13 +52,10 @@ export default function KPICards({
       {cards.map((card) => {
         const Icon = card.icon;
         const value = card.value === 'total' ? total : card.count;
+        const href = card.href || `/properties?status=${card.value}`;
         const content = (
           <div
-            className={`h-full bg-card rounded-xl border border-border p-5 transition-all duration-200 ease-out ${
-              card.value !== 'total'
-                ? 'hover:border-primary/45 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 cursor-pointer'
-                : 'hover:border-primary/20'
-            }`}
+            className="h-full bg-card rounded-xl border border-border p-5 transition-all duration-200 ease-out hover:border-primary/45 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 cursor-pointer"
           >
             <div className="flex items-start justify-between gap-3 mb-4">
               <span className="min-h-10 text-xs text-muted-foreground font-medium leading-snug">
@@ -75,18 +73,14 @@ export default function KPICards({
           </div>
         );
 
-        return card.value !== 'total' ? (
+        return (
           <Link
             key={card.value}
-            to={`/properties?status=${card.value}`}
+            to={href}
             className="block h-full"
           >
             {content}
           </Link>
-        ) : (
-          <div key={card.value}>
-            {content}
-          </div>
         );
       })}
     </div>
