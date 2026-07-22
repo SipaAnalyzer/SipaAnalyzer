@@ -41,6 +41,20 @@ function getPropertyCardStyle(couleur) {
   return { '--sipa-card-accent': accent };
 }
 
+function getSipaTotalIncome(analysis) {
+  const sipaEntry = analysis?.sipa_data?.find((entry) =>
+    String(entry?.label || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .includes('sipa total')
+  );
+  const importedAmount = sipaEntry?.values?.find((value) => value.type === 'amount' || typeof value.value === 'number');
+  if (importedAmount?.value != null) return importedAmount.value;
+
+  return Number(analysis?.honoraires_sipa || 0) + Number(analysis?.gestion || 0);
+}
+
 export default function Properties() {
   const { permissions, isAdmin } = usePermissions();
   const queryClient = useQueryClient();
@@ -248,18 +262,22 @@ export default function Properties() {
                       {p.latestAnalysis?.note && <ScoreBadge note={p.latestAnalysis.note} />}
                     </div>
                     {p.latestAnalysis && (
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border/50">
+                      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border/50">
                         <div>
                           <p className="text-[10px] text-muted-foreground">Prix total</p>
                           <p className="text-xs font-mono font-medium">{formatCHF(p.latestAnalysis.prix_total)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-muted-foreground">Rdt. brut</p>
-                          <p className="text-xs font-mono font-medium">{formatPercent(p.latestAnalysis.rendement_brut)}</p>
+                          <p className="text-[10px] text-muted-foreground">Prix d'achat</p>
+                          <p className="text-xs font-mono font-medium">{formatCHF(p.latestAnalysis.prix_bien)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-muted-foreground">Rdt. net/FP</p>
-                          <p className="text-xs font-mono font-medium text-primary">{formatPercent(p.latestAnalysis.rendement_net_fonds_propres)}</p>
+                          <p className="text-[10px] text-muted-foreground">Rdt. distribue / FP</p>
+                          <p className="text-xs font-mono font-medium text-primary">{formatPercent(p.latestAnalysis.revenu_distribue_fonds_propres)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">SIPA total income</p>
+                          <p className="text-xs font-mono font-medium">{formatCHF(getSipaTotalIncome(p.latestAnalysis))}</p>
                         </div>
                       </div>
                     )}
