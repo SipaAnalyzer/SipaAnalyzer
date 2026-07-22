@@ -1289,6 +1289,20 @@ function percentOf(amount, base) {
   return Math.round((numericAmount / numericBase) * 10000) / 100;
 }
 
+function getSipaTotalIncome(analysis) {
+  const sipaEntry = analysis?.sipa_data?.find((entry) =>
+    String(entry?.label || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .includes('sipa total')
+  );
+  const importedAmount = sipaEntry?.values?.find((value) => value.type === 'amount' || typeof value.value === 'number');
+  if (importedAmount?.value != null) return importedAmount.value;
+
+  return Number(analysis?.honoraires_sipa || 0) + Number(analysis?.gestion || 0);
+}
+
 function PropertyPresentation({ property, latest, comments, updateCouleur }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
@@ -1469,25 +1483,11 @@ function AnalysisSummary({ property, selected, selectedAnalysisId, canEdit, canE
           onChange={onStatusChange}
         />
 
-        <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="flex-1 grid grid-cols-2 xl:grid-cols-4 gap-4">
           <MetricCard label="Prix total" value={formatCHF(selected.prix_total)} />
-          <MetricCard label="Revenu net" value={formatCHF(selected.revenu_net)} />
-          <MetricCard label="Revenu distribué" value={formatCHF(selected.revenu_distribue)} />
-          <MetricCard label="Rdt. brut" value={formatPercent(selected.rendement_brut)} />
-          <MetricCard label="Rdt. net / FP" value={formatPercent(selected.rendement_net_fonds_propres)} highlight />
-          <MetricCard label="Rdt. dist. / FP" value={formatPercent(selected.revenu_distribue_fonds_propres)} highlight />
-          <MetricCard label="Prix / m²" value={selected.prix_m2_bien ? formatCHF(selected.prix_m2_bien) : 'Surface manquante'} />
-          <MetricCard label="Marché zone" value={selected.prix_m2_marche ? formatCHF(selected.prix_m2_marche) : 'Référence indisponible'} />
-          <MetricCard
-            label="Écart marché"
-            value={selected.ecart_prix_m2_marche != null ? `${selected.ecart_prix_m2_marche > 0 ? '+' : ''}${selected.ecart_prix_m2_marche}%` : 'N/A'}
-            highlight={selected.ecart_prix_m2_marche != null && selected.ecart_prix_m2_marche <= 0}
-          />
-          <MetricCard
-            label="Impact zone"
-            value={`${selected.impact_score_prix_m2 > 0 ? '+' : ''}${selected.impact_score_prix_m2 || 0} pt`}
-            highlight={selected.impact_score_prix_m2 > 0}
-          />
+          <MetricCard label="Rdt. distribue / FP" value={formatPercent(selected.revenu_distribue_fonds_propres)} highlight />
+          <MetricCard label="Prix d'achat" value={formatCHF(selected.prix_bien)} />
+          <MetricCard label="SIPA total income" value={formatCHF(getSipaTotalIncome(selected))} highlight emphasis />
         </div>
       </div>
     </div>
@@ -1749,11 +1749,11 @@ function ExternalButton({ href, label }) {
   );
 }
 
-function MetricCard({ label, value, highlight }) {
+function MetricCard({ label, value, highlight, emphasis }) {
   return (
-    <div>
+    <div className={emphasis ? 'rounded-lg border border-primary/35 bg-primary/10 px-3 py-2 shadow-sm shadow-primary/10' : ''}>
       <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
-      <p className={`text-sm font-bold font-mono mt-0.5 ${highlight ? 'text-primary' : ''}`}>
+      <p className={`${emphasis ? 'text-base' : 'text-sm'} font-bold font-mono mt-0.5 ${highlight ? 'text-primary' : ''}`}>
         {value}
       </p>
     </div>
