@@ -25,11 +25,25 @@ const statusIcons = {
   abandonne: XCircle,
 };
 
+const statusWaveColors = {
+  total: 'hsl(var(--primary))',
+  en_cours: 'rgb(59 130 246)',
+  demande_complementaire: 'rgb(6 182 212)',
+  visite_sipa: 'rgb(139 92 246)',
+  demande_rapport_expertise_externe: 'rgb(99 102 241)',
+  proposition_achat: 'rgb(245 158 11)',
+  negociation: 'rgb(249 115 22)',
+  proposition_acceptee: 'rgb(16 185 129)',
+  commercialise: 'rgb(132 204 22)',
+  abandonne: 'rgb(239 68 68)',
+};
+
 const totalCard = {
   value: 'total',
   label: 'Total biens',
   icon: ClipboardList,
   className: 'bg-primary/15 text-primary',
+  waveColor: statusWaveColors.total,
   href: '/properties',
 };
 
@@ -43,6 +57,7 @@ export default function KPICards({
       ...status,
       icon: statusIcons[status.value] || ClipboardList,
       className: STATUS_CONFIG[status.value]?.class || 'bg-muted text-muted-foreground',
+      waveColor: statusWaveColors[status.value] || 'hsl(var(--primary))',
       count: statusCounts[status.value] || 0,
     })),
   ];
@@ -58,7 +73,7 @@ export default function KPICards({
           <div
             className="sipa-card-motion sipa-dashboard-card flex min-h-[138px] h-full flex-col bg-card rounded-xl border border-border p-5 transition-all duration-200 ease-out hover:border-primary/45 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 cursor-pointer"
           >
-            <div className="sipa-card-waves" aria-hidden="true">
+            <div className="sipa-card-waves" style={{ color: card.waveColor }} aria-hidden="true">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 26 150 26"
