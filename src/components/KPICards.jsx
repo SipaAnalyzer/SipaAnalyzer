@@ -56,7 +56,7 @@ export default function KPICards({
         const waveId = `gentle-wave-${card.value}`;
         const content = (
           <div
-            className="sipa-card-motion sipa-dashboard-card h-full bg-card rounded-xl border border-border p-5 transition-all duration-200 ease-out hover:border-primary/45 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 cursor-pointer"
+            className="sipa-card-motion sipa-dashboard-card flex min-h-[138px] h-full flex-col bg-card rounded-xl border border-border p-5 transition-all duration-200 ease-out hover:border-primary/45 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 cursor-pointer"
           >
             <div className="sipa-card-waves" aria-hidden="true">
               <svg
@@ -72,10 +72,10 @@ export default function KPICards({
                   />
                 </defs>
                 <g className="parallax">
-                  <use href={`#${waveId}`} x="48" y="0" fill="currentColor" opacity="0.22" />
-                  <use href={`#${waveId}`} x="48" y="3" fill="currentColor" opacity="0.16" />
-                  <use href={`#${waveId}`} x="48" y="5" fill="currentColor" opacity="0.10" />
-                  <use href={`#${waveId}`} x="48" y="7" fill="currentColor" opacity="0.07" />
+                  <use href={`#${waveId}`} x="48" y="0" fill="currentColor" opacity="0.30" />
+                  <use href={`#${waveId}`} x="48" y="3" fill="currentColor" opacity="0.22" />
+                  <use href={`#${waveId}`} x="48" y="5" fill="currentColor" opacity="0.15" />
+                  <use href={`#${waveId}`} x="48" y="7" fill="currentColor" opacity="0.10" />
                 </g>
               </svg>
             </div>
@@ -90,7 +90,7 @@ export default function KPICards({
               </span>
             </div>
 
-            <p className="text-3xl font-bold tracking-tight">
+            <p className="relative z-10 mt-auto text-3xl font-bold tracking-tight">
               {value}
             </p>
           </div>
