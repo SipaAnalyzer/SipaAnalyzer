@@ -137,7 +137,8 @@
     box-shadow: 0 0 22px hsl(var(--primary) / 0.16);
   }
 
-  .sipa-card-motion.sipa-dashboard-card::after {
+  .sipa-card-motion.sipa-dashboard-card::after,
+  .sipa-card-motion.sipa-property-card::after {
     display: none;
   }
 
@@ -194,7 +195,8 @@
     animation-duration: 20s;
   }
 
-  .sipa-dashboard-card > *:not(.sipa-card-waves) {
+  .sipa-dashboard-card > *:not(.sipa-card-waves),
+  .sipa-property-card > *:not(.sipa-card-waves) {
     position: relative;
     z-index: 1;
   }

@@ -38,9 +38,7 @@ function getPropertyAccentColor(couleur) {
 
 function getPropertyCardStyle(couleur) {
   const accent = getPropertyAccentColor(couleur);
-  return couleur
-    ? { borderTopColor: accent, '--sipa-card-accent': accent }
-    : { '--sipa-card-accent': accent };
+  return { '--sipa-card-accent': accent };
 }
 
 export default function Properties() {
@@ -179,10 +177,32 @@ export default function Properties() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-visible">
           {sorted.map(p => {
+            const waveId = `property-wave-${p.id}`;
             return (
               <Link key={p.id} to={`/property/${p.id}`} className="relative block">
-                <div className={`sipa-card-motion relative transform-gpu bg-card rounded-xl border p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out group hover:z-30 hover:scale-[1.03] hover:-translate-y-1 hover:border-primary/60 hover:shadow-[0_24px_60px_rgba(0,0,0,0.22)] ${p.couleur ? 'border-t-4' : 'border-border border-t-border'}`}
+                <div className="sipa-card-motion sipa-property-card relative transform-gpu bg-card rounded-xl border border-border p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out group hover:z-30 hover:scale-[1.03] hover:-translate-y-1 hover:border-primary/60 hover:shadow-[0_24px_60px_rgba(0,0,0,0.22)]"
                   style={getPropertyCardStyle(p.couleur)}>
+                  <div className="sipa-card-waves" style={{ color: 'var(--sipa-card-accent)' }} aria-hidden="true">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 26 150 26"
+                      preserveAspectRatio="none"
+                      shapeRendering="auto"
+                    >
+                      <defs>
+                        <path
+                          id={waveId}
+                          d="M-160 44c30 0 58-18 88-18s58 18 88 18 58-18 88-18 58 18 88 18v44h-352z"
+                        />
+                      </defs>
+                      <g className="parallax">
+                        <use href={`#${waveId}`} x="48" y="0" fill="currentColor" opacity="0.30" />
+                        <use href={`#${waveId}`} x="48" y="3" fill="currentColor" opacity="0.22" />
+                        <use href={`#${waveId}`} x="48" y="5" fill="currentColor" opacity="0.15" />
+                        <use href={`#${waveId}`} x="48" y="7" fill="currentColor" opacity="0.10" />
+                      </g>
+                    </svg>
+                  </div>
                   <div className="relative mb-4 h-40 overflow-hidden rounded-lg border border-border/40 bg-muted/20">
                     {p.image_url ? (
                       <img src={p.image_url} alt="" className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.025]" />
