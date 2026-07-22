@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { base44 } from '@/api/base44Client';
-import { formatCHF, formatPercent, isActivePropertyStatus, isFinalizedPropertyStatus, normalizeAnalysis } from '../utils/calculations';
+import { formatCHF, formatPercent, isActivePropertyStatus, isFinalizedPropertyStatus, normalizeAnalysis, STATUS_CONFIG, WORKFLOW_STATUSES } from '../utils/calculations';
 import ScoreBadge from '../components/ScoreBadge';
 import { geocodeProperties } from '../utils/geocode';
 import {
@@ -33,8 +33,23 @@ const average = (items, selector) => {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 };
 
+const PRESENTATION_STATUS_COLORS = {
+  en_cours: '#3b82f6',
+  demande_complementaire: '#06b6d4',
+  visite_sipa: '#8b5cf6',
+  demande_rapport_expertise_externe: '#6366f1',
+  proposition_achat: '#f59e0b',
+  negociation: '#f97316',
+  proposition_acceptee: '#10b981',
+  commercialise: '#84cc16',
+  abandonne: '#ff0000',
+};
+
+const getPresentationStatusColor = (status) => PRESENTATION_STATUS_COLORS[status] || '#a5d63a';
+const getPresentationStatusLabel = (status) => STATUS_CONFIG[status]?.label || status || 'Statut non renseigne';
+
 const createScoreIcon = (property) => {
-  const markerColor = property.couleur === 'vert' ? '#22c55e' : '#ef4444';
+  const markerColor = getPresentationStatusColor(property.statut);
   const score = property.analysis?.score_global ? Math.round(property.analysis.score_global) : '';
 
   return L.divIcon({
@@ -46,7 +61,7 @@ const createScoreIcon = (property) => {
         border-radius: 999px;
         background: ${markerColor};
         border: 4px solid white;
-        box-shadow: 0 12px 28px rgba(0,0,0,.32), 0 0 0 8px rgba(34,197,94,.18);
+        box-shadow: 0 12px 28px rgba(0,0,0,.32), 0 0 0 8px ${markerColor}33;
         color: white;
         display: flex;
         align-items: center;
@@ -230,11 +245,15 @@ export default function Presentation() {
       });
   }, [properties, analyses]);
 
-  const greenValides = useMemo(() => {
-    return valides.filter((property) => property.couleur === 'vert');
-  }, [valides]);
+  const allWithAnalysis = useMemo(() => {
+    return properties.map((property) => {
+      const latest = analyses
+        .filter((analysis) => analysis.property_id === property.id)
+        .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
 
-  const allWithAnalysis = greenValides;
+      return { ...property, analysis: latest ? normalizeAnalysis(latest, property) : null };
+    });
+  }, [properties, analyses]);
 
   const [geocodedCoords, setGeocodedCoords] = useState([]);
 
@@ -344,7 +363,7 @@ export default function Presentation() {
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <HeroStat label="Biens sur la carte" value={withCoords.length} detail={`${greenValides.length} biens valides verts`} />
+          <HeroStat label="Biens sur la carte" value={withCoords.length} detail={`${allWithAnalysis.length} biens du portefeuille`} />
           <HeroStat label="Dossiers en cours" value={enCours.length} detail={`${summary.withAnalysis} analyses disponibles`} />
           <HeroStat label="Valeur analysee" value={formatCHF(summary.totalValue)} detail={`Fonds propres ${formatCHF(summary.totalEquity)}`} />
           <HeroStat label="Rendement moyen" value={formatPercent(summary.avgNetEquityYield)} detail={`Brut ${formatPercent(summary.avgGrossYield)}`} />
@@ -406,8 +425,8 @@ export default function Presentation() {
       <section className="overflow-hidden rounded-lg border border-primary/20 bg-card shadow-lg">
         <div className="flex flex-col gap-3 border-b border-border bg-background/60 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-heading font-semibold">Carte des biens retenus</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Uniquement les biens valides avec pastille verte</p>
+            <h2 className="font-heading font-semibold">Carte du portefeuille</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Tous les biens, avec une couleur differente par statut</p>
           </div>
           <div className="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
             <Navigation className="h-3.5 w-3.5" />
@@ -437,6 +456,10 @@ export default function Presentation() {
                   <div className="text-sm font-medium">{property.nom_bien}</div>
                   <div className="text-xs text-gray-500">
                     {property.ville}{property.canton ? `, ${property.canton}` : ''}
+                  </div>
+                  <div className="mt-2 inline-flex items-center gap-1.5 rounded bg-gray-100 px-2 py-1 text-[11px] text-gray-700">
+                    <span style={{ backgroundColor: getPresentationStatusColor(property.statut) }} className="h-2 w-2 rounded-full" />
+                    {getPresentationStatusLabel(property.statut)}
                   </div>
                   {property.analysis && (
                     <div className="text-xs mt-2 space-y-1">
@@ -468,9 +491,20 @@ export default function Presentation() {
             <h3 className="mt-2 font-heading text-lg font-semibold">Selection cartographique</h3>
             <div className="mt-4 grid grid-cols-2 gap-3">
               <Metric label="Biens visibles" value={withCoords.length} highlight />
-              <Metric label="Valides verts" value={greenValides.length} highlight />
+              <Metric label="Statuts representes" value={new Set(withCoords.map((property) => property.statut)).size} highlight />
               <Metric label="Top score" value={summary.best?.analysis ? `${summary.best.analysis.score_global}/100` : '-'} />
               <Metric label="Net/FP moyen" value={formatPercent(summary.avgNetEquityYield)} />
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-1.5">
+              {WORKFLOW_STATUSES.map((status) => (
+                <div key={status.value} className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: getPresentationStatusColor(status.value) }}
+                  />
+                  <span className="truncate">{status.label}</span>
+                </div>
+              ))}
             </div>
           </div>
           {withCoords.length > 0 && (
@@ -479,7 +513,12 @@ export default function Presentation() {
                 {withCoords.slice(0, 4).map((property) => (
                   <div key={property.id} className="rounded-md border border-border/70 bg-background/80 p-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">Valide</span>
+                      <span
+                        className="rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
+                        style={{ backgroundColor: getPresentationStatusColor(property.statut) }}
+                      >
+                        {getPresentationStatusLabel(property.statut)}
+                      </span>
                       {property.analysis && <span className="text-[10px] font-mono text-primary">{property.analysis.score_global}/100</span>}
                     </div>
                     <p className="mt-2 truncate text-xs font-medium">{property.nom_bien}</p>
