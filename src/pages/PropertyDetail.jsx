@@ -300,6 +300,7 @@ export default function PropertyDetail() {
                 selected={displayedAnalysis}
                 selectedAnalysisId={selectedAnalysisId}
                 canEdit={canEdit}
+                canEditAnalysis={canEditAnalysis}
                 isUpdatingStatus={updatePropertyStatus.isPending}
                 onStatusChange={(status) => updatePropertyStatus.mutate(status)}
               />
@@ -1407,9 +1408,20 @@ function PropertyMeta({ property, compact = false }) {
   );
 }
 
-function AnalysisSummary({ property, selected, selectedAnalysisId, canEdit, isUpdatingStatus, onStatusChange }) {
+function AnalysisSummary({ property, selected, selectedAnalysisId, canEdit, canEditAnalysis, isUpdatingStatus, onStatusChange }) {
   return (
     <div className="bg-card rounded-xl border border-border p-6">
+      {canEditAnalysis && selected?.id && (
+        <div className="mb-5 flex justify-end">
+          <Link to={`/edit-analysis/${selected.id}`}>
+            <Button size="sm" variant="outline" className="gap-2">
+              <Pencil className="h-3.5 w-3.5" />
+              Modifier l'analyse
+            </Button>
+          </Link>
+        </div>
+      )}
+
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         <div className="flex items-center gap-4">
           <ScoreGauge score={selected.score_global || 0} size={110} />
