@@ -58,7 +58,7 @@ export default function SmartAlertsPanel({
           <CheckCircle2 className="h-5 w-5 text-emerald-400" />
           <div>
             <p className="text-sm font-medium">Aucune alerte active</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Les indicateurs surveillés ne présentent pas d’anomalie.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Aucun bien supprimé ni baisse de prix liée au SARON détecté.</p>
           </div>
         </div>
       ) : (

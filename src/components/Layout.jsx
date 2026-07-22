@@ -3,7 +3,6 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
-import { supabase } from '@/api/supabaseClient';
 import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star, Sun, Moon, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTheme } from 'next-themes';
@@ -73,15 +72,9 @@ function SidebarContent({ location, user, onNavigate, collapsed = false, onToggl
   const [seenAlertIds, setSeenAlertIds] = useState(readSeenAlertIds);
   const [hiddenAlertIds, setHiddenAlertIds] = useState(readHiddenAlertIds);
 
-  const { data: alertProperties = [] } = useQuery({
-    queryKey: ['nav-alert-properties'],
-    queryFn: () => base44.entities.Property.list('-created_date', 300),
-    ...NAV_ALERT_QUERY_OPTIONS,
-  });
-
-  const { data: alertAnalyses = [] } = useQuery({
-    queryKey: ['nav-alert-analyses'],
-    queryFn: () => base44.entities.Analysis.list('-created_date', 800),
+  const { data: alertComments = [] } = useQuery({
+    queryKey: ['nav-alert-comments'],
+    queryFn: () => base44.entities.Comment.list('-created_date', 1000),
     ...NAV_ALERT_QUERY_OPTIONS,
   });
 
@@ -91,38 +84,10 @@ function SidebarContent({ location, user, onNavigate, collapsed = false, onToggl
     ...NAV_ALERT_QUERY_OPTIONS,
   });
 
-  const { data: alertUsers = [] } = useQuery({
-    queryKey: ['nav-alert-users'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, created_at')
-        .order('created_at', { ascending: false });
-      if (error) return [];
-      return data || [];
-    },
-    enabled: !!isAdmin,
-    ...NAV_ALERT_QUERY_OPTIONS,
-  });
-
-  const { data: alertPermissions = [] } = useQuery({
-    queryKey: ['nav-alert-permissions'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('user_permissions').select('*');
-      if (error) return [];
-      return data || [];
-    },
-    enabled: !!isAdmin,
-    ...NAV_ALERT_QUERY_OPTIONS,
-  });
-
   const alerts = useMemo(() => buildSmartAlerts({
-    properties: alertProperties,
-    analyses: alertAnalyses,
     auditLogs: alertAuditLogs,
-    users: alertUsers,
-    permissions: alertPermissions,
-  }), [alertProperties, alertAnalyses, alertAuditLogs, alertUsers, alertPermissions]);
+    comments: alertComments,
+  }), [alertAuditLogs, alertComments]);
 
   const visibleAlerts = useMemo(() => filterHiddenAlerts(alerts, hiddenAlertIds), [alerts, hiddenAlertIds]);
   const alertIds = useMemo(() => visibleAlerts.map((alert) => alert.id).filter(Boolean), [visibleAlerts]);

@@ -1,150 +1,170 @@
-import { normalizeAnalysis } from './calculations';
+const PROPERTY_DELETE_EVENTS = new Set(['property_soft_deleted', 'property_hard_deleted']);
 
-const LOW_GROSS_YIELD = 4;
-const OPPORTUNITY_GROSS_YIELD = 4;
-const HIGH_CHARGES_RATIO = 25;
-const PENDING_ROLE_DAYS = 3;
+const PRICE_FIELDS = new Set([
+  'prix_bien',
+  'prix_total',
+  'banque_a_evaluation',
+  'banque_b_evaluation',
+  'sales_price',
+]);
 
-export function buildSmartAlerts({
-  properties = [],
-  analyses = [],
-  auditLogs = [],
-  users = [],
-  permissions = [],
-} = {}) {
+const AUDIT_PREFIX = '__audit__';
+
+export function buildSmartAlerts({ auditLogs = [], comments = [] } = {}) {
   const alerts = [];
-  const latestByProperty = getLatestAnalysisByProperty(analyses);
-  const propertyById = new Map(properties.map((property) => [property.id, property]));
+  const seenDeletedProperties = new Set();
+  const alertEvents = [
+    ...auditLogs.map(normalizeAuditLog),
+    ...parseAuditComments(comments),
+  ].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
-  properties.forEach((property) => {
-    const latest = latestByProperty.get(property.id);
-    if (!latest) return;
-    const latestMarker = latest.id || latest.updated_at || latest.updated_date || latest.created_at || latest.created_date || 'current';
-
-    if (Number(latest.rendement_brut || 0) > 0 && Number(latest.rendement_brut || 0) < LOW_GROSS_YIELD) {
-      alerts.push({
-        id: `low-yield-${property.id}-${latestMarker}`,
-        severity: 'warning',
-        category: 'Rentabilité',
-        title: 'Rendement trop faible',
-        description: `${property.nom_bien || 'Bien'} affiche un rendement brut de ${Number(latest.rendement_brut).toFixed(2)}%.`,
-        link: `/property/${property.id}`,
-      });
-    }
-
-    if (Number(latest.rendement_brut || 0) >= OPPORTUNITY_GROSS_YIELD) {
-      alerts.push({
-        id: `opportunity-detected-${property.id}-${latestMarker}`,
-        severity: 'info',
-        category: 'Opportunité',
-        title: 'Opportunité détectée',
-        description: `${property.nom_bien || 'Bien'} atteint un rendement brut de ${Number(latest.rendement_brut).toFixed(2)}%.`,
-        link: `/property/${property.id}`,
-      });
-    }
-
-    const chargesRatio = Number(latest.revenus_locatifs || 0) > 0
-      ? (Number(latest.charges_operationnelles || 0) / Number(latest.revenus_locatifs || 0)) * 100
-      : 0;
-
-    if (chargesRatio >= HIGH_CHARGES_RATIO) {
-      alerts.push({
-        id: `high-charges-${property.id}-${latestMarker}`,
-        severity: chargesRatio >= 35 ? 'critical' : 'warning',
-        category: 'Charges',
-        title: 'Charges trop élevées',
-        description: `${property.nom_bien || 'Bien'} a des charges à ${chargesRatio.toFixed(1)}% des revenus locatifs.`,
-        link: `/property/${property.id}`,
-      });
-    }
-  });
-
-  auditLogs.slice(0, 150).forEach((log) => {
-    const label = log.target_label || log.target_id || 'élément concerné';
+  alertEvents.slice(0, 250).forEach((log) => {
     const metadata = log.metadata || {};
-    const changes = Array.isArray(metadata.changes) ? metadata.changes : [];
-    const hasMortgageRateChange = changes.some((change) => String(change.field || '').includes('taux_hypothecaire'));
 
-    if (log.event_type === 'analysis_update' && hasMortgageRateChange) {
-      alerts.push({
-        id: `mortgage-rate-change-${log.id || log.created_at}`,
-        severity: 'warning',
-        category: 'Financement',
-        title: 'Taux hypothécaire changé',
-        description: `Un taux hypothécaire a changé sur ${label}.`,
-      });
-    }
+    if (PROPERTY_DELETE_EVENTS.has(log.event_type)) {
+      const propertyId = metadata.property_id || log.target_id || log.id || log.created_at;
+      if (seenDeletedProperties.has(propertyId)) return;
+      seenDeletedProperties.add(propertyId);
 
-    if (log.event_type === 'analysis_soft_deleted') {
-      const property = propertyById.get(metadata.property_id);
-      const propertyName = metadata.property_name || property?.nom_bien || label;
+      const propertyName = metadata.property_name || log.target_label || 'Bien';
       alerts.push({
-        id: `analysis-deleted-${log.id || log.created_at}`,
+        id: `property-deleted-${propertyId}`,
         severity: 'critical',
         category: 'Suppression',
-        title: 'Analyse supprimée',
-        description: `Une analyse concernant ${propertyName} a ete placee en corbeille.`,
+        title: 'Bien supprimé',
+        description: `${propertyName} a été supprimé ou placé en corbeille.`,
+      });
+      return;
+    }
+
+    const saronPriceDrop = getSaronPriceDrop(log);
+    if (saronPriceDrop) {
+      alerts.push({
+        id: `saron-price-drop-${log.id || log.created_at}`,
+        severity: 'warning',
+        category: 'SARON',
+        title: 'Prix en baisse après actualisation SARON',
+        description: `${log.target_label || 'Un bien'} passe de ${formatCHF(saronPriceDrop.before)} à ${formatCHF(saronPriceDrop.after)} (${formatDelta(saronPriceDrop.deltaPct)}).`,
         link: metadata.property_id ? `/property/${metadata.property_id}` : undefined,
       });
     }
-
-    if (log.event_type === 'property_soft_deleted') {
-      const propertyName = metadata.property_name || label;
-      alerts.push({
-        id: `property-deleted-${log.id || log.created_at}`,
-        severity: 'critical',
-        category: 'Suppression',
-        title: 'Bien supprime',
-        description: `${propertyName} a ete place en corbeille.`,
-      });
-    }
   });
 
-  const permissionsByUser = new Map(permissions.map((permission) => [permission.user_id, permission]));
-  users.forEach((user) => {
-    const permission = permissionsByUser.get(user.id);
-    const normalizedRole = String(permission?.role || '').trim().toLowerCase();
-    const isPending = !permission || ['en_attente', 'pending', 'aucun', 'none', 'null', ''].includes(normalizedRole);
-    const daysPending = daysSince(user.created_at || user.created_date);
-
-    if (isPending && daysPending >= PENDING_ROLE_DAYS) {
-      alerts.push({
-        id: `pending-user-${user.id}`,
-        severity: daysPending >= 7 ? 'critical' : 'warning',
-        category: 'Accès',
-        title: 'Utilisateur sans rôle',
-        description: `${user.email || user.full_name || 'Utilisateur'} est en attente depuis ${daysPending} jour${daysPending > 1 ? 's' : ''}.`,
-        link: '/admin',
-      });
-    }
-  });
-
-  return dedupeAlerts(alerts.filter((alert) => !String(alert.id || '').startsWith('price-change-')))
+  return dedupeAlerts(alerts)
     .sort((a, b) => severityWeight(b.severity) - severityWeight(a.severity))
     .slice(0, 12);
 }
 
-function getLatestAnalysisByProperty(analyses) {
-  const latest = new Map();
+function getSaronPriceDrop(log) {
+  if (log.event_type !== 'analysis_update') return null;
 
-  analyses.forEach((analysis) => {
-    const normalized = normalizeAnalysis(analysis);
-    const current = latest.get(normalized.property_id);
-    const currentDate = new Date(current?.created_at || current?.created_date || 0);
-    const nextDate = new Date(normalized.created_at || normalized.created_date || 0);
+  const metadata = log.metadata || {};
+  const changes = Array.isArray(metadata.changes) ? metadata.changes : [];
+  if (!changes.length || !hasSaronSignal(log, changes)) return null;
 
-    if (!current || nextDate > currentDate) {
-      latest.set(normalized.property_id, normalized);
-    }
-  });
-
-  return latest;
+  return changes
+    .map((change) => ({
+      ...change,
+      beforeNumber: toNumber(change.before),
+      afterNumber: toNumber(change.after),
+    }))
+    .find((change) =>
+      PRICE_FIELDS.has(change.field) &&
+      Number.isFinite(change.beforeNumber) &&
+      Number.isFinite(change.afterNumber) &&
+      change.afterNumber < change.beforeNumber
+    )
+    ? buildPriceDrop(changes)
+    : null;
 }
 
-function daysSince(date) {
-  if (!date) return 0;
-  const diff = Date.now() - new Date(date).getTime();
-  return Math.max(0, Math.floor(diff / 86400000));
+function normalizeAuditLog(log) {
+  return {
+    ...log,
+    event_type: log.event_type || log.type,
+  };
+}
+
+function parseAuditComments(comments = []) {
+  return comments
+    .map((comment) => {
+      if (!comment?.commentaire?.startsWith(AUDIT_PREFIX)) return null;
+
+      try {
+        const audit = JSON.parse(comment.commentaire.slice(AUDIT_PREFIX.length));
+        return {
+          id: comment.id,
+          event_type: audit.type,
+          target_label: audit.target_label || audit.entity_id,
+          target_id: audit.entity_id,
+          metadata: {
+            ...audit,
+            property_id: comment.property_id,
+          },
+          created_at: comment.created_at || comment.created_date,
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+}
+
+function buildPriceDrop(changes) {
+  const priceDrop = changes
+    .map((change) => ({
+      ...change,
+      beforeNumber: toNumber(change.before),
+      afterNumber: toNumber(change.after),
+    }))
+    .find((change) =>
+      PRICE_FIELDS.has(change.field) &&
+      Number.isFinite(change.beforeNumber) &&
+      Number.isFinite(change.afterNumber) &&
+      change.afterNumber < change.beforeNumber
+    );
+
+  if (!priceDrop) return null;
+
+  return {
+    before: priceDrop.beforeNumber,
+    after: priceDrop.afterNumber,
+    deltaPct: priceDrop.beforeNumber > 0
+      ? ((priceDrop.afterNumber / priceDrop.beforeNumber) - 1) * 100
+      : null,
+  };
+}
+
+function hasSaronSignal(log, changes) {
+  const metadata = log.metadata || {};
+  const metadataText = JSON.stringify(metadata).toLowerCase();
+
+  return metadataText.includes('saron') ||
+    changes.some((change) => {
+      const field = String(change.field || '').toLowerCase();
+      const before = String(change.before || '').toLowerCase();
+      const after = String(change.after || '').toLowerCase();
+      return field.includes('saron') || before.includes('saron') || after.includes('saron');
+    });
+}
+
+function toNumber(value) {
+  if (typeof value === 'number') return value;
+  if (value == null || value === '') return NaN;
+  return Number(String(value).replace(/[^0-9,.-]/g, '').replace(',', '.'));
+}
+
+function formatCHF(amount) {
+  return new Intl.NumberFormat('fr-CH', {
+    style: 'currency',
+    currency: 'CHF',
+    maximumFractionDigits: 0,
+  }).format(amount || 0);
+}
+
+function formatDelta(deltaPct) {
+  if (deltaPct == null) return 'baisse';
+  return `${deltaPct.toFixed(2)}%`;
 }
 
 function severityWeight(severity) {

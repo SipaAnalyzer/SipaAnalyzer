@@ -88,10 +88,10 @@ export default function PropertyDetail() {
   });
 
   const refreshAlertBadgeQueries = () => {
-    queryClient.invalidateQueries({ queryKey: ['nav-alert-properties'] });
-    queryClient.invalidateQueries({ queryKey: ['nav-alert-analyses'] });
     queryClient.invalidateQueries({ queryKey: ['nav-alert-audit-logs'] });
+    queryClient.invalidateQueries({ queryKey: ['nav-alert-comments'] });
     queryClient.invalidateQueries({ queryKey: ['alerts-audit-logs'] });
+    queryClient.invalidateQueries({ queryKey: ['alerts-comments'] });
   };
 
   const deleteProperty = useMutation({

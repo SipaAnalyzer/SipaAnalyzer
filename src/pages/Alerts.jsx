@@ -3,8 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Bell, Filter, Loader2 } from 'lucide-react';
 
 import { base44 } from '@/api/base44Client';
-import { supabase } from '@/api/supabaseClient';
-import { usePermissions } from '@/hooks/usePermissions';
 import SmartAlertsPanel from '../components/SmartAlertsPanel';
 import { buildSmartAlerts } from '../utils/smartAlerts';
 import { listAuditLogs } from '../utils/auditLogs';
@@ -18,22 +16,13 @@ const FILTERS = [
 ];
 
 export default function Alerts() {
-  const { isAdmin } = usePermissions();
   const [severityFilter, setSeverityFilter] = useState('all');
   const [hiddenAlertIds, setHiddenAlertIds] = useState(readHiddenAlertIds);
   const [selectedAlertIds, setSelectedAlertIds] = useState([]);
 
-  const { data: properties = [], isLoading: lp } = useQuery({
-    queryKey: ['alerts-properties'],
-    queryFn: () => base44.entities.Property.list('-created_date', 300),
-    staleTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-  });
-
-  const { data: analyses = [], isLoading: la } = useQuery({
-    queryKey: ['alerts-analyses'],
-    queryFn: () => base44.entities.Analysis.list('-created_date', 800),
+  const { data: comments = [], isLoading: lc } = useQuery({
+    queryKey: ['alerts-comments'],
+    queryFn: () => base44.entities.Comment.list('-created_date', 1000),
     staleTime: 0,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
@@ -44,36 +33,10 @@ export default function Alerts() {
     queryFn: () => listAuditLogs(200),
   });
 
-  const { data: users = [] } = useQuery({
-    queryKey: ['alerts-users'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email, full_name, created_at')
-        .order('created_at', { ascending: false });
-      if (error) return [];
-      return data || [];
-    },
-    enabled: !!isAdmin,
-  });
-
-  const { data: permissions = [] } = useQuery({
-    queryKey: ['alerts-permissions'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('user_permissions').select('*');
-      if (error) return [];
-      return data || [];
-    },
-    enabled: !!isAdmin,
-  });
-
   const alerts = useMemo(() => buildSmartAlerts({
-    properties,
-    analyses,
     auditLogs,
-    users,
-    permissions,
-  }), [properties, analyses, auditLogs, users, permissions]);
+    comments,
+  }), [auditLogs, comments]);
 
   const visibleAlerts = useMemo(() => filterHiddenAlerts(alerts, hiddenAlertIds), [alerts, hiddenAlertIds]);
 
@@ -96,7 +59,7 @@ export default function Alerts() {
     setSelectedAlertIds([]);
   };
 
-  if (lp || la) {
+  if (lc) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -113,7 +76,7 @@ export default function Alerts() {
             <h1 className="font-display text-2xl font-bold">Alertes</h1>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Surveillance des rendements, charges, modifications sensibles et comptes en attente.
+            Surveillance limitée aux suppressions de biens et aux baisses de prix liées au SARON.
           </p>
         </div>
 

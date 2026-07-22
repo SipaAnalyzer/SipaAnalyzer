@@ -22,6 +22,8 @@ export default function EditAnalysis() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['analyses'] });
       queryClient.invalidateQueries({ queryKey: ['comments', analysis.property_id] });
+      queryClient.invalidateQueries({ queryKey: ['nav-alert-comments'] });
+      queryClient.invalidateQueries({ queryKey: ['alerts-comments'] });
       toast.success('Analyse mise à jour');
       recordAuditLog({ eventType: 'analysis_updated', targetType: 'analysis', targetId: analysisId, targetLabel: `Analyse #${analysisId?.slice(0, 8)}`, metadata: { property_id: analysis.property_id } });
       navigate(`/property/${analysis.property_id}`);
