@@ -1,7 +1,20 @@
 const cache = new Map();
+const EMPTY_LOCATION_VALUES = new Set(['na', 'n/a', 'n.a', 'nc', 'n.c', 'non renseigne', 'non renseigné', '-', '--']);
+
+function cleanLocationPart(value) {
+  const text = String(value || '').trim();
+  const normalized = text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  return !text || EMPTY_LOCATION_VALUES.has(normalized) ? '' : text;
+}
 
 function buildAddresses(property) {
-  const { adresse, ville, canton } = property;
+  const adresse = cleanLocationPart(property.adresse);
+  const ville = cleanLocationPart(property.ville);
+  const canton = cleanLocationPart(property.canton);
   const city = [ville, canton].filter(Boolean).join(', ');
 
   const queries = [];

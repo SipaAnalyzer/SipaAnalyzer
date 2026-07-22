@@ -92,6 +92,15 @@ const getGoogleMapsUrl = (property) => {
 
 const LEMAN_CENTER = [46.47, 6.7];
 const LEMAN_ZOOM = 9;
+const KNOWN_BAD_GEOCODE_POINTS = [
+  [46.9413229, 7.4499253],
+];
+
+const isKnownBadGeocodePoint = (lat, lng) =>
+  KNOWN_BAD_GEOCODE_POINTS.some(
+    ([badLat, badLng]) =>
+      Math.abs(lat - badLat) < 0.00001 && Math.abs(lng - badLng) < 0.00001
+  );
 
 function FitMapToProperties({ properties }) {
   const map = useMap();
@@ -293,7 +302,14 @@ export default function Presentation() {
   const hasValidCoords = (property) => {
     const lat = Number(property.latitude);
     const lng = Number(property.longitude);
-    return Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0) && property.latitude !== '' && property.latitude != null;
+    return (
+      Number.isFinite(lat) &&
+      Number.isFinite(lng) &&
+      (lat !== 0 || lng !== 0) &&
+      !isKnownBadGeocodePoint(lat, lng) &&
+      property.latitude !== '' &&
+      property.latitude != null
+    );
   };
 
   const withCoords = useMemo(() => {
