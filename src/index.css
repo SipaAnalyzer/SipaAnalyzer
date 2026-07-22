@@ -158,15 +158,15 @@
 
   .sipa-dashboard-card:hover .sipa-card-waves {
     opacity: 1;
-    transform: translateY(0) scaleY(-1);
+    transform: translateY(-4px) scaleY(-1);
   }
 
   .sipa-card-waves svg {
     display: block;
     position: absolute;
-    inset: 0 auto auto -90px;
+    inset: -4px auto auto -90px;
     width: calc(100% + 180px);
-    height: 100%;
+    height: calc(100% + 8px);
   }
 
   .sipa-card-waves .parallax > use {
