@@ -137,6 +137,7 @@ const AUDIT_FIELDS = {
     nombre_logements: "Nombre de logements",
     nombre_bureaux: "Nombre de bureaux",
     nombre_parkings: "Nombre de parkings",
+    courtier_apporteur_affaire: "Courtier / apporteur d'affaire",
     lien_annonce: "Lien annonce",
     latitude: "Latitude",
     longitude: "Longitude",

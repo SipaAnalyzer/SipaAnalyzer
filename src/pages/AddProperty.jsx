@@ -20,6 +20,7 @@ export default function AddProperty() {
   const [form, setForm] = useState({
     nom_bien: '', adresse: '', ville: '', canton: '', pays: 'Suisse',
     annee_construction: '', surface: '', nombre_logements: '', nombre_bureaux: '', nombre_parkings: '', statut: 'en_cours',
+    courtier_apporteur_affaire: '',
     lien_annonce: '', lien_piece_jointe: '', image_url: '', latitude: '', longitude: '',
   });
 
@@ -163,6 +164,10 @@ export default function AddProperty() {
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block">Nombre de parkings</Label>
             <Input type="number" value={form.nombre_parkings} onChange={set('nombre_parkings')} placeholder="6" className="bg-background border-border" />
+          </div>
+          <div className="sm:col-span-2">
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Courtier / apporteur d'affaire</Label>
+            <Input value={form.courtier_apporteur_affaire} onChange={set('courtier_apporteur_affaire')} placeholder="Nom, societe ou contact" className="bg-background border-border" />
           </div>
             <div className="sm:col-span-2">
               <Label className="text-xs text-muted-foreground mb-1.5 block">Photo du bien</Label>

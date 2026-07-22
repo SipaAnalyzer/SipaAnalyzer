@@ -324,6 +324,7 @@ function propertyRows(property) {
     { label: 'Annee', value: property?.annee_construction },
     { label: 'Surface', value: property?.surface ? `${property.surface} m2` : 'N/A' },
     { label: 'Logements', value: property?.nombre_logements },
+    { label: "Courtier / apporteur d'affaire", value: property?.courtier_apporteur_affaire || 'N/A' },
     { label: 'Coordonnees', value: property?.latitude && property?.longitude ? `${property.latitude}, ${property.longitude}` : 'N/A' },
   ];
 }

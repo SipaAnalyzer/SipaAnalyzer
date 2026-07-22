@@ -1348,6 +1348,7 @@ function PropertyPresentation({ property, latest, comments, updateCouleur }) {
           <InfoItem label="Nombre de logements" value={property.nombre_logements} />
           <InfoItem label="Nombre de bureaux" value={property.nombre_bureaux} />
           <InfoItem label="Nombre de parkings" value={property.nombre_parkings} />
+          <InfoItem label="Courtier / apporteur d'affaire" value={property.courtier_apporteur_affaire} />
           <InfoItem label="Statut" value={property.statut} />
         </div>
 
