@@ -97,7 +97,24 @@ function FitMapToProperties({ properties }) {
   const map = useMap();
 
   useEffect(() => {
-    map.setView(LEMAN_CENTER, LEMAN_ZOOM);
+    const coordinates = properties
+      .map((property) => [Number(property.latitude), Number(property.longitude)])
+      .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng));
+
+    if (coordinates.length === 0) {
+      map.setView(LEMAN_CENTER, LEMAN_ZOOM);
+      return;
+    }
+
+    if (coordinates.length === 1) {
+      map.setView(coordinates[0], 12);
+      return;
+    }
+
+    map.fitBounds(L.latLngBounds(coordinates), {
+      padding: [54, 54],
+      maxZoom: 12,
+    });
   }, [map, properties]);
 
   return null;

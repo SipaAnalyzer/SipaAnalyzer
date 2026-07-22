@@ -357,8 +357,12 @@
   display: none !important;
 }
 .map-container .leaflet-container {
-  background: transparent;
+  background: #eef3ec;
   z-index: 0 !important;
+}
+.map-container .leaflet-tile,
+.map-container .leaflet-tile-container {
+  background: #eef3ec;
 }
 .map-container .leaflet-tile-pane {
   filter: none !important;
