@@ -141,39 +141,32 @@
     display: none;
   }
 
-  .sipa-card-waves {
+  .sipa-dashboard-card::before {
+    content: '';
     position: absolute;
-    right: 0;
     top: 0;
-    left: 0;
-    width: 100%;
-    height: 20px;
+    left: -80px;
+    right: -80px;
+    height: 18px;
     pointer-events: none;
     opacity: 0;
     transform: translateY(-8px);
     transition: opacity 180ms ease, transform 220ms ease;
-    color: hsl(var(--primary));
+    background-color: hsl(var(--primary));
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 1440 80' preserveAspectRatio='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0H1440V25C1320 54 1200 54 1080 25C960 -4 840 -4 720 25C600 54 480 54 360 25C240 -4 120 -4 0 25V0Z' fill='rgba(255,255,255,0.42)'/%3E%3Cpath d='M0 0H1440V34C1300 58 1160 58 1020 34C880 10 740 10 600 34C460 58 320 58 180 34C90 18 45 14 0 18V0Z' fill='rgba(255,255,255,0.26)'/%3E%3Cpath d='M0 0H1440V43C1260 68 1080 68 900 43C720 18 540 18 360 43C180 68 90 62 0 43V0Z' fill='rgba(255,255,255,0.18)'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-size: 220px 18px;
+    background-position: 0 0;
+    animation: sipa-wave-move 18s cubic-bezier(.55,.5,.45,.5) infinite;
     z-index: 0;
   }
 
-  .sipa-dashboard-card:hover .sipa-card-waves {
+  .sipa-dashboard-card:hover::before {
     opacity: 1;
     transform: translateY(0);
   }
 
-  .sipa-card-waves svg {
-    display: block;
-    position: absolute;
-    inset: 0 auto auto -80px;
-    width: calc(100% + 160px);
-    height: 100%;
-  }
-
-  .sipa-card-waves .parallax {
-    animation: sipa-wave-move 18s cubic-bezier(.55,.5,.45,.5) infinite;
-  }
-
-  .sipa-dashboard-card > *:not(.sipa-card-waves) {
+  .sipa-dashboard-card > * {
     position: relative;
     z-index: 1;
   }
@@ -181,10 +174,10 @@
 
 @keyframes sipa-wave-move {
   0% {
-    transform: translate3d(-90px, 0, 0);
+    background-position: 0 0;
   }
   100% {
-    transform: translate3d(85px, 0, 0);
+    background-position: 220px 0;
   }
 }
 

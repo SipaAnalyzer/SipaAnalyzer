@@ -57,21 +57,6 @@ export default function KPICards({
           <div
             className="sipa-card-motion sipa-dashboard-card flex min-h-[138px] h-full flex-col bg-card rounded-xl border border-border p-5 transition-all duration-200 ease-out hover:border-primary/45 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 cursor-pointer"
           >
-            <div className="sipa-card-waves" aria-hidden="true">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 1440 80"
-                preserveAspectRatio="none"
-                shapeRendering="auto"
-              >
-                <g className="parallax">
-                  <path d="M0 0H1440V25C1320 54 1200 54 1080 25C960 -4 840 -4 720 25C600 54 480 54 360 25C240 -4 120 -4 0 25V0Z" fill="currentColor" opacity="0.28" />
-                  <path d="M0 0H1440V34C1300 58 1160 58 1020 34C880 10 740 10 600 34C460 58 320 58 180 34C90 18 45 14 0 18V0Z" fill="currentColor" opacity="0.19" />
-                  <path d="M0 0H1440V43C1260 68 1080 68 900 43C720 18 540 18 360 43C180 68 90 62 0 43V0Z" fill="currentColor" opacity="0.12" />
-                </g>
-              </svg>
-            </div>
-
             <div className="flex items-start justify-between gap-3 mb-4">
               <span className="min-h-10 text-xs text-muted-foreground font-medium leading-snug">
                 {card.label}
