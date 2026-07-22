@@ -10,7 +10,7 @@ import StatusBadge from '../components/StatusBadge';
 import ScoreGauge from '../components/ScoreGauge';
 import FavoriteButton from '../components/FavoriteButton';
 import { formatCHF, formatPercent, normalizeAnalysis, WORKFLOW_STATUSES } from '../utils/calculations';
-import { Plus, Search, Building2, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Search, Building2, Loader2, ExternalLink, MapPin } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 
 const COULEURS = [
@@ -28,6 +28,20 @@ const SORT_OPTIONS = [
   { value: 'date-desc', label: 'Plus récent' },
   { value: 'date-asc', label: 'Plus ancien' },
 ];
+
+function getPropertyAccentColor(couleur) {
+  if (couleur === 'rouge') return '#ef4444';
+  if (couleur === 'orange') return '#f97316';
+  if (couleur === 'vert') return '#22c55e';
+  return 'hsl(var(--primary))';
+}
+
+function getPropertyCardStyle(couleur) {
+  const accent = getPropertyAccentColor(couleur);
+  return couleur
+    ? { borderTopColor: accent, '--sipa-card-accent': accent }
+    : { '--sipa-card-accent': accent };
+}
 
 export default function Properties() {
   const { permissions, isAdmin } = usePermissions();
@@ -60,11 +74,6 @@ export default function Properties() {
   });
 
   const villes = useMemo(() => [...new Set(properties.map(p => p.ville).filter(Boolean))], [properties]);
-  const couleursUtilisees = useMemo(() =>
-    [...new Set(properties.map(p => p.couleur).filter(Boolean))],
-    [properties]
-  );
-
   const enriched = useMemo(() => {
     return properties.map(p => {
       const propAnalyses = analyses.filter(a => a.property_id === p.id).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
@@ -170,18 +179,33 @@ export default function Properties() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-visible">
           {sorted.map(p => {
-            const colorDef = COULEURS.find(c => c.value === p.couleur);
             return (
               <Link key={p.id} to={`/property/${p.id}`} className="relative block">
                 <div className={`sipa-card-motion relative transform-gpu bg-card rounded-xl border p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out group hover:z-30 hover:scale-[1.03] hover:-translate-y-1 hover:border-primary/60 hover:shadow-[0_24px_60px_rgba(0,0,0,0.22)] ${p.couleur ? 'border-t-4' : 'border-border border-t-border'}`}
-                  style={p.couleur ? { borderTopColor: p.couleur === 'rouge' ? '#ef4444' : p.couleur === 'orange' ? '#f97316' : '#22c55e' } : {}}>
-                  {p.image_url ? (
-                    <img src={p.image_url} alt="" className="w-full h-36 object-cover rounded-lg mb-4 transition-transform duration-300 ease-out group-hover:scale-[1.015]" />
-                  ) : (
-                    <div className="sipa-card-icon w-full h-36 rounded-lg mb-4 bg-muted/30 flex items-center justify-center">
-                      <Building2 className="h-8 w-8 text-muted-foreground/40" />
+                  style={getPropertyCardStyle(p.couleur)}>
+                  <div className="relative mb-4 h-40 overflow-hidden rounded-lg border border-border/40 bg-muted/20">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt="" className="h-full w-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.025]" />
+                    ) : (
+                      <div className="sipa-card-icon flex h-full w-full items-center justify-center bg-muted/30">
+                        <Building2 className="h-8 w-8 text-muted-foreground/40" />
+                      </div>
+                    )}
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background/85 to-transparent" />
+                    <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
+                      {p.ville && (
+                        <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-border/60 bg-background/85 px-2 py-1 text-[10px] font-medium text-foreground backdrop-blur">
+                          <MapPin className="h-3 w-3 text-primary" />
+                          <span className="truncate">{p.ville}</span>
+                        </span>
+                      )}
+                      {p.surface && (
+                        <span className="rounded-md border border-border/60 bg-background/85 px-2 py-1 text-[10px] font-medium text-muted-foreground backdrop-blur">
+                          {p.surface} m²
+                        </span>
+                      )}
                     </div>
-                  )}
+                  </div>
                   <div>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-1.5 min-w-0">

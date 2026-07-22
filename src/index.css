@@ -114,7 +114,7 @@
     right: 0;
     top: 0;
     height: 2px;
-    background: hsl(var(--primary));
+    background: var(--sipa-card-accent, hsl(var(--primary)));
     opacity: 0;
     transform: scaleX(0);
     transform-origin: left center;
