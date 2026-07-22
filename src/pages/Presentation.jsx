@@ -507,29 +507,6 @@ export default function Presentation() {
               ))}
             </div>
           </div>
-          {withCoords.length > 0 && (
-            <div className="pointer-events-none absolute bottom-4 left-4 right-4 z-[400] hidden rounded-lg border border-border bg-card/95 p-3 shadow-2xl backdrop-blur lg:block">
-              <div className="grid grid-cols-4 gap-3">
-                {withCoords.slice(0, 4).map((property) => (
-                  <div key={property.id} className="rounded-md border border-border/70 bg-background/80 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className="rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
-                        style={{ backgroundColor: getPresentationStatusColor(property.statut) }}
-                      >
-                        {getPresentationStatusLabel(property.statut)}
-                      </span>
-                      {property.analysis && <span className="text-[10px] font-mono text-primary">{property.analysis.score_global}/100</span>}
-                    </div>
-                    <p className="mt-2 truncate text-xs font-medium">{property.nom_bien}</p>
-                    <p className="mt-1 text-[10px] text-muted-foreground">
-                      {property.ville}{property.canton ? `, ${property.canton}` : ''}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
