@@ -262,14 +262,15 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         }))
       : [];
 
-    const mergedSipaData = form.sipa_data
-      ? [...form.sipa_data, ...customSipaData]
-      : customSipaData.length > 0 ? customSipaData : null;
+    const baseSipaData = Array.isArray(form.sipa_data)
+      ? form.sipa_data.filter((entry) => !entry._custom)
+      : [];
+    const mergedSipaData = [...baseSipaData, ...customSipaData];
 
     const payload = {
       property_id: form.property_id,
       statut: form.statut,
-      sipa_data: mergedSipaData,
+      sipa_data: mergedSipaData.length > 0 ? mergedSipaData : null,
       prix_bien: form.prix_bien,
       versement_initial: form.versement_initial,
       amortissement_5_ans: form.amortissement_5_ans,
