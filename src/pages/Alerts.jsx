@@ -33,10 +33,28 @@ export default function Alerts() {
     queryFn: () => listAuditLogs(200),
   });
 
+  const { data: properties = [], isLoading: lp } = useQuery({
+    queryKey: ['alerts-properties'],
+    queryFn: () => base44.entities.Property.list('-created_date', 500),
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
+
+  const { data: analyses = [], isLoading: la } = useQuery({
+    queryKey: ['alerts-analyses'],
+    queryFn: () => base44.entities.Analysis.list('-created_date', 1000),
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
+
   const alerts = useMemo(() => buildSmartAlerts({
     auditLogs,
     comments,
-  }), [auditLogs, comments]);
+    properties,
+    analyses,
+  }), [auditLogs, comments, properties, analyses]);
 
   const visibleAlerts = useMemo(() => filterHiddenAlerts(alerts, hiddenAlertIds), [alerts, hiddenAlertIds]);
 
@@ -59,7 +77,7 @@ export default function Alerts() {
     setSelectedAlertIds([]);
   };
 
-  if (lc) {
+  if (lc || lp || la) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -76,7 +94,7 @@ export default function Alerts() {
             <h1 className="font-display text-2xl font-bold">Alertes</h1>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Surveillance limitée aux suppressions de biens et aux baisses de prix liées au SARON.
+            Surveillance des suppressions, baisses de prix et dossiers sans activite depuis 30 jours.
           </p>
         </div>
 

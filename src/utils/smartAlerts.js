@@ -9,8 +9,23 @@ const PRICE_FIELDS = new Set([
 ]);
 
 const AUDIT_PREFIX = '__audit__';
+const STALE_PROPERTY_THRESHOLD_DAYS = 30;
+const STALE_ALERT_EXCLUDED_STATUSES = new Set(['commercialise', 'abandonne']);
 
-export function buildSmartAlerts({ auditLogs = [], comments = [] } = {}) {
+const STATUS_LABELS = {
+  en_cours: "En cours d'analyse",
+  demande_complementaire: 'Demande complementaire',
+  visite_sipa: 'Visite SIPA',
+  demande_rapport_expertise_externe: 'Demande rapport expertise externe',
+  proposition_achat: "Proposition d'achat",
+  negociation: 'Negociation',
+  proposition_acceptee: 'Proposition acceptee',
+  commercialise: 'Commercialise',
+  abandonne: 'Abandonne',
+  valide: 'Valide',
+};
+
+export function buildSmartAlerts({ auditLogs = [], comments = [], properties = [], analyses = [] } = {}) {
   const alerts = [];
   const seenDeletedProperties = new Set();
   const alertEvents = [
@@ -50,9 +65,71 @@ export function buildSmartAlerts({ auditLogs = [], comments = [] } = {}) {
     }
   });
 
+  alerts.push(...buildStalePropertyAlerts({ properties, analyses, comments, auditLogs: alertEvents }));
+
   return dedupeAlerts(alerts)
     .sort((a, b) => severityWeight(b.severity) - severityWeight(a.severity))
     .slice(0, 12);
+}
+
+function buildStalePropertyAlerts({ properties = [], analyses = [], comments = [], auditLogs = [] } = {}) {
+  const now = new Date();
+  const activityByPropertyId = new Map();
+
+  properties.forEach((property) => {
+    setLatestActivity(activityByPropertyId, property.id, property.updated_at || property.updated_date || property.created_at || property.created_date);
+  });
+
+  analyses.forEach((analysis) => {
+    setLatestActivity(activityByPropertyId, analysis.property_id, analysis.updated_at || analysis.updated_date || analysis.created_at || analysis.created_date);
+  });
+
+  comments.forEach((comment) => {
+    setLatestActivity(activityByPropertyId, comment.property_id, comment.updated_at || comment.updated_date || comment.created_at || comment.created_date);
+  });
+
+  auditLogs.forEach((log) => {
+    const metadata = log.metadata || {};
+    const propertyId = metadata.property_id || (log.target_type === 'property' ? log.target_id : null);
+    setLatestActivity(activityByPropertyId, propertyId, log.created_at);
+  });
+
+  return properties
+    .filter((property) => property?.id && !STALE_ALERT_EXCLUDED_STATUSES.has(property.statut))
+    .map((property) => {
+      const lastActivity = activityByPropertyId.get(property.id);
+      const daysSinceActivity = getDaysSince(lastActivity, now);
+      if (daysSinceActivity == null || daysSinceActivity < STALE_PROPERTY_THRESHOLD_DAYS) return null;
+
+      const statusLabel = STATUS_LABELS[property.statut] || property.statut || 'Statut non renseigne';
+
+      return {
+        id: `stale-property-${property.id}`,
+        severity: 'info',
+        category: 'Suivi interne',
+        title: 'Dossier sans activite depuis 30 jours',
+        description: `${property.nom_bien || 'Ce bien'} est au statut "${statusLabel}" et n'a pas eu d'activite depuis ${daysSinceActivity} jours.`,
+        link: `/property/${property.id}`,
+      };
+    })
+    .filter(Boolean);
+}
+
+function setLatestActivity(activityByPropertyId, propertyId, rawDate) {
+  if (!propertyId || !rawDate) return;
+
+  const date = new Date(rawDate);
+  if (Number.isNaN(date.getTime())) return;
+
+  const current = activityByPropertyId.get(propertyId);
+  if (!current || date > current) {
+    activityByPropertyId.set(propertyId, date);
+  }
+}
+
+function getDaysSince(date, now = new Date()) {
+  if (!date) return null;
+  return Math.floor((now.getTime() - date.getTime()) / 86400000);
 }
 
 function getPriceDropAlert(log) {

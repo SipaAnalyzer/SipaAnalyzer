@@ -84,10 +84,24 @@ function SidebarContent({ location, user, onNavigate, collapsed = false, onToggl
     ...NAV_ALERT_QUERY_OPTIONS,
   });
 
+  const { data: alertProperties = [] } = useQuery({
+    queryKey: ['nav-alert-properties'],
+    queryFn: () => base44.entities.Property.list('-created_date', 500),
+    ...NAV_ALERT_QUERY_OPTIONS,
+  });
+
+  const { data: alertAnalyses = [] } = useQuery({
+    queryKey: ['nav-alert-analyses'],
+    queryFn: () => base44.entities.Analysis.list('-created_date', 1000),
+    ...NAV_ALERT_QUERY_OPTIONS,
+  });
+
   const alerts = useMemo(() => buildSmartAlerts({
     auditLogs: alertAuditLogs,
     comments: alertComments,
-  }), [alertAuditLogs, alertComments]);
+    properties: alertProperties,
+    analyses: alertAnalyses,
+  }), [alertAuditLogs, alertComments, alertProperties, alertAnalyses]);
 
   const visibleAlerts = useMemo(() => filterHiddenAlerts(alerts, hiddenAlertIds), [alerts, hiddenAlertIds]);
   const alertIds = useMemo(() => visibleAlerts.map((alert) => alert.id).filter(Boolean), [visibleAlerts]);
