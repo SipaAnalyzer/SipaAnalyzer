@@ -144,21 +144,21 @@
   .sipa-card-waves {
     position: absolute;
     right: 0;
-    bottom: 0;
+    top: 0;
     left: 0;
     width: 100%;
-    height: 68px;
+    height: 18px;
     pointer-events: none;
     opacity: 0;
-    transform: translateY(48px);
-    transition: opacity 220ms ease, transform 260ms ease;
+    transform: translateY(-10px) scaleY(-1);
+    transition: opacity 180ms ease, transform 220ms ease;
     color: hsl(var(--primary));
     z-index: 0;
   }
 
   .sipa-dashboard-card:hover .sipa-card-waves {
     opacity: 1;
-    transform: translateY(26px);
+    transform: translateY(0) scaleY(-1);
   }
 
   .sipa-card-waves svg {
