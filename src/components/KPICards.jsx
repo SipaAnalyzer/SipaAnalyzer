@@ -26,7 +26,7 @@ const statusIcons = {
 };
 
 const statusWaveColors = {
-  total: 'hsl(var(--primary))',
+  total: 'hsl(var(--primary) / 0.62)',
   en_cours: 'rgb(59 130 246)',
   demande_complementaire: 'rgb(6 182 212)',
   visite_sipa: 'rgb(139 92 246)',
@@ -57,7 +57,7 @@ export default function KPICards({
       ...status,
       icon: statusIcons[status.value] || ClipboardList,
       className: STATUS_CONFIG[status.value]?.class || 'bg-muted text-muted-foreground',
-      waveColor: statusWaveColors[status.value] || 'hsl(var(--primary))',
+      waveColor: statusWaveColors[status.value] || 'hsl(var(--primary) / 0.62)',
       count: statusCounts[status.value] || 0,
     })),
   ];

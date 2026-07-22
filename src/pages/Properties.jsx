@@ -30,10 +30,10 @@ const SORT_OPTIONS = [
 ];
 
 function getPropertyAccentColor(couleur) {
-  if (couleur === 'rouge') return '#ff1f1f';
+  if (couleur === 'rouge') return '#ff0000';
   if (couleur === 'orange') return '#f97316';
   if (couleur === 'vert') return '#22c55e';
-  return 'hsl(var(--primary))';
+  return 'hsl(var(--primary) / 0.62)';
 }
 
 function getPropertyCardStyle(couleur) {
