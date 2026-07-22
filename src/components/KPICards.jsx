@@ -53,7 +53,6 @@ export default function KPICards({
         const Icon = card.icon;
         const value = card.value === 'total' ? total : card.count;
         const href = card.href || `/properties?status=${card.value}`;
-        const waveId = `gentle-wave-${card.value}`;
         const content = (
           <div
             className="sipa-card-motion sipa-dashboard-card flex min-h-[138px] h-full flex-col bg-card rounded-xl border border-border p-5 transition-all duration-200 ease-out hover:border-primary/45 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 cursor-pointer"
@@ -61,21 +60,14 @@ export default function KPICards({
             <div className="sipa-card-waves" aria-hidden="true">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 -2 150 22"
+                viewBox="0 0 1440 80"
                 preserveAspectRatio="none"
                 shapeRendering="auto"
               >
-                <defs>
-                  <path
-                    id={waveId}
-                    d="M-160 0c30 0 58 14 88 14s58-14 88-14 58 14 88 14 58-14 88-14v-44h-352z"
-                  />
-                </defs>
                 <g className="parallax">
-                  <use href={`#${waveId}`} x="48" y="0" fill="currentColor" opacity="0.30" />
-                  <use href={`#${waveId}`} x="48" y="3" fill="currentColor" opacity="0.22" />
-                  <use href={`#${waveId}`} x="48" y="5" fill="currentColor" opacity="0.15" />
-                  <use href={`#${waveId}`} x="48" y="7" fill="currentColor" opacity="0.10" />
+                  <path d="M0 0H1440V25C1320 54 1200 54 1080 25C960 -4 840 -4 720 25C600 54 480 54 360 25C240 -4 120 -4 0 25V0Z" fill="currentColor" opacity="0.28" />
+                  <path d="M0 0H1440V34C1300 58 1160 58 1020 34C880 10 740 10 600 34C460 58 320 58 180 34C90 18 45 14 0 18V0Z" fill="currentColor" opacity="0.19" />
+                  <path d="M0 0H1440V43C1260 68 1080 68 900 43C720 18 540 18 360 43C180 68 90 62 0 43V0Z" fill="currentColor" opacity="0.12" />
                 </g>
               </svg>
             </div>
