@@ -191,7 +191,7 @@
     animation-duration: 20s;
   }
 
-  .sipa-dashboard-card > * {
+  .sipa-dashboard-card > *:not(.sipa-card-waves) {
     position: relative;
     z-index: 1;
   }
