@@ -55,14 +55,14 @@ export default function KPICards({
         const href = card.href || `/properties?status=${card.value}`;
         const content = (
           <div
-            className="h-full bg-card rounded-xl border border-border p-5 transition-all duration-200 ease-out hover:border-primary/45 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 cursor-pointer"
+            className="sipa-card-motion h-full bg-card rounded-xl border border-border p-5 transition-all duration-200 ease-out hover:border-primary/45 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 cursor-pointer"
           >
             <div className="flex items-start justify-between gap-3 mb-4">
               <span className="min-h-10 text-xs text-muted-foreground font-medium leading-snug">
                 {card.label}
               </span>
 
-              <span className={`shrink-0 rounded-lg p-2 ${card.className}`}>
+              <span className={`sipa-card-icon shrink-0 rounded-lg p-2 ${card.className}`}>
                 <Icon className="h-4 w-4" />
               </span>
             </div>

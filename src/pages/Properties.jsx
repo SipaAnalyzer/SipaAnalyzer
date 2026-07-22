@@ -173,12 +173,12 @@ export default function Properties() {
             const colorDef = COULEURS.find(c => c.value === p.couleur);
             return (
               <Link key={p.id} to={`/property/${p.id}`} className="relative block">
-                <div className={`relative transform-gpu bg-card rounded-xl border p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out group hover:z-30 hover:scale-[1.03] hover:-translate-y-1 hover:border-primary/60 hover:shadow-[0_24px_60px_rgba(0,0,0,0.22)] ${p.couleur ? 'border-t-4' : 'border-border border-t-border'}`}
+                <div className={`sipa-card-motion relative transform-gpu bg-card rounded-xl border p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out group hover:z-30 hover:scale-[1.03] hover:-translate-y-1 hover:border-primary/60 hover:shadow-[0_24px_60px_rgba(0,0,0,0.22)] ${p.couleur ? 'border-t-4' : 'border-border border-t-border'}`}
                   style={p.couleur ? { borderTopColor: p.couleur === 'rouge' ? '#ef4444' : p.couleur === 'orange' ? '#f97316' : '#22c55e' } : {}}>
                   {p.image_url ? (
-                    <img src={p.image_url} alt="" className="w-full h-36 object-cover rounded-lg mb-4" />
+                    <img src={p.image_url} alt="" className="w-full h-36 object-cover rounded-lg mb-4 transition-transform duration-300 ease-out group-hover:scale-[1.015]" />
                   ) : (
-                    <div className="w-full h-36 rounded-lg mb-4 bg-muted/30 flex items-center justify-center">
+                    <div className="sipa-card-icon w-full h-36 rounded-lg mb-4 bg-muted/30 flex items-center justify-center">
                       <Building2 className="h-8 w-8 text-muted-foreground/40" />
                     </div>
                   )}
