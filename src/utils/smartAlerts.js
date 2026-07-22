@@ -1,4 +1,4 @@
-const PROPERTY_DELETE_EVENTS = new Set(['property_soft_deleted', 'property_hard_deleted']);
+const PROPERTY_DELETE_EVENTS = new Set(['property_soft_deleted', 'property_hard_deleted', 'property_auto_trashed']);
 
 const PRICE_FIELDS = new Set([
   'prix_bien',
@@ -11,6 +11,8 @@ const PRICE_FIELDS = new Set([
 const AUDIT_PREFIX = '__audit__';
 const STALE_PROPERTY_THRESHOLD_DAYS = 30;
 const STALE_ALERT_EXCLUDED_STATUSES = new Set(['commercialise', 'abandonne']);
+const AUTO_TRASH_PROPERTY_THRESHOLD_DAYS = 90;
+const AUTO_TRASH_PROPERTY_STATUSES = new Set(['en_cours', 'abandonne']);
 
 const STATUS_LABELS = {
   en_cours: "En cours d'analyse",
@@ -73,7 +75,70 @@ export function buildSmartAlerts({ auditLogs = [], comments = [], properties = [
 }
 
 function buildStalePropertyAlerts({ properties = [], analyses = [], comments = [], auditLogs = [] } = {}) {
+  return getInactivePropertyItems({
+    properties,
+    analyses,
+    comments,
+    auditLogs,
+    thresholdDays: STALE_PROPERTY_THRESHOLD_DAYS,
+    includeStatus: (status) => !STALE_ALERT_EXCLUDED_STATUSES.has(status),
+  })
+    .map(({ property, daysSinceActivity }) => {
+
+      const statusLabel = STATUS_LABELS[property.statut] || property.statut || 'Statut non renseigne';
+
+      return {
+        id: `stale-property-${property.id}`,
+        severity: 'info',
+        category: 'Suivi interne',
+        title: 'Dossier sans activite depuis 30 jours',
+        description: `${property.nom_bien || 'Ce bien'} est au statut "${statusLabel}" et n'a pas eu d'activite depuis ${daysSinceActivity} jours.`,
+        link: `/property/${property.id}`,
+      };
+    })
+    .filter(Boolean);
+}
+
+export function getAutoTrashCandidates({ properties = [], analyses = [], comments = [], auditLogs = [] } = {}) {
+  return getInactivePropertyItems({
+    properties,
+    analyses,
+    comments,
+    auditLogs: [
+      ...auditLogs.map(normalizeAuditLog),
+      ...parseAuditComments(comments),
+    ],
+    thresholdDays: AUTO_TRASH_PROPERTY_THRESHOLD_DAYS,
+    includeStatus: (status) => AUTO_TRASH_PROPERTY_STATUSES.has(status),
+  }).map(({ property, daysSinceActivity }) => ({
+    property,
+    daysSinceActivity,
+  }));
+}
+
+function getInactivePropertyItems({
+  properties = [],
+  analyses = [],
+  comments = [],
+  auditLogs = [],
+  thresholdDays,
+  includeStatus,
+} = {}) {
   const now = new Date();
+  const activityByPropertyId = getLatestActivityByPropertyId({ properties, analyses, comments, auditLogs });
+
+  return properties
+    .filter((property) => property?.id && includeStatus(property.statut))
+    .map((property) => {
+      const lastActivity = activityByPropertyId.get(property.id);
+      const daysSinceActivity = getDaysSince(lastActivity, now);
+      if (daysSinceActivity == null || daysSinceActivity < thresholdDays) return null;
+      return { property, daysSinceActivity, lastActivity };
+    })
+    .filter(Boolean);
+}
+
+function getLatestActivityByPropertyId({ properties = [], analyses = [], comments = [], auditLogs = [] } = {}) {
   const activityByPropertyId = new Map();
 
   properties.forEach((property) => {
@@ -94,25 +159,7 @@ function buildStalePropertyAlerts({ properties = [], analyses = [], comments = [
     setLatestActivity(activityByPropertyId, propertyId, log.created_at);
   });
 
-  return properties
-    .filter((property) => property?.id && !STALE_ALERT_EXCLUDED_STATUSES.has(property.statut))
-    .map((property) => {
-      const lastActivity = activityByPropertyId.get(property.id);
-      const daysSinceActivity = getDaysSince(lastActivity, now);
-      if (daysSinceActivity == null || daysSinceActivity < STALE_PROPERTY_THRESHOLD_DAYS) return null;
-
-      const statusLabel = STATUS_LABELS[property.statut] || property.statut || 'Statut non renseigne';
-
-      return {
-        id: `stale-property-${property.id}`,
-        severity: 'info',
-        category: 'Suivi interne',
-        title: 'Dossier sans activite depuis 30 jours',
-        description: `${property.nom_bien || 'Ce bien'} est au statut "${statusLabel}" et n'a pas eu d'activite depuis ${daysSinceActivity} jours.`,
-        link: `/property/${property.id}`,
-      };
-    })
-    .filter(Boolean);
+  return activityByPropertyId;
 }
 
 function setLatestActivity(activityByPropertyId, propertyId, rawDate) {

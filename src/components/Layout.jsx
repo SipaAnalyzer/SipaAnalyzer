@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star, Sun, Moon, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -11,12 +11,13 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import QuickNotes from '@/components/QuickNotes';
 import AIAssistant from '@/components/AIAssistant';
-import { buildSmartAlerts } from '@/utils/smartAlerts';
-import { listAuditLogs } from '@/utils/auditLogs';
+import { buildSmartAlerts, getAutoTrashCandidates } from '@/utils/smartAlerts';
+import { listAuditLogs, recordAuditLog } from '@/utils/auditLogs';
 import { filterHiddenAlerts, readHiddenAlertIds } from '@/utils/alertVisibility';
 
 const SEEN_ALERTS_KEY = 'sipa_seen_alert_ids';
 const SIDEBAR_COLLAPSED_KEY = 'sipa_sidebar_collapsed';
+const AUTO_TRASH_PROCESSING_IDS = new Set();
 const NAV_ALERT_QUERY_OPTIONS = {
   staleTime: 0,
   refetchInterval: 30000,
@@ -68,6 +69,7 @@ const navItems = [
 
 function SidebarContent({ location, user, onNavigate, collapsed = false, onToggleCollapse }) {
   const { permissions, isAdmin } = usePermissions();
+  const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const [seenAlertIds, setSeenAlertIds] = useState(readSeenAlertIds);
   const [hiddenAlertIds, setHiddenAlertIds] = useState(readHiddenAlertIds);
@@ -103,6 +105,13 @@ function SidebarContent({ location, user, onNavigate, collapsed = false, onToggl
     analyses: alertAnalyses,
   }), [alertAuditLogs, alertComments, alertProperties, alertAnalyses]);
 
+  const autoTrashCandidates = useMemo(() => getAutoTrashCandidates({
+    auditLogs: alertAuditLogs,
+    comments: alertComments,
+    properties: alertProperties,
+    analyses: alertAnalyses,
+  }), [alertAuditLogs, alertComments, alertProperties, alertAnalyses]);
+
   const visibleAlerts = useMemo(() => filterHiddenAlerts(alerts, hiddenAlertIds), [alerts, hiddenAlertIds]);
   const alertIds = useMemo(() => visibleAlerts.map((alert) => alert.id).filter(Boolean), [visibleAlerts]);
   const unseenAlertCount = useMemo(() => {
@@ -124,6 +133,42 @@ function SidebarContent({ location, user, onNavigate, collapsed = false, onToggl
       markAlertsSeen();
     }
   }, [location.pathname, alertIds.join('|')]);
+
+  useEffect(() => {
+    const canAutoTrash = isAdmin || permissions.can_delete_property;
+    if (!canAutoTrash || autoTrashCandidates.length === 0) return;
+
+    autoTrashCandidates.forEach(({ property, daysSinceActivity }) => {
+      if (!property?.id || AUTO_TRASH_PROCESSING_IDS.has(property.id)) return;
+      AUTO_TRASH_PROCESSING_IDS.add(property.id);
+
+      base44.entities.Property.delete(property.id)
+        .then(() => recordAuditLog({
+          eventType: 'property_auto_trashed',
+          severity: 'warning',
+          targetType: 'property',
+          targetId: property.id,
+          targetLabel: property.nom_bien || undefined,
+          metadata: {
+            property_id: property.id,
+            property_name: property.nom_bien,
+            status: property.statut,
+            days_since_activity: daysSinceActivity,
+            reason: 'Aucune activite depuis 90 jours',
+          },
+        }))
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['properties'] });
+          queryClient.invalidateQueries({ queryKey: ['nav-alert-properties'] });
+          queryClient.invalidateQueries({ queryKey: ['nav-alert-audit-logs'] });
+          queryClient.invalidateQueries({ queryKey: ['trash-properties'] });
+        })
+        .catch((error) => {
+          AUTO_TRASH_PROCESSING_IDS.delete(property.id);
+          console.warn('[AutoTrash] property soft delete failed:', error);
+        });
+    });
+  }, [autoTrashCandidates, isAdmin, permissions.can_delete_property, queryClient]);
 
   const visibleNavItems = navItems.filter(item => {
     if (item.path === '/comparator') return isAdmin || permissions.can_view_comparator;
