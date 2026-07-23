@@ -9,7 +9,6 @@ import { formatCHF, formatPercent, isActivePropertyStatus, isFinalizedPropertySt
 import ScoreBadge from '../components/ScoreBadge';
 import { geocodeProperties } from '../utils/geocode';
 import {
-  AlertTriangle,
   BarChart3,
   CheckCircle2,
   ExternalLink,
@@ -367,10 +366,6 @@ export default function Presentation() {
     return [...native, ...geocoded];
   }, [allWithAnalysis, geocodedCoords]);
 
-  const withoutCoords = allWithAnalysis.filter(
-    (property) => !withCoords.some((item) => item.id === property.id)
-  );
-
   useEffect(() => {
     console.log('[presentation] allWithAnalysis length:', allWithAnalysis.length);
     const toGeocode = allWithAnalysis.filter((property) => !hasValidCoords(property));
@@ -638,29 +633,6 @@ export default function Presentation() {
         </div>
       </div>
 
-      {withoutCoords.length > 0 && (
-        <div className="bg-card rounded-lg border border-border p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="h-4 w-4 text-amber-400" />
-            <h2 className="font-heading font-semibold text-sm">Biens sans coordonnées GPS</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {withoutCoords.map((property) => (
-              <div key={property.id} className="rounded-lg border border-border/60 bg-background/60 p-4 flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <Link to={`/property/${property.id}`} className="text-sm font-medium hover:text-primary">
-                    {property.nom_bien}
-                  </Link>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {property.ville}{property.canton ? `, ${property.canton}` : ''}
-                  </p>
-                </div>
-                {property.analysis && <ScoreBadge note={property.analysis.note} />}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="hidden">
         <h2 className="font-heading font-semibold text-sm mb-4 flex items-center gap-2">
