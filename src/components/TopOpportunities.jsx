@@ -23,8 +23,10 @@ export default function TopOpportunities({ items = [] }) {
     );
   }
 
+  const [leader, ...others] = items;
+
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <section className="overflow-hidden rounded-xl border border-primary/20 bg-card shadow-sm">
       <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -40,99 +42,143 @@ export default function TopOpportunities({ items = [] }) {
         </span>
       </div>
 
-      <div className="space-y-3 p-4">
-        {items.map((item, index) => {
-          const score = clampScore(item.score_global);
-          const isLeader = index === 0;
-
-          return (
-            <Link
-              key={item.id}
-              to={`/property/${item.property_id}`}
-              className={`group block rounded-xl border p-3 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg ${
-                isLeader
-                  ? 'border-primary/35 bg-primary/10 hover:border-primary/60 hover:shadow-primary/10'
-                  : 'border-border/70 bg-background/45 hover:border-primary/35 hover:bg-muted/30'
-              }`}
-            >
-              <div className="grid gap-4 sm:grid-cols-[64px_minmax(0,1fr)_auto] sm:items-center">
-                <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-border bg-muted">
-                  {item.property?.image_url ? (
-                    <img
-                      src={item.property.image_url}
-                      alt={item.property?.nom_bien || 'Bien'}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                      <Building2 className="h-6 w-6" />
-                    </div>
-                  )}
-                  <span
-                    className={`absolute left-1.5 top-1.5 flex h-6 min-w-6 items-center justify-center rounded-md px-1.5 text-[10px] font-bold ${
-                      isLeader ? 'bg-primary text-primary-foreground' : 'bg-background/90 text-foreground'
-                    }`}
-                  >
-                    {isLeader ? <Trophy className="h-3.5 w-3.5" /> : `#${index + 1}`}
-                  </span>
-                </div>
-
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="truncate text-sm font-semibold transition-colors group-hover:text-primary">
-                      {item.property?.nom_bien || 'Sans nom'}
-                    </h3>
-                    {isLeader && (
-                      <span className="rounded-md bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground">
-                        Meilleure opportunité
-                      </span>
-                    )}
-                    {item.property?.lien_annonce && (
-                      <span
-                        className="text-muted-foreground transition-colors group-hover:text-primary"
-                        title="Annonce disponible"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          window.open(item.property.lien_annonce, '_blank', 'noopener,noreferrer');
-                        }}
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <span>{item.property?.ville || 'Ville non renseignée'}</span>
-                    <StatusBadge statut={item.statut} />
-                  </div>
-
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${scoreColor(score)}`}
-                      style={{ width: `${score}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 sm:min-w-[360px] sm:grid-cols-[82px_1fr_1fr_1fr_auto] sm:items-center">
-                  <div className="rounded-lg border border-border/70 bg-card/70 p-2 text-center">
-                    <p className="mb-1 text-[10px] text-muted-foreground">Score</p>
-                    <ScoreBadge note={item.note} />
-                  </div>
-                  <OpportunityMetric label="Rdt. Net / FP" value={formatPercent(item.rendement_net_fonds_propres)} highlight />
-                  <OpportunityMetric label="Rdt. Brut" value={formatPercent(item.rendement_brut)} />
-                  <OpportunityMetric label="Prix total" value={formatCHF(item.prix_total)} />
-                  <span className="hidden h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-all group-hover:border-primary/40 group-hover:text-primary sm:flex">
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                  </span>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
+      <div className="grid gap-4 p-4 xl:grid-cols-[minmax(320px,0.95fr)_1.35fr]">
+        <LeaderOpportunity item={leader} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          {others.map((item, index) => (
+            <CompactOpportunity key={item.id} item={item} rank={index + 2} />
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
+  );
+}
+
+function LeaderOpportunity({ item }) {
+  const score = clampScore(item.score_global);
+
+  return (
+    <Link
+      to={`/property/${item.property_id}`}
+      className="group relative flex min-h-[310px] overflow-hidden rounded-xl border border-primary/35 bg-primary/10 p-4 transition-all duration-200 hover:-translate-y-1 hover:border-primary/70 hover:shadow-xl hover:shadow-primary/10"
+    >
+      <div className="absolute inset-x-0 top-0 h-1.5 bg-primary" />
+      <div className="flex w-full flex-col">
+        <div className="relative mb-4 h-32 overflow-hidden rounded-lg border border-primary/20 bg-background/70">
+          {item.property?.image_url ? (
+            <img
+              src={item.property.image_url}
+              alt={item.property?.nom_bien || 'Bien'}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-primary">
+              <Building2 className="h-9 w-9" />
+              <span className="text-xs font-medium">Dossier immobilier</span>
+            </div>
+          )}
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
+            <Trophy className="h-3.5 w-3.5" />
+            #1
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-primary">Meilleure opportunité</p>
+            <h3 className="mt-1 line-clamp-2 font-heading text-xl font-semibold transition-colors group-hover:text-primary">
+              {item.property?.nom_bien || 'Sans nom'}
+            </h3>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span>{item.property?.ville || 'Ville non renseignée'}</span>
+              <StatusBadge statut={item.statut} />
+              <ExternalLinkButton url={item.property?.lien_annonce} />
+            </div>
+          </div>
+          <ScoreBadge note={item.note} />
+        </div>
+
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-background/80">
+          <div className={`h-full rounded-full ${scoreColor(score)}`} style={{ width: `${score}%` }} />
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <OpportunityMetric label="Rdt. Net / FP" value={formatPercent(item.rendement_net_fonds_propres)} highlight />
+          <OpportunityMetric label="Rdt. Brut" value={formatPercent(item.rendement_brut)} />
+          <OpportunityMetric label="Prix total" value={formatCHF(item.prix_total)} />
+        </div>
+
+        <div className="mt-auto flex items-center justify-between pt-4 text-xs font-medium text-primary">
+          <span>Ouvrir la fiche</span>
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function CompactOpportunity({ item, rank }) {
+  const score = clampScore(item.score_global);
+
+  return (
+    <Link
+      to={`/property/${item.property_id}`}
+      className="group flex min-h-[148px] flex-col rounded-xl border border-border/70 bg-background/45 p-3 transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:bg-muted/30 hover:shadow-lg"
+    >
+      <div className="flex items-start gap-3">
+        <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+          {item.property?.image_url ? (
+            <img
+              src={item.property.image_url}
+              alt={item.property?.nom_bien || 'Bien'}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+              <Building2 className="h-5 w-5" />
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="rounded-md bg-card px-2 py-1 text-[10px] font-bold text-primary">#{rank}</span>
+            <ScoreBadge note={item.note} />
+          </div>
+          <h3 className="mt-2 truncate text-sm font-semibold transition-colors group-hover:text-primary">
+            {item.property?.nom_bien || 'Sans nom'}
+          </h3>
+          <p className="mt-1 truncate text-xs text-muted-foreground">{item.property?.ville || 'Ville non renseignée'}</p>
+        </div>
+      </div>
+
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className={`h-full rounded-full ${scoreColor(score)}`} style={{ width: `${score}%` }} />
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <OpportunityMetric label="Rdt. Net / FP" value={formatPercent(item.rendement_net_fonds_propres)} highlight />
+        <OpportunityMetric label="Prix total" value={formatCHF(item.prix_total)} />
+      </div>
+    </Link>
+  );
+}
+
+function ExternalLinkButton({ url }) {
+  if (!url) return null;
+
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-muted-foreground transition-colors group-hover:text-primary"
+      title="Annonce disponible"
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }}
+    >
+      <ExternalLink className="h-3.5 w-3.5" />
+      Annonce
+    </span>
   );
 }
 
