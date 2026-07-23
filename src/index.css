@@ -376,10 +376,4 @@
   -webkit-filter: none !important;
 }
 
-/* Animation des barres de score */
-@keyframes score-bar-grow {
-  from { width: 0; }
-}
-.score-bar {
-  animation: score-bar-grow 0.8s ease-out forwards;
-}
+

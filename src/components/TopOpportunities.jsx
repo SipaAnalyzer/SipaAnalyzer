@@ -2,23 +2,17 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Building2, ExternalLink, SlidersHorizontal, Sparkles, Trophy, TrendingUp } from 'lucide-react';
 import ScoreBadge from './ScoreBadge';
+import ScoreGauge from './ScoreGauge';
 import StatusBadge from './StatusBadge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCHF, formatPercent } from '../utils/calculations';
 
-const clampScore = (score) => Math.max(0, Math.min(100, Number(score) || 0));
 const SORT_OPTIONS = [
   { value: 'score', label: 'Score', key: 'score_global' },
   { value: 'net_equity', label: 'Rdt. net / FP', key: 'rendement_net_fonds_propres' },
   { value: 'gross_yield', label: 'Rdt. brut', key: 'rendement_brut' },
   { value: 'price', label: 'Prix total', key: 'prix_total' },
 ];
-
-function scoreColor(score) {
-  if (score >= 80) return 'bg-primary';
-  if (score >= 65) return 'bg-amber-400';
-  return 'bg-red-500';
-}
 
 export default function TopOpportunities({ items = [] }) {
   const [sortBy, setSortBy] = useState('score');
@@ -88,8 +82,6 @@ export default function TopOpportunities({ items = [] }) {
 }
 
 function LeaderOpportunity({ item }) {
-  const score = clampScore(item.score_global);
-
   return (
     <Link
       to={`/property/${item.property_id}`}
@@ -116,7 +108,7 @@ function LeaderOpportunity({ item }) {
           </span>
         </div>
 
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.18em] text-primary">Meilleure opportunité</p>
             <h3 className="mt-1 line-clamp-2 font-heading text-xl font-semibold transition-colors group-hover:text-primary">
@@ -128,11 +120,10 @@ function LeaderOpportunity({ item }) {
               <ExternalLinkButton url={item.property?.lien_annonce} />
             </div>
           </div>
-          <ScoreBadge note={item.note} />
-        </div>
-
-        <div className="mt-4 h-2 overflow-hidden rounded-full bg-background/80">
-          <div className={`h-full rounded-full ${scoreColor(score)} score-bar`} style={{ width: `${score}%` }} />
+          <div className="flex flex-col items-center gap-1.5">
+            <ScoreGauge score={item.score_global || 0} size={68} />
+            <ScoreBadge note={item.note} />
+          </div>
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
@@ -151,8 +142,6 @@ function LeaderOpportunity({ item }) {
 }
 
 function CompactOpportunity({ item, rank }) {
-  const score = clampScore(item.score_global);
-
   return (
     <Link
       to={`/property/${item.property_id}`}
@@ -172,20 +161,19 @@ function CompactOpportunity({ item, rank }) {
             </div>
           )}
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="rounded-md bg-card px-2 py-1 text-[10px] font-bold text-primary">#{rank}</span>
-            <ScoreBadge note={item.note} />
+        <div className="flex items-center gap-3">
+          <ScoreGauge score={item.score_global || 0} size={52} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-card px-2 py-1 text-[10px] font-bold text-primary">#{rank}</span>
+              <ScoreBadge note={item.note} />
+            </div>
+            <h3 className="mt-1 truncate text-sm font-semibold transition-colors group-hover:text-primary">
+              {item.property?.nom_bien || 'Sans nom'}
+            </h3>
+            <p className="mt-1 truncate text-xs text-muted-foreground">{item.property?.ville || 'Ville non renseignée'}</p>
           </div>
-          <h3 className="mt-2 truncate text-sm font-semibold transition-colors group-hover:text-primary">
-            {item.property?.nom_bien || 'Sans nom'}
-          </h3>
-          <p className="mt-1 truncate text-xs text-muted-foreground">{item.property?.ville || 'Ville non renseignée'}</p>
         </div>
-      </div>
-
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
-        <div className={`h-full rounded-full ${scoreColor(score)} score-bar`} style={{ width: `${score}%` }} />
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
