@@ -103,8 +103,8 @@ const getGoogleMapsUrl = (property) => {
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 };
 
-const LEMAN_CENTER = [46.47, 6.7];
-const LEMAN_ZOOM = 9;
+const LEMAN_CENTER = [46.5199, 6.6328];
+const LEMAN_ZOOM = 10;
 const KNOWN_BAD_GEOCODE_POINTS = [
   [46.9413229, 7.4499253],
 ];
