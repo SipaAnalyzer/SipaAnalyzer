@@ -76,10 +76,10 @@ export default function TopOpportunities({ items = [] }) {
       </div>
 
       <div className="grid gap-4 p-4 xl:grid-cols-[minmax(320px,0.95fr)_1.35fr]">
-        <LeaderOpportunity item={leader} />
+        <LeaderOpportunity key={leader.id + '-' + sortBy} item={leader} />
         <div className="grid gap-3 sm:grid-cols-2">
           {others.map((item, index) => (
-            <CompactOpportunity key={item.id} item={item} rank={index + 2} />
+            <CompactOpportunity key={item.id + '-' + sortBy} item={item} rank={index + 2} />
           ))}
         </div>
       </div>
@@ -132,7 +132,7 @@ function LeaderOpportunity({ item }) {
         </div>
 
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-background/80">
-          <div className={`h-full rounded-full ${scoreColor(score)}`} style={{ width: `${score}%` }} />
+          <div className={`h-full rounded-full ${scoreColor(score)} score-bar`} style={{ width: `${score}%` }} />
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
@@ -184,8 +184,8 @@ function CompactOpportunity({ item, rank }) {
         </div>
       </div>
 
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
-        <div className={`h-full rounded-full ${scoreColor(score)}`} style={{ width: `${score}%` }} />
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className={`h-full rounded-full ${scoreColor(score)} score-bar`} style={{ width: `${score}%` }} />
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
