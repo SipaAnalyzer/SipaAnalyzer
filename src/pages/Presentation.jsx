@@ -33,6 +33,20 @@ const average = (items, selector) => {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 };
 
+function getSipaTotalIncome(analysis) {
+  const sipaEntry = analysis?.sipa_data?.find((entry) =>
+    String(entry?.label || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .includes('sipa total')
+  );
+  const importedAmount = sipaEntry?.values?.find((value) => value.type === 'amount' || typeof value.value === 'number');
+  if (importedAmount?.value != null) return importedAmount.value;
+
+  return Number(analysis?.honoraires_sipa || 0) + Number(analysis?.gestion || 0);
+}
+
 const PRESENTATION_STATUS_COLORS = {
   en_cours: '#3b82f6',
   demande_complementaire: '#06b6d4',
@@ -606,10 +620,11 @@ export default function Presentation() {
                   </div>
 
                   {property.analysis ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 mt-3 border-t border-border/50">
-                      <Metric label="Prix" value={formatCHF(property.analysis.prix_total)} />
-                      <Metric label="Rdt. net/FP" value={formatPercent(property.analysis.rendement_net_fonds_propres)} highlight />
-                      <Metric label="Distribué" value={formatCHF(property.analysis.revenu_distribue)} />
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-3 mt-3 border-t border-border/50">
+                      <Metric label="Prix total" value={formatCHF(property.analysis.prix_total)} />
+                      <Metric label="Rdt. distribue / FP" value={formatPercent(property.analysis.revenu_distribue_fonds_propres)} highlight />
+                      <Metric label="Prix d'achat" value={formatCHF(property.analysis.prix_bien)} />
+                      <Metric label="SIPA total income" value={formatCHF(getSipaTotalIncome(property.analysis))} highlight />
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border/50">
