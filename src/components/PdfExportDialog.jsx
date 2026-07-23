@@ -39,7 +39,7 @@ export default function PdfExportDialog({ onExport, children, ...triggerProps })
         {children || (
           <Button size="sm" variant="outline" className="gap-2">
             <Download className="h-3.5 w-3.5" />
-            PDF analyse
+            Export PDF
           </Button>
         )}
       </DialogTrigger>

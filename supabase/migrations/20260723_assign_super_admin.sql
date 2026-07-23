@@ -1,3 +1,11 @@
+-- Ajouter super_admin à la contrainte check si pas déjà fait
+alter table if exists public.user_permissions
+  drop constraint if exists user_permissions_role_check;
+
+alter table if exists public.user_permissions
+  add constraint user_permissions_role_check
+  check (role in ('en_attente', 'membre', 'staff', 'direction', 'admin', 'super_admin'));
+
 -- Assigner le rôle super_admin à magalie.loureiro@sipa.swiss
 do $$
 declare

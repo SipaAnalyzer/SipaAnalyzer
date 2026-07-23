@@ -19,7 +19,7 @@ import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
 import { calculateAnalysis, formatCHF, formatPercent, normalizeAnalyses, WORKFLOW_STATUSES } from '../utils/calculations';
 import { formatSipaValue } from '../utils/excelImport';
-import { exportAnalysisPdf, exportPropertyPdf } from '../utils/pdfExports';
+import { exportAnalysisPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
 import { listAuditLogs, recordAuditLog } from '../utils/auditLogs';
 import { toast } from 'sonner';
@@ -250,10 +250,7 @@ export default function PropertyDetail() {
         <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
           <FavoriteButton propertyId={propertyId} variant="outline" className="h-8 w-8" />
 
-          <Button size="sm" variant="outline" className="flex-1 sm:flex-none gap-2" onClick={() => exportPropertyPdf(property, normalizedAnalyses)}>
-            <Download className="h-3.5 w-3.5" />
-            PDF bien
-          </Button>
+
 
           {displayedAnalysis && <PdfExportDialog onExport={(sections) => exportAnalysisPdf(property, displayedAnalysis, sections)} />}
 
