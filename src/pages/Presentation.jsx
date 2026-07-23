@@ -156,6 +156,34 @@ function HeroStat({ label, value, detail }) {
   );
 }
 
+function PresentationWave() {
+  const waveId = 'gentle-wave-presentation-hero';
+
+  return (
+    <div className="sipa-card-waves" style={{ color: 'hsl(var(--primary) / 0.62)' }} aria-hidden="true">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 26 150 26"
+        preserveAspectRatio="none"
+        shapeRendering="auto"
+      >
+        <defs>
+          <path
+            id={waveId}
+            d="M-160 44c30 0 58-18 88-18s58 18 88 18 58-18 88-18 58 18 88 18v44h-352z"
+          />
+        </defs>
+        <g className="parallax">
+          <use href={`#${waveId}`} x="48" y="0" fill="currentColor" opacity="0.30" />
+          <use href={`#${waveId}`} x="48" y="3" fill="currentColor" opacity="0.22" />
+          <use href={`#${waveId}`} x="48" y="5" fill="currentColor" opacity="0.15" />
+          <use href={`#${waveId}`} x="48" y="7" fill="currentColor" opacity="0.10" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
 function Metric({ label, value, highlight = false }) {
   return (
     <div>
@@ -378,7 +406,8 @@ export default function Presentation() {
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm md:p-6">
+      <section className="sipa-card-motion sipa-presentation-card relative overflow-hidden rounded-lg border border-border bg-card p-5 shadow-sm md:p-6">
+        <PresentationWave />
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-md border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">

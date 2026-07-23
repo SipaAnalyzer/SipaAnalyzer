@@ -196,7 +196,8 @@
   }
 
   .sipa-dashboard-card > *:not(.sipa-card-waves),
-  .sipa-property-card > *:not(.sipa-card-waves) {
+  .sipa-property-card > *:not(.sipa-card-waves),
+  .sipa-presentation-card > *:not(.sipa-card-waves) {
     position: relative;
     z-index: 1;
   }
