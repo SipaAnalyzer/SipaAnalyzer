@@ -254,6 +254,21 @@ function UserActivityPanel({ allPerms }) {
 }
 
 const ROLE_PRESETS = {
+  super_admin: {
+    role: 'super_admin',
+    is_admin: true,
+    can_view_properties: true,
+    can_create_property: true,
+    can_edit_property: true,
+    can_delete_property: true,
+    can_create_analysis: true,
+    can_edit_analysis: true,
+    can_delete_analysis: true,
+    can_view_comparator: true,
+    can_view_presentation: true,
+    can_comment: true,
+  },
+
   en_attente: {
     role: 'en_attente',
     is_admin: false,
@@ -331,6 +346,7 @@ const ROLE_PRESETS = {
 };
 
 const ROLE_LABELS = {
+  super_admin: 'Super Admin',
   en_attente: 'En attente',
   admin: 'Admin',
   direction: 'Direction',
@@ -456,7 +472,7 @@ function UserPermissionRow({ user, existingPerm, onSave, onDelete }) {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Admin peut gérer les rôles et permissions. Direction a toutes les features sauf l’administration. Membre est en lecture seule.
+              Super Admin peut gérer tous les rôles (y compris les admins). Admin peut gérer les rôles et permissions. Direction a toutes les features sauf l'administration. Membre est en lecture seule.
             </p>
           </div>
 
@@ -477,15 +493,15 @@ function UserPermissionRow({ user, existingPerm, onSave, onDelete }) {
                   id={`${user.id}-${key}`}
                   checked={!!perms[key]}
                   onCheckedChange={() => toggle(key)}
-                  disabled={perms.role === 'admin' || perms.role === 'en_attente'}
+                  disabled={perms.role === 'super_admin' || perms.role === 'admin' || perms.role === 'en_attente'}
                 />
               </div>
             ))}
           </div>
 
-          {perms.role === 'admin' && (
+          {(perms.role === 'super_admin' || perms.role === 'admin') && (
             <p className="text-xs text-muted-foreground">
-              Cet utilisateur est admin : toutes les permissions sont activées automatiquement.
+              Cet utilisateur est {perms.role === 'super_admin' ? 'Super Admin' : 'admin'} : toutes les permissions sont activées automatiquement.
             </p>
           )}
 
@@ -591,10 +607,12 @@ export default function Admin() {
       ...newPerms,
       user_id: userId,
       role,
-      is_admin: role === 'admin',
+      is_admin: role === 'admin' || role === 'super_admin',
     };
 
-    if (role === 'admin') {
+    if (role === 'super_admin') {
+      Object.assign(payload, ROLE_PRESETS.super_admin);
+    } else if (role === 'admin') {
       Object.assign(payload, ROLE_PRESETS.admin);
     }
 
