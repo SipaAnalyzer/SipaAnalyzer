@@ -56,10 +56,8 @@ const { data: properties = [], isLoading: lp } = useQuery({
     })
     .filter(a => a.property);
 
-  const top5 = [...enriched]
-    .filter(a => isActivePropertyStatus(a.property?.statut) && !isFinalizedPropertyStatus(a.statut))
-    .sort((a, b) => (b.score_global || 0) - (a.score_global || 0))
-    .slice(0, 5);
+  const opportunities = enriched
+    .filter(a => isActivePropertyStatus(a.property?.statut) && !isFinalizedPropertyStatus(a.statut));
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -75,7 +73,7 @@ const { data: properties = [], isLoading: lp } = useQuery({
 
       <KPICards total={total} statusCounts={statusCounts} />
 
-      <TopOpportunities items={top5} />
+      <TopOpportunities items={opportunities} />
     </div>
   );
 }

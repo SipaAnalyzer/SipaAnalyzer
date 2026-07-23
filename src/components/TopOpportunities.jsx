@@ -1,10 +1,18 @@
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Building2, ExternalLink, Sparkles, Trophy, TrendingUp } from 'lucide-react';
+import { ArrowRight, Building2, ExternalLink, SlidersHorizontal, Sparkles, Trophy, TrendingUp } from 'lucide-react';
 import ScoreBadge from './ScoreBadge';
 import StatusBadge from './StatusBadge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCHF, formatPercent } from '../utils/calculations';
 
 const clampScore = (score) => Math.max(0, Math.min(100, Number(score) || 0));
+const SORT_OPTIONS = [
+  { value: 'score', label: 'Score', key: 'score_global' },
+  { value: 'net_equity', label: 'Rdt. net / FP', key: 'rendement_net_fonds_propres' },
+  { value: 'gross_yield', label: 'Rdt. brut', key: 'rendement_brut' },
+  { value: 'price', label: 'Prix total', key: 'prix_total' },
+];
 
 function scoreColor(score) {
   if (score >= 80) return 'bg-primary';
@@ -13,6 +21,18 @@ function scoreColor(score) {
 }
 
 export default function TopOpportunities({ items = [] }) {
+  const [sortBy, setSortBy] = useState('score');
+  const selectedSort = SORT_OPTIONS.find((option) => option.value === sortBy) || SORT_OPTIONS[0];
+  const visibleItems = useMemo(() => {
+    return [...items]
+      .sort((a, b) => {
+        const diff = Number(b[selectedSort.key] || 0) - Number(a[selectedSort.key] || 0);
+        if (diff !== 0) return diff;
+        return Number(b.score_global || 0) - Number(a.score_global || 0);
+      })
+      .slice(0, 5);
+  }, [items, selectedSort.key]);
+
   if (items.length === 0) {
     return (
       <div className="rounded-xl border border-border bg-card p-8 text-center">
@@ -23,7 +43,7 @@ export default function TopOpportunities({ items = [] }) {
     );
   }
 
-  const [leader, ...others] = items;
+  const [leader, ...others] = visibleItems;
 
   return (
     <section className="overflow-hidden rounded-xl border border-primary/20 bg-card shadow-sm">
@@ -37,9 +57,22 @@ export default function TopOpportunities({ items = [] }) {
             <p className="mt-0.5 text-xs text-muted-foreground">Les dossiers actifs les plus prometteurs</p>
           </div>
         </div>
-        <span className="w-fit rounded-md border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-          Classées par score
-        </span>
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <span className="hidden text-xs text-muted-foreground sm:inline">Trier par</span>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="h-9 w-full min-w-[170px] border-primary/20 bg-primary/10 text-xs font-medium text-primary sm:w-[190px]">
+              <SlidersHorizontal className="mr-2 h-3.5 w-3.5" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid gap-4 p-4 xl:grid-cols-[minmax(320px,0.95fr)_1.35fr]">
