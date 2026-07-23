@@ -104,7 +104,7 @@ const getGoogleMapsUrl = (property) => {
 };
 
 const LEMAN_CENTER = [46.4355, 6.9108];
-const LEMAN_ZOOM = 10;
+const LEMAN_ZOOM = 9;
 const KNOWN_BAD_GEOCODE_POINTS = [
   [46.9413229, 7.4499253],
 ];
