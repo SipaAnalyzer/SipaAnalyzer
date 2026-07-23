@@ -69,23 +69,23 @@ const createScoreIcon = (property) => {
     className: 'portfolio-marker',
     html: `
       <div style="
-        width: 44px;
-        height: 44px;
+        width: 30px;
+        height: 30px;
         border-radius: 999px;
         background: ${markerColor};
-        border: 4px solid white;
-        box-shadow: 0 12px 28px rgba(0,0,0,.32), 0 0 0 8px ${markerColor}33;
+        border: 3px solid white;
+        box-shadow: 0 8px 20px rgba(0,0,0,.3), 0 0 0 6px ${markerColor}33;
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font: 700 12px Inter, Arial, sans-serif;
+        font: 700 8px Inter, Arial, sans-serif;
         letter-spacing: -.02em;
       ">${score}</div>
     `,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
-    popupAnchor: [0, -26],
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    popupAnchor: [0, -18],
   });
 };
 
