@@ -163,6 +163,12 @@
     transform: scaleY(-1);
   }
 
+  .sipa-presentation-card .sipa-card-waves {
+    top: -2px;
+    height: 20px;
+    transform: translateY(-1px) scaleY(-1);
+  }
+
   .sipa-card-waves svg {
     display: block;
     position: absolute;
