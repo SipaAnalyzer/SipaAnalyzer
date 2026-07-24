@@ -49,14 +49,7 @@ function writeSidebarCollapsed(value) {
 }
 
 const LogoSipaCrochet = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 280" width="52" height="56">
-    <g stroke="#A5D63A" strokeWidth="18" fill="none" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M40 113V50H103" />
-      <path d="M157 50H220V113" />
-      <path d="M40 167V230H103" />
-      <path d="M157 230H220V167" />
-    </g>
-  </svg>
+  <img src="/logosipavertgros.png" alt="SIPA Logo" width="52" height="56" className="object-contain" />
 );
 
 const navItems = [
