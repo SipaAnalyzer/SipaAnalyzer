@@ -4,17 +4,20 @@ import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
 import { formatSipaValue } from '../utils/excelImport';
 import { exportAnalysisPdf } from '../utils/pdfExports';
+import { usePermissions } from '@/hooks/usePermissions';
 import PdfExportDialog from '../components/PdfExportDialog';
 import ScoreGauge from '../components/ScoreGauge';
 import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
 import FinancialTable from '../components/FinancialTable';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, MapPin, Landmark, FileText, TrendingUp } from 'lucide-react';
+import { Loader2, ArrowLeft, MapPin, Landmark, FileText, TrendingUp, Pencil } from 'lucide-react';
 import moment from 'moment';
 
 export default function ViewAnalysis() {
   const { analysisId } = useParams();
+  const { permissions, isAdmin } = usePermissions();
+  const canEditAnalysis = isAdmin || permissions.can_edit_analysis;
 
   const { data: analysisRaw, isLoading } = useQuery({
     queryKey: ['analysis', analysisId],
@@ -172,9 +175,19 @@ export default function ViewAnalysis() {
 
       {analysis.notes && (
         <section className="bg-card rounded-xl border border-border p-6">
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-primary" />
             <h3 className="font-heading font-semibold">Informations complémentaires</h3>
+          </div>
+            {canEditAnalysis && (
+              <Link to={`/edit-analysis/${analysis.id}?tab=notes`}>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Pencil className="h-4 w-4" />
+                  Modifier
+                </Button>
+              </Link>
+            )}
           </div>
           <pre className="w-full bg-background border border-border rounded-lg p-3 text-sm font-mono whitespace-pre-wrap break-words">{analysis.notes}</pre>
         </section>

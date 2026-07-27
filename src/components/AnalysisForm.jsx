@@ -163,7 +163,7 @@ function PctRow({ label, amount, onAmount, pct, onPct }) {
   );
 }
 
-export default function AnalysisForm({ initialData, initialPropertyId, onSubmit, isSubmitting }) {
+export default function AnalysisForm({ initialData, initialPropertyId, onSubmit, isSubmitting, initialTab = 'financial' }) {
   const { data: properties = [] } = useQuery({
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list('-created_date', 100),
@@ -361,7 +361,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
 
   const selectedProperty = properties.find((p) => p.id === form.property_id);
 
-  const [activeTab, setActiveTab] = useState('financial');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [analysisViewMode, setAnalysisViewMode] = useState('simplified');
   const [excelImportState, setExcelImportState] = useState({
     loading: false,

@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { recordAuditLog } from '@/utils/auditLogs';
@@ -10,7 +10,9 @@ import { toast } from 'sonner';
 export default function EditAnalysis() {
   const { analysisId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const initialTab = searchParams.get('tab') === 'notes' ? 'notes' : 'financial';
 
   const { data: analysis, isLoading } = useQuery({
     queryKey: ['analysis', analysisId],
@@ -49,7 +51,7 @@ export default function EditAnalysis() {
           <p className="text-sm text-muted-foreground">Mettez à jour les données financières</p>
         </div>
       </div>
-      <AnalysisForm initialData={analysis} initialPropertyId={analysis?.property_id} onSubmit={update.mutateAsync} isSubmitting={update.isPending} />
+      <AnalysisForm initialData={analysis} initialPropertyId={analysis?.property_id} onSubmit={update.mutateAsync} isSubmitting={update.isPending} initialTab={initialTab} />
     </div>
   );
 }
