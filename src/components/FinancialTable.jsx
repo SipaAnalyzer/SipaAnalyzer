@@ -39,10 +39,11 @@ export default function FinancialTable({ analysis }) {
               <Row label="Prix du bien" value={formatCHF(analysis.prix_bien)} />
               <Row label="Versement initial sur le compte de la copropriété" value={formatCHF(analysis.versement_initial)} />
               <Row label="Amortissement sur 5 ans" value={formatCHF(analysis.amortissement_5_ans)} />
-              <Row label="Honoraires transaction Sipa Immobilier SA" amount={analysis.honoraires_sipa} base={analysis.prix_bien} />
+              <Row label="Frais de transaction" amount={analysis.honoraires_sipa} base={analysis.prix_bien} />
               <Row label="Frais de dossier bancaire" value={formatCHF(analysis.frais_dossier_bancaire)} />
               <RowTotal label="Prix total" value={formatCHF(prixTotal)} />
               <Row label="Fonds propres" value={formatCHF(analysis.fonds_propres)} />
+              <Row label="Target bénéfice SIPA fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} base={analysis.fonds_propres} />
               <Row label="Hypothèque" amount={analysis.hypotheque} base={prixTotal} />
               <tr className="border-t-2 border-border">
                 <Td className="text-muted-foreground">Revenus locatifs (hors charges)</Td>

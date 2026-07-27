@@ -103,6 +103,21 @@ function recalculateFinancialState(data, { financingDriver = 'hypotheque', sourc
     next.fonds_propres_pct = 100;
   }
 
+  if (
+    hasFinancialValue(next.target_benefice_sipa_fonds_propres_pct) &&
+    shouldRecalculateFromPct('target_benefice_sipa_fonds_propres', sourceKey, sourceType)
+  ) {
+    next.target_benefice_sipa_fonds_propres = amountFromPct(
+      toNumber(next.fonds_propres),
+      next.target_benefice_sipa_fonds_propres_pct
+    );
+  } else if (hasFinancialValue(next.target_benefice_sipa_fonds_propres)) {
+    next.target_benefice_sipa_fonds_propres_pct = pctFromAmount(
+      toNumber(next.fonds_propres),
+      next.target_benefice_sipa_fonds_propres
+    );
+  }
+
   if (hasFinancialValue(next.interets_hypothecaires_pct) && shouldRecalculateFromPct('interets_hypothecaires', sourceKey, sourceType)) {
     next.interets_hypothecaires = amountFromPct(toNumber(next.hypotheque), next.interets_hypothecaires_pct);
   }
@@ -166,6 +181,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     frais_dossier_bancaire: null,
     fonds_propres: null,
     fonds_propres_pct: null,
+    target_benefice_sipa_fonds_propres: null,
+    target_benefice_sipa_fonds_propres_pct: 15,
     hypotheque: null,
     hypotheque_pct: null,
     revenus_locatifs: null,
@@ -203,6 +220,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       if (Number(data.prix_bien) > 0 && data.versement_initial != null) data.versement_initial_pct = Math.round((data.versement_initial / data.prix_bien) * 10000) / 100;
       if (Number(data.prix_bien) > 0 && data.honoraires_sipa != null) data.honoraires_sipa_pct = Math.round((data.honoraires_sipa / data.prix_bien) * 10000) / 100;
       if (prixTotal > 0 && data.fonds_propres != null) data.fonds_propres_pct = Math.round((data.fonds_propres / prixTotal) * 10000) / 100;
+      if (Number(data.fonds_propres) > 0 && data.target_benefice_sipa_fonds_propres != null && data.target_benefice_sipa_fonds_propres_pct == null) data.target_benefice_sipa_fonds_propres_pct = Math.round((data.target_benefice_sipa_fonds_propres / data.fonds_propres) * 10000) / 100;
       if (prixTotal > 0 && data.hypotheque != null) data.hypotheque_pct = Math.round((data.hypotheque / prixTotal) * 10000) / 100;
       if (Number(data.hypotheque) > 0 && data.interets_hypothecaires != null) data.interets_hypothecaires_pct = Math.round((data.interets_hypothecaires / data.hypotheque) * 10000) / 100;
       if (Number(data.revenus_locatifs) > 0 && data.gestion != null) data.gestion_pct = Math.round((data.gestion / data.revenus_locatifs) * 10000) / 100;
@@ -287,6 +305,10 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         Number(s.prix_bien || 0) + Number(s.versement_initial || 0) + Number(s.amortissement_5_ans || 0) + Number(s.honoraires_sipa || 0) + Number(s.frais_dossier_bancaire || 0)
       , 'fonds_propres'),
     };
+    const targetBeneficeSipa = {
+      amount: makeAmountHandler('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', (s) => Number(s.fonds_propres || 0)),
+      pct: makePctHandler('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', (s) => Number(s.fonds_propres || 0)),
+    };
     const interets = {
       amount: makeAmountHandler('interets_hypothecaires', 'interets_hypothecaires_pct', (s) => Number(s.hypotheque || 0)),
       pct: makePctHandler('interets_hypothecaires', 'interets_hypothecaires_pct', (s) => Number(s.hypotheque || 0)),
@@ -311,7 +333,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         return rev - ch - int - ges;
       }),
     };
-    return { versementInitial, honoraires, hypotheque, fondsPropres, interets, gestion, impot };
+    return { versementInitial, honoraires, hypotheque, fondsPropres, targetBeneficeSipa, interets, gestion, impot };
   }, [makeAmountHandler, makePctHandler]);
 
   const set = (key) => (value) => {
@@ -325,6 +347,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         'frais_dossier_bancaire',
         'hypotheque',
         'fonds_propres',
+        'target_benefice_sipa_fonds_propres',
         'revenus_locatifs',
         'charges_operationnelles',
         'interets_hypothecaires',
@@ -413,6 +436,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       honoraires_sipa: calculatedForm.honoraires_sipa,
       frais_dossier_bancaire: calculatedForm.frais_dossier_bancaire,
       fonds_propres: calculatedForm.fonds_propres,
+      target_benefice_sipa_fonds_propres: calculatedForm.target_benefice_sipa_fonds_propres,
+      target_benefice_sipa_fonds_propres_pct: calculatedForm.target_benefice_sipa_fonds_propres_pct,
       hypotheque: calculatedForm.hypotheque,
       revenus_locatifs: calculatedForm.revenus_locatifs,
       charges_operationnelles: calculatedForm.charges_operationnelles,
@@ -666,7 +691,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                 </td>
               </tr>
               <PctRow
-                label="Honoraires transaction Sipa Immobilier SA"
+                label="Frais de transaction"
                 amount={form.honoraires_sipa}
                 onAmount={handlers.honoraires.amount}
                 pct={form.honoraires_sipa_pct}
@@ -690,6 +715,13 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                 onAmount={handlers.fondsPropres.amount}
                 pct={form.fonds_propres_pct}
                 onPct={handlers.fondsPropres.pct}
+              />
+              <PctRow
+                label="Target bénéfice SIPA fonds propres"
+                amount={form.target_benefice_sipa_fonds_propres}
+                onAmount={handlers.targetBeneficeSipa.amount}
+                pct={form.target_benefice_sipa_fonds_propres_pct}
+                onPct={handlers.targetBeneficeSipa.pct}
               />
               <PctRow
                 label="Hypothèque"
@@ -1218,7 +1250,7 @@ function TechnicalAnalysisView({
               <ExcelPctRow
                 row={5}
                 section="Acquisition"
-                label="Honoraires transaction SIPA"
+                label="Frais de transaction"
                 amount={form.honoraires_sipa}
                 onAmount={handlers.honoraires.amount}
                 pct={form.honoraires_sipa_pct}
@@ -1239,6 +1271,15 @@ function TechnicalAnalysisView({
               <ExcelPctRow
                 row={9}
                 section="Financement"
+                label="Target benefice SIPA fonds propres"
+                amount={form.target_benefice_sipa_fonds_propres}
+                onAmount={handlers.targetBeneficeSipa.amount}
+                pct={form.target_benefice_sipa_fonds_propres_pct}
+                onPct={handlers.targetBeneficeSipa.pct}
+              />
+              <ExcelPctRow
+                row={10}
+                section="Financement"
                 label="Hypotheque"
                 amount={form.hypotheque}
                 onAmount={handlers.hypotheque.amount}
@@ -1246,11 +1287,11 @@ function TechnicalAnalysisView({
                 onPct={handlers.hypotheque.pct}
               />
 
-              <ExcelAmountRow row={10} section="Exploitation" label="Revenus locatifs hors charges" value={form.revenus_locatifs} onChange={set('revenus_locatifs')} />
-              <ExcelComputedRow row={11} section="Exploitation" label="Taux de rendement brut" value={formatPercent(calc.rendement_brut)} />
-              <ExcelAmountRow row={12} section="Exploitation" label="Charges operationnelles" value={form.charges_operationnelles} onChange={set('charges_operationnelles')} />
+              <ExcelAmountRow row={11} section="Exploitation" label="Revenus locatifs hors charges" value={form.revenus_locatifs} onChange={set('revenus_locatifs')} />
+              <ExcelComputedRow row={12} section="Exploitation" label="Taux de rendement brut" value={formatPercent(calc.rendement_brut)} />
+              <ExcelAmountRow row={13} section="Exploitation" label="Charges operationnelles" value={form.charges_operationnelles} onChange={set('charges_operationnelles')} />
               <ExcelPctRow
-                row={13}
+                row={14}
                 section="Exploitation"
                 label="Interet hypothecaire moyen 5 ans"
                 amount={form.interets_hypothecaires}
@@ -1259,7 +1300,7 @@ function TechnicalAnalysisView({
                 onPct={handlers.interets.pct}
               />
               <ExcelPctRow
-                row={14}
+                row={15}
                 section="Exploitation"
                 label="Honoraires de gestion"
                 amount={form.gestion}
@@ -1267,10 +1308,10 @@ function TechnicalAnalysisView({
                 pct={form.gestion_pct}
                 onPct={handlers.gestion.pct}
               />
-              <ExcelComputedRow row={15} section="Exploitation" label="Revenu net" value={formatCHF(calc.revenu_net)} strong />
-              <ExcelComputedRow row={16} section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(calc.rendement_net_fonds_propres)} />
+              <ExcelComputedRow row={16} section="Exploitation" label="Revenu net" value={formatCHF(calc.revenu_net)} strong />
+              <ExcelComputedRow row={17} section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(calc.rendement_net_fonds_propres)} />
               <ExcelPctRow
-                row={17}
+                row={18}
                 section="Fiscalite"
                 label="Impot"
                 amount={form.impot}
@@ -1278,12 +1319,12 @@ function TechnicalAnalysisView({
                 pct={form.impot_pct}
                 onPct={handlers.impot.pct}
               />
-              <ExcelComputedRow row={18} section="Distribution" label="Revenu distribue" value={formatCHF(calc.revenu_distribue)} strong />
-              <ExcelComputedRow row={19} section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(calc.revenu_distribue_fonds_propres)} />
+              <ExcelComputedRow row={19} section="Distribution" label="Revenu distribue" value={formatCHF(calc.revenu_distribue)} strong />
+              <ExcelComputedRow row={20} section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(calc.revenu_distribue_fonds_propres)} />
 
               {customFinancialFields.map((cf, index) => (
                 <tr key={cf.id}>
-                  <ExcelRowNumber>{20 + index}</ExcelRowNumber>
+                  <ExcelRowNumber>{21 + index}</ExcelRowNumber>
                   <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>Personnalise</ExcelCell>
                   <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                     <input
@@ -1330,7 +1371,7 @@ function TechnicalAnalysisView({
               ))}
 
               <tr className="hover:bg-[#fff2cc]">
-                <ExcelRowNumber>{20 + customFinancialFields.length}</ExcelRowNumber>
+                <ExcelRowNumber>{21 + customFinancialFields.length}</ExcelRowNumber>
                 <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>Nouvelle ligne</ExcelCell>
                 <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                   <input

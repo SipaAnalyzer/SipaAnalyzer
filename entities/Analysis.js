@@ -33,6 +33,16 @@
       "type": "number",
       "title": "Fonds propres"
     },
+    "target_benefice_sipa_fonds_propres": {
+      "type": "number",
+      "title": "Target bénéfice SIPA fonds propres",
+      "default": 0
+    },
+    "target_benefice_sipa_fonds_propres_pct": {
+      "type": "number",
+      "title": "Target bénéfice SIPA fonds propres (%)",
+      "default": 15
+    },
     "hypotheque": {
       "type": "number",
       "title": "Hypoth\u00e8que"

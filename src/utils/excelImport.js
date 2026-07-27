@@ -29,6 +29,7 @@ const FIELD_DEFINITIONS = [
   { key: 'honoraires_sipa', pctKey: 'honoraires_sipa_pct', labels: ['honoraires transaction sipa', 'frais de transaction'], kind: 'amount' },
   { key: 'frais_dossier_bancaire', labels: ['frais de dossier bancaire', 'commission broker hypotheque', 'commission broker autres charges'], kind: 'amount' },
   { key: 'fonds_propres', labels: ['fonds propres', 'fond propre'], kind: 'amount' },
+  { key: 'target_benefice_sipa_fonds_propres', pctKey: 'target_benefice_sipa_fonds_propres_pct', labels: ['target benefice sipa fonds prop', 'target benefice sipa fonds propres'], kind: 'amount' },
   { key: 'hypotheque', pctKey: 'hypotheque_pct', labels: ['hypotheque', 'hypotheque bancaire'], kind: 'amount' },
   { key: 'revenus_locatifs', labels: ['revenus locatifs annuels', 'revenus locatifs'], kind: 'amount' },
   { key: 'charges_operationnelles', labels: ['charges operationnelles', 'charges operationnells'], kind: 'amount' },
@@ -45,6 +46,7 @@ const FIELD_DEFINITIONS = [
 
 const PCT_LABELS = new Map([
   ['honoraires_sipa_pct', ['honoraires transaction sipa', 'frais de transaction']],
+  ['target_benefice_sipa_fonds_propres_pct', ['target benefice sipa fonds prop', 'target benefice sipa fonds propres']],
   ['hypotheque_pct', ['hypotheque']],
   ['interets_hypothecaires_pct', ['interet hypothecaire']],
   ['gestion_pct', ['frais de gestion', 'honoraires de gestion', 'gestion']],
@@ -664,6 +666,16 @@ function applyDerivedPercentages(fields) {
 
   if (fields.hypotheque_pct == null && prixTotal > 0 && fields.hypotheque != null) {
     fields.hypotheque_pct = round2((fields.hypotheque / prixTotal) * 100);
+  }
+
+  if (
+    fields.target_benefice_sipa_fonds_propres_pct == null &&
+    fields.fonds_propres > 0 &&
+    fields.target_benefice_sipa_fonds_propres != null
+  ) {
+    fields.target_benefice_sipa_fonds_propres_pct = round2(
+      (fields.target_benefice_sipa_fonds_propres / fields.fonds_propres) * 100
+    );
   }
 
   if (fields.interets_hypothecaires_pct == null && fields.hypotheque > 0 && fields.interets_hypothecaires != null) {
