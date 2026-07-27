@@ -339,9 +339,19 @@ export default function PropertyDetail() {
         <TabsContent value="infos" className="mt-5 space-y-6">
           {selected?.notes && (
             <section className="bg-card rounded-xl border border-border p-6">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+                <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4 text-primary" />
                 <h3 className="font-heading font-semibold">Informations complémentaires</h3>
+                </div>
+                {canEditAnalysis && selected?.id && (
+                  <Link to={`/edit-analysis/${selected.id}?tab=notes`}>
+                    <Button size="sm" variant="outline" className="gap-2">
+                      <Pencil className="h-3.5 w-3.5" />
+                      Modifier
+                    </Button>
+                  </Link>
+                )}
               </div>
               <pre className="w-full bg-background border border-border rounded-lg p-3 text-sm font-mono whitespace-pre-wrap break-words">{selected.notes}</pre>
             </section>
