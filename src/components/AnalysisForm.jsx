@@ -61,24 +61,32 @@ function pctFromAmount(base, amount) {
   return round2((Number(amount) / base) * 100);
 }
 
-function recalculateFinancialState(data, { financingDriver = 'hypotheque' } = {}) {
+function shouldRecalculateFromPct(fieldKey, sourceKey, sourceType) {
+  return sourceKey !== fieldKey || sourceType === 'pct';
+}
+
+function recalculateFinancialState(data, { financingDriver = 'hypotheque', sourceKey = null, sourceType = null } = {}) {
   const next = { ...data };
 
-  if (hasFinancialValue(next.versement_initial_pct)) {
+  if (hasFinancialValue(next.versement_initial_pct) && shouldRecalculateFromPct('versement_initial', sourceKey, sourceType)) {
     next.versement_initial = amountFromPct(toNumber(next.prix_bien), next.versement_initial_pct);
   }
 
-  if (hasFinancialValue(next.honoraires_sipa_pct)) {
+  if (hasFinancialValue(next.honoraires_sipa_pct) && shouldRecalculateFromPct('honoraires_sipa', sourceKey, sourceType)) {
     next.honoraires_sipa = amountFromPct(toNumber(next.prix_bien), next.honoraires_sipa_pct);
   }
 
   const prixTotal = getAcquisitionTotal(next);
 
-  if (financingDriver === 'fonds_propres' && hasFinancialValue(next.fonds_propres_pct)) {
+  if (financingDriver === 'fonds_propres' && hasFinancialValue(next.fonds_propres_pct) && shouldRecalculateFromPct('fonds_propres', sourceKey, sourceType)) {
     next.fonds_propres = amountFromPct(prixTotal, next.fonds_propres_pct);
     next.hypotheque = round2(prixTotal - toNumber(next.fonds_propres));
     next.hypotheque_pct = pctFromAmount(prixTotal, next.hypotheque);
-  } else if (hasFinancialValue(next.hypotheque_pct)) {
+  } else if (financingDriver === 'fonds_propres' && hasFinancialValue(next.fonds_propres)) {
+    next.fonds_propres_pct = pctFromAmount(prixTotal, next.fonds_propres);
+    next.hypotheque = round2(prixTotal - toNumber(next.fonds_propres));
+    next.hypotheque_pct = pctFromAmount(prixTotal, next.hypotheque);
+  } else if (hasFinancialValue(next.hypotheque_pct) && shouldRecalculateFromPct('hypotheque', sourceKey, sourceType)) {
     next.hypotheque = amountFromPct(prixTotal, next.hypotheque_pct);
     next.fonds_propres = round2(prixTotal - toNumber(next.hypotheque));
     next.fonds_propres_pct = pctFromAmount(prixTotal, next.fonds_propres);
@@ -95,15 +103,15 @@ function recalculateFinancialState(data, { financingDriver = 'hypotheque' } = {}
     next.fonds_propres_pct = 100;
   }
 
-  if (hasFinancialValue(next.interets_hypothecaires_pct)) {
+  if (hasFinancialValue(next.interets_hypothecaires_pct) && shouldRecalculateFromPct('interets_hypothecaires', sourceKey, sourceType)) {
     next.interets_hypothecaires = amountFromPct(toNumber(next.hypotheque), next.interets_hypothecaires_pct);
   }
 
-  if (hasFinancialValue(next.gestion_pct)) {
+  if (hasFinancialValue(next.gestion_pct) && shouldRecalculateFromPct('gestion', sourceKey, sourceType)) {
     next.gestion = amountFromPct(toNumber(next.revenus_locatifs), next.gestion_pct);
   }
 
-  if (hasFinancialValue(next.impot_pct)) {
+  if (hasFinancialValue(next.impot_pct) && shouldRecalculateFromPct('impot', sourceKey, sourceType)) {
     next.impot = amountFromPct(getRevenuNet(next), next.impot_pct);
   }
 
@@ -235,7 +243,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       } else {
         next[pctKey] = null;
       }
-      return recalculateFinancialState(next, { financingDriver: driver || financingDriver });
+      return recalculateFinancialState(next, { financingDriver: driver || financingDriver, sourceKey: key, sourceType: 'amount' });
     });
   }, [financingDriver]);
 
@@ -250,7 +258,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       } else {
         next[key] = null;
       }
-      return recalculateFinancialState(next, { financingDriver: driver || financingDriver });
+      return recalculateFinancialState(next, { financingDriver: driver || financingDriver, sourceKey: key, sourceType: 'pct' });
     });
   }, [financingDriver]);
 
@@ -322,7 +330,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         'interets_hypothecaires',
         'gestion',
       ].includes(key)) {
-        return recalculateFinancialState(next, { financingDriver });
+        return recalculateFinancialState(next, { financingDriver, sourceKey: key, sourceType: 'amount' });
       }
       return next;
     });
@@ -466,7 +474,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         return;
       }
 
-      setForm((prev) => ({ ...prev, ...result.fields }));
+      setForm((prev) => recalculateFinancialState({ ...prev, ...result.fields }, { financingDriver }));
       if (result.customFinancialFields?.length > 0) {
         setCustomFinancialFields((prev) => {
           const existing = new Set(prev.map((f) => f.name));
