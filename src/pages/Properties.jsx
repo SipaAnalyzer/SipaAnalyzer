@@ -10,7 +10,7 @@ import StatusBadge from '../components/StatusBadge';
 import ScoreGauge from '../components/ScoreGauge';
 import FavoriteButton from '../components/FavoriteButton';
 import { formatCHF, formatPercent, normalizeAnalysis, WORKFLOW_STATUSES } from '../utils/calculations';
-import { Plus, Search, Building2, Loader2, ExternalLink, MapPin } from 'lucide-react';
+import { Plus, Search, Building2, Loader2, ExternalLink, MapPin, Calendar } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 
 const COULEURS = [
@@ -41,6 +41,21 @@ function getPropertyCardStyle(couleur) {
   return { '--sipa-card-accent': accent };
 }
 
+function getPropertyDate(property) {
+  return property?.date_creation_bien || property?.created_at || property?.created_date;
+}
+
+function formatPropertyDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat('fr-CH', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
+}
+
 function getSipaTotalIncome(analysis) {
   const sipaEntry = analysis?.sipa_data?.find((entry) =>
     String(entry?.label || '')
@@ -62,7 +77,7 @@ export default function Properties() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(urlParams.get('status') || 'all');
   const [villeFilter, setVilleFilter] = useState('all');
-  const [rendementFilter, setRendementFilter] = useState('all');
+  const [rendementFilter] = useState('all');
   const [couleurFilter, setCouleurFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date-desc');
 
@@ -192,6 +207,7 @@ export default function Properties() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 overflow-visible">
           {sorted.map(p => {
             const waveId = `property-wave-${p.id}`;
+            const propertyDate = formatPropertyDate(getPropertyDate(p));
             return (
               <Link key={p.id} to={`/property/${p.id}`} className="relative block">
                 <div className="sipa-card-motion sipa-property-card relative transform-gpu bg-card rounded-xl border border-border p-5 transition-[transform,box-shadow,border-color] duration-200 ease-out group hover:z-30 hover:scale-[1.03] hover:-translate-y-1 hover:border-primary/60 hover:shadow-[0_24px_60px_rgba(0,0,0,0.22)]"
@@ -281,27 +297,35 @@ export default function Properties() {
                         </div>
                       </div>
                     )}
-                    <div className="flex items-center gap-2 pt-3 mt-3 border-t border-border/30">
-                    <span className="text-[10px] text-muted-foreground mr-1">Couleur :</span>
-                    {['rouge', 'orange', 'vert'].map(c => (
-                      <button
-                        key={c}
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateCouleur.mutate({ id: p.id, couleur: p.couleur === c ? '' : c }); }}
-                        className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-125 ${p.couleur === c ? 'border-white ring-2 ring-primary scale-110' : 'border-border/50 opacity-50 hover:opacity-100'}`}
-                        style={{ backgroundColor: c === 'rouge' ? '#ef4444' : c === 'orange' ? '#f97316' : '#22c55e' }}
-                        title={c}
-                      />
-                    ))}
-                    {p.couleur && (
-                      <button
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateCouleur.mutate({ id: p.id, couleur: '' }); }}
-                        className="text-[10px] text-muted-foreground hover:text-foreground ml-1"
-                        title="Enlever la couleur"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
+                    <div className="flex items-center justify-between gap-3 pt-3 mt-3 border-t border-border/30">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-[10px] text-muted-foreground mr-1">Couleur :</span>
+                        {['rouge', 'orange', 'vert'].map(c => (
+                          <button
+                            key={c}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateCouleur.mutate({ id: p.id, couleur: p.couleur === c ? '' : c }); }}
+                            className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-125 ${p.couleur === c ? 'border-white ring-2 ring-primary scale-110' : 'border-border/50 opacity-50 hover:opacity-100'}`}
+                            style={{ backgroundColor: c === 'rouge' ? '#ef4444' : c === 'orange' ? '#f97316' : '#22c55e' }}
+                            title={c}
+                          />
+                        ))}
+                        {p.couleur && (
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); updateCouleur.mutate({ id: p.id, couleur: '' }); }}
+                            className="text-[10px] text-muted-foreground hover:text-foreground ml-1"
+                            title="Enlever la couleur"
+                          >
+                            x
+                          </button>
+                        )}
+                      </div>
+                      {propertyDate && (
+                        <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          {propertyDate}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Link>
