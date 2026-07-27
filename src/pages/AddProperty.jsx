@@ -12,6 +12,8 @@ import { ArrowLeft, Save, Upload, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { WORKFLOW_STATUSES } from '../utils/calculations';
 
+const todayIsoDate = () => new Date().toISOString().slice(0, 10);
+
 export default function AddProperty() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -19,6 +21,7 @@ export default function AddProperty() {
   const [imageUploading, setImageUploading] = useState(false);
   const [form, setForm] = useState({
     nom_bien: '', adresse: '', ville: '', canton: '', pays: 'Suisse',
+    date_creation_bien: todayIsoDate(),
     annee_construction: '', surface: '', nombre_logements: '', nombre_bureaux: '', nombre_parkings: '', statut: 'en_cours',
     courtier_apporteur_affaire: '',
     lien_annonce: '', lien_piece_jointe: '', image_url: '', latitude: '', longitude: '',
@@ -39,7 +42,7 @@ export default function AddProperty() {
     setUploading(true);
     try {
       const fileName = `${Date.now()}-${file.name}`;
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('property-files')
         .upload(fileName, file);
 
@@ -73,7 +76,7 @@ export default function AddProperty() {
     try {
       const ext = file.name.split('.').pop();
       const fileName = `images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('property-files')
         .upload(fileName, file);
 
@@ -97,6 +100,7 @@ export default function AddProperty() {
     mutationFn: () => base44.entities.Property.create({
       ...form,
       ...(!form.lien_piece_jointe ? { lien_piece_jointe: undefined } : {}),
+      date_creation_bien: form.date_creation_bien || undefined,
       annee_construction: form.annee_construction ? parseInt(form.annee_construction) : undefined,
       surface: form.surface ? parseFloat(form.surface) : undefined,
       nombre_logements: form.nombre_logements ? parseInt(form.nombre_logements) : undefined,
@@ -144,6 +148,10 @@ export default function AddProperty() {
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block">Pays</Label>
             <Input value={form.pays} onChange={set('pays')} className="bg-background border-border" />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Date du bien</Label>
+            <Input type="date" value={form.date_creation_bien} onChange={set('date_creation_bien')} className="bg-background border-border" />
           </div>
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block">Année de construction</Label>

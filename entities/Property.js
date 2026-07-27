@@ -23,6 +23,11 @@
       "title": "Pays",
       "default": "Suisse"
     },
+    "date_creation_bien": {
+      "type": "string",
+      "format": "date",
+      "title": "Date du bien"
+    },
     "annee_construction": {
       "type": "number",
       "title": "Ann\u00e9e de construction"

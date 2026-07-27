@@ -20,6 +20,11 @@ const parseOptionalNumber = (value) => {
   return Number(value);
 };
 
+const toDateInputValue = (value) => {
+  if (!value) return '';
+  return String(value).slice(0, 10);
+};
+
 export default function EditProperty() {
   const { propertyId } = useParams();
   const navigate = useNavigate();
@@ -47,7 +52,7 @@ export default function EditProperty() {
     setUploading(true);
     try {
       const fileName = `${Date.now()}-${file.name}`;
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('property-files')
         .upload(fileName, file);
 
@@ -81,7 +86,7 @@ export default function EditProperty() {
     try {
       const ext = file.name.split('.').pop();
       const fileName = `images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('property-files')
         .upload(fileName, file);
 
@@ -105,6 +110,7 @@ export default function EditProperty() {
     if (property) setForm({
       nom_bien: property.nom_bien || '', adresse: property.adresse || '', ville: property.ville || '',
       canton: property.canton || '', pays: property.pays || 'Suisse',
+      date_creation_bien: toDateInputValue(property.date_creation_bien || property.created_at || property.created_date),
       annee_construction: property.annee_construction ?? '', surface: property.surface ?? '',
       nombre_logements: property.nombre_logements ?? '', nombre_bureaux: property.nombre_bureaux ?? '', nombre_parkings: property.nombre_parkings ?? '', statut: property.statut || 'en_cours',
       courtier_apporteur_affaire: property.courtier_apporteur_affaire || '',
@@ -119,6 +125,7 @@ export default function EditProperty() {
     mutationFn: () => base44.entities.Property.update(propertyId, {
       ...form,
       ...(!form.lien_piece_jointe ? { lien_piece_jointe: undefined } : {}),
+      date_creation_bien: form.date_creation_bien || null,
       annee_construction: parseOptionalNumber(form.annee_construction),
       surface: parseOptionalNumber(form.surface),
       nombre_logements: parseOptionalNumber(form.nombre_logements),
@@ -159,6 +166,7 @@ export default function EditProperty() {
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Ville *</Label><Input value={form.ville || ''} onChange={set('ville')} className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Canton</Label><Input value={form.canton || ''} onChange={set('canton')} className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Pays</Label><Input value={form.pays || ''} onChange={set('pays')} className="bg-background border-border" /></div>
+          <div><Label className="text-xs text-muted-foreground mb-1.5 block">Date du bien</Label><Input type="date" value={form.date_creation_bien || ''} onChange={set('date_creation_bien')} className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Année de construction</Label><Input type="number" value={form.annee_construction || ''} onChange={set('annee_construction')} className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Surface (m²)</Label><Input type="number" value={form.surface || ''} onChange={set('surface')} className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Nombre de logements</Label><Input type="number" value={form.nombre_logements || ''} onChange={set('nombre_logements')} className="bg-background border-border" /></div>

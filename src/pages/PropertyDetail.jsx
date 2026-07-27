@@ -1300,6 +1300,16 @@ function getSipaTotalIncome(analysis) {
   return Number(analysis?.honoraires_sipa || 0) + Number(analysis?.gestion || 0);
 }
 
+function getPropertyDate(property) {
+  return property?.date_creation_bien || property?.created_at || property?.created_date;
+}
+
+function formatPropertyDate(value) {
+  if (!value) return null;
+  const parsed = moment(value);
+  return parsed.isValid() ? parsed.format('DD.MM.YYYY') : null;
+}
+
 function PropertyPresentation({ property, latest, comments, updateCouleur }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
@@ -1337,6 +1347,7 @@ function PropertyPresentation({ property, latest, comments, updateCouleur }) {
 
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <InfoItem label="Nom du bien" value={property.nom_bien} />
+          <InfoItem label="Date du bien" value={formatPropertyDate(getPropertyDate(property))} />
           <InfoItem label="Ville" value={property.ville} />
           <InfoItem label="Canton" value={property.canton} />
           <InfoItem label="Adresse" value={property.adresse} />
@@ -1400,8 +1411,16 @@ function PropertyPresentation({ property, latest, comments, updateCouleur }) {
 }
 
 function PropertyMeta({ property, compact = false }) {
+  const propertyDate = formatPropertyDate(getPropertyDate(property));
+
   return (
     <div className={`flex flex-wrap items-center gap-3 text-sm text-muted-foreground ${compact ? 'mt-1' : ''}`}>
+      {propertyDate && (
+        <span className="flex items-center gap-1">
+          <Calendar className="h-3.5 w-3.5" />
+          Date du bien: {propertyDate}
+        </span>
+      )}
       {property.ville && (
         <span className="flex items-center gap-1">
           <MapPin className="h-3.5 w-3.5" />

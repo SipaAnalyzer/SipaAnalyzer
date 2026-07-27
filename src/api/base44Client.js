@@ -132,6 +132,7 @@ const AUDIT_FIELDS = {
     ville: "Ville",
     canton: "Canton",
     pays: "Pays",
+    date_creation_bien: "Date du bien",
     annee_construction: "Année de construction",
     surface: "Surface",
     nombre_logements: "Nombre de logements",
