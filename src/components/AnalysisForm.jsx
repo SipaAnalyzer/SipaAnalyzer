@@ -28,6 +28,75 @@ function InputField({ value, onChange, prefix, className }) {
   );
 }
 
+const hasFinancialValue = (value) => value !== null && value !== undefined && value !== '';
+const toNumber = (value) => Number(value || 0);
+const round2 = (value) => Math.round(Number(value || 0) * 100) / 100;
+
+function getAcquisitionTotal(data) {
+  return round2(
+    toNumber(data.prix_bien) +
+    toNumber(data.versement_initial) +
+    toNumber(data.amortissement_5_ans) +
+    toNumber(data.honoraires_sipa) +
+    toNumber(data.frais_dossier_bancaire)
+  );
+}
+
+function getRevenuNet(data) {
+  return round2(
+    toNumber(data.revenus_locatifs) -
+    toNumber(data.charges_operationnelles) -
+    toNumber(data.interets_hypothecaires) -
+    toNumber(data.gestion)
+  );
+}
+
+function amountFromPct(base, pct) {
+  if (!base || !hasFinancialValue(pct)) return null;
+  return round2(base * Number(pct) / 100);
+}
+
+function applyExcelStyleFinancialFormulas(data) {
+  const next = { ...data };
+
+  if (hasFinancialValue(next.honoraires_sipa_pct)) {
+    next.honoraires_sipa = amountFromPct(toNumber(next.prix_bien), next.honoraires_sipa_pct);
+  }
+
+  const prixTotal = getAcquisitionTotal(next);
+
+  if (hasFinancialValue(next.hypotheque_pct)) {
+    next.hypotheque = amountFromPct(prixTotal, next.hypotheque_pct);
+  }
+
+  next.fonds_propres = round2(prixTotal - toNumber(next.hypotheque));
+
+  if (hasFinancialValue(next.interets_hypothecaires_pct)) {
+    next.interets_hypothecaires = amountFromPct(toNumber(next.hypotheque), next.interets_hypothecaires_pct);
+  }
+
+  if (hasFinancialValue(next.gestion_pct)) {
+    next.gestion = amountFromPct(toNumber(next.revenus_locatifs), next.gestion_pct);
+  }
+
+  if (hasFinancialValue(next.impot_pct)) {
+    next.impot = amountFromPct(getRevenuNet(next), next.impot_pct);
+  }
+
+  return next;
+}
+
+function hasChangedFinancialFormulaValue(before, after) {
+  return [
+    'honoraires_sipa',
+    'hypotheque',
+    'fonds_propres',
+    'interets_hypothecaires',
+    'gestion',
+    'impot',
+  ].some((key) => before[key] !== after[key]);
+}
+
 function PctRow({ label, amount, onAmount, pct, onPct }) {
   return (
     <tr>
@@ -151,7 +220,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     setForm((prev) => {
       const base = getBase(prev);
       if (base && value !== null) {
-        const amount = Math.round(base * value / 100);
+        const amount = round2(base * value / 100);
         return { ...prev, [key]: amount, [pctKey]: value };
       }
       return { ...prev, [key]: null, [pctKey]: value };
@@ -202,6 +271,29 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  useEffect(() => {
+    setForm((prev) => {
+      const next = applyExcelStyleFinancialFormulas(prev);
+      return hasChangedFinancialFormulaValue(prev, next) ? next : prev;
+    });
+  }, [
+    form.prix_bien,
+    form.versement_initial,
+    form.amortissement_5_ans,
+    form.honoraires_sipa,
+    form.honoraires_sipa_pct,
+    form.frais_dossier_bancaire,
+    form.hypotheque,
+    form.hypotheque_pct,
+    form.revenus_locatifs,
+    form.charges_operationnelles,
+    form.interets_hypothecaires,
+    form.interets_hypothecaires_pct,
+    form.gestion,
+    form.gestion_pct,
+    form.impot_pct,
+  ]);
+
   const selectedProperty = properties.find((p) => p.id === form.property_id);
 
   const [activeTab, setActiveTab] = useState('financial');
@@ -236,15 +328,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     annee_construction: selectedProperty?.annee_construction,
   }), [form, selectedProperty]);
 
-  const prixTotal = useMemo(() =>
-    Math.round(
-      Number(form.prix_bien || 0) +
-      Number(form.versement_initial || 0) +
-      Number(form.amortissement_5_ans || 0) +
-      Number(form.honoraires_sipa || 0) +
-      Number(form.frais_dossier_bancaire || 0)
-    ),
-  [form]);
+  const prixTotal = useMemo(() => getAcquisitionTotal(form), [form]);
 
   const handleSubmit = async () => {
     setSubmitError('');
@@ -253,6 +337,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       setSubmitError('Selectionne un bien avant d’enregistrer l’analyse.');
       return;
     }
+
+    const calculatedForm = applyExcelStyleFinancialFormulas(form);
 
     const customSipaData = customFinancialFields.length > 0
       ? customFinancialFields.map((cf) => ({
@@ -267,45 +353,53 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       : [];
     const mergedSipaData = [...baseSipaData, ...customSipaData];
 
+    const calculatedCalc = calculateAnalysis({
+      ...calculatedForm,
+      ville: selectedProperty?.ville,
+      canton: selectedProperty?.canton,
+      surface: selectedProperty?.surface,
+      annee_construction: selectedProperty?.annee_construction,
+    });
+
     const payload = {
-      property_id: form.property_id,
-      statut: form.statut,
+      property_id: calculatedForm.property_id,
+      statut: calculatedForm.statut,
       sipa_data: mergedSipaData.length > 0 ? mergedSipaData : null,
-      prix_bien: form.prix_bien,
-      versement_initial: form.versement_initial,
-      amortissement_5_ans: form.amortissement_5_ans,
-      honoraires_sipa: form.honoraires_sipa,
-      frais_dossier_bancaire: form.frais_dossier_bancaire,
-      fonds_propres: form.fonds_propres,
-      hypotheque: form.hypotheque,
-      revenus_locatifs: form.revenus_locatifs,
-      charges_operationnelles: form.charges_operationnelles,
-      interets_hypothecaires: form.interets_hypothecaires,
-      gestion: form.gestion,
-      impot: form.impot,
-      notes: form.notes || null,
-      banque_a_taux_hypothecaire: form.banque_a_taux_hypothecaire,
-      banque_a_type_taux: form.banque_a_type_taux,
-      banque_a_marge_saron: form.banque_a_marge_saron,
-      banque_a_amortissement_annuel: form.banque_a_amortissement_annuel,
-      banque_a_evaluation: form.banque_a_evaluation,
-      banque_b_taux_hypothecaire: form.banque_b_taux_hypothecaire,
-      banque_b_type_taux: form.banque_b_type_taux,
-      banque_b_marge_saron: form.banque_b_marge_saron,
-      banque_b_amortissement_annuel: form.banque_b_amortissement_annuel,
-      banque_b_evaluation: form.banque_b_evaluation,
-      operating_projection: form.operating_projection,
-      capital_projection: form.capital_projection,
-      ...(form.etat_batiment ? { etat_batiment: form.etat_batiment } : {}),
-      ...(form.emplacement_bien ? { emplacement_bien: form.emplacement_bien } : {}),
-      prix_total: prixTotal,
-      rendement_brut: calc.rendement_brut,
-      revenu_net: calc.revenu_net,
-      rendement_net_fonds_propres: calc.rendement_net_fonds_propres,
-      revenu_distribue: calc.revenu_distribue,
-      revenu_distribue_fonds_propres: calc.revenu_distribue_fonds_propres,
-      score_global: calc.score_global,
-      note: calc.note,
+      prix_bien: calculatedForm.prix_bien,
+      versement_initial: calculatedForm.versement_initial,
+      amortissement_5_ans: calculatedForm.amortissement_5_ans,
+      honoraires_sipa: calculatedForm.honoraires_sipa,
+      frais_dossier_bancaire: calculatedForm.frais_dossier_bancaire,
+      fonds_propres: calculatedForm.fonds_propres,
+      hypotheque: calculatedForm.hypotheque,
+      revenus_locatifs: calculatedForm.revenus_locatifs,
+      charges_operationnelles: calculatedForm.charges_operationnelles,
+      interets_hypothecaires: calculatedForm.interets_hypothecaires,
+      gestion: calculatedForm.gestion,
+      impot: calculatedForm.impot,
+      notes: calculatedForm.notes || null,
+      banque_a_taux_hypothecaire: calculatedForm.banque_a_taux_hypothecaire,
+      banque_a_type_taux: calculatedForm.banque_a_type_taux,
+      banque_a_marge_saron: calculatedForm.banque_a_marge_saron,
+      banque_a_amortissement_annuel: calculatedForm.banque_a_amortissement_annuel,
+      banque_a_evaluation: calculatedForm.banque_a_evaluation,
+      banque_b_taux_hypothecaire: calculatedForm.banque_b_taux_hypothecaire,
+      banque_b_type_taux: calculatedForm.banque_b_type_taux,
+      banque_b_marge_saron: calculatedForm.banque_b_marge_saron,
+      banque_b_amortissement_annuel: calculatedForm.banque_b_amortissement_annuel,
+      banque_b_evaluation: calculatedForm.banque_b_evaluation,
+      operating_projection: calculatedForm.operating_projection,
+      capital_projection: calculatedForm.capital_projection,
+      ...(calculatedForm.etat_batiment ? { etat_batiment: calculatedForm.etat_batiment } : {}),
+      ...(calculatedForm.emplacement_bien ? { emplacement_bien: calculatedForm.emplacement_bien } : {}),
+      prix_total: getAcquisitionTotal(calculatedForm),
+      rendement_brut: calculatedCalc.rendement_brut,
+      revenu_net: calculatedCalc.revenu_net,
+      rendement_net_fonds_propres: calculatedCalc.rendement_net_fonds_propres,
+      revenu_distribue: calculatedCalc.revenu_distribue,
+      revenu_distribue_fonds_propres: calculatedCalc.revenu_distribue_fonds_propres,
+      score_global: calculatedCalc.score_global,
+      note: calculatedCalc.note,
     };
 
     try {
@@ -548,9 +642,11 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                 </td>
               </tr>
               <tr>
-                <td className="py-2.5 pr-4">Fonds propres</td>
-                <td className="py-2.5 pl-4">
-                  <InputField value={form.fonds_propres} onChange={set('fonds_propres')} prefix="CHF" />
+                <td className="py-2.5 pr-4">
+                  <span className="text-muted-foreground">Fonds propres</span>
+                </td>
+                <td className="py-2.5 pl-4 font-mono text-right">
+                  {formatCHF(form.fonds_propres)}
                 </td>
               </tr>
               <PctRow
@@ -1081,7 +1177,7 @@ function TechnicalAnalysisView({
               <ExcelAmountRow row={6} section="Acquisition" label="Frais de dossier bancaire" value={form.frais_dossier_bancaire} onChange={set('frais_dossier_bancaire')} />
               <ExcelComputedRow row={7} section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
 
-              <ExcelAmountRow row={8} section="Financement" label="Fonds propres" value={form.fonds_propres} onChange={set('fonds_propres')} />
+              <ExcelComputedRow row={8} section="Financement" label="Fonds propres" value={formatCHF(form.fonds_propres)} />
               <ExcelPctRow
                 row={9}
                 section="Financement"
