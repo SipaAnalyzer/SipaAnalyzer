@@ -56,8 +56,17 @@ function amountFromPct(base, pct) {
   return round2(base * Number(pct) / 100);
 }
 
-function applyExcelStyleFinancialFormulas(data) {
+function pctFromAmount(base, amount) {
+  if (!base || !hasFinancialValue(amount)) return null;
+  return round2((Number(amount) / base) * 100);
+}
+
+function recalculateFinancialState(data, { financingDriver = 'hypotheque' } = {}) {
   const next = { ...data };
+
+  if (hasFinancialValue(next.versement_initial_pct)) {
+    next.versement_initial = amountFromPct(toNumber(next.prix_bien), next.versement_initial_pct);
+  }
 
   if (hasFinancialValue(next.honoraires_sipa_pct)) {
     next.honoraires_sipa = amountFromPct(toNumber(next.prix_bien), next.honoraires_sipa_pct);
@@ -65,11 +74,26 @@ function applyExcelStyleFinancialFormulas(data) {
 
   const prixTotal = getAcquisitionTotal(next);
 
-  if (hasFinancialValue(next.hypotheque_pct)) {
+  if (financingDriver === 'fonds_propres' && hasFinancialValue(next.fonds_propres_pct)) {
+    next.fonds_propres = amountFromPct(prixTotal, next.fonds_propres_pct);
+    next.hypotheque = round2(prixTotal - toNumber(next.fonds_propres));
+    next.hypotheque_pct = pctFromAmount(prixTotal, next.hypotheque);
+  } else if (hasFinancialValue(next.hypotheque_pct)) {
     next.hypotheque = amountFromPct(prixTotal, next.hypotheque_pct);
+    next.fonds_propres = round2(prixTotal - toNumber(next.hypotheque));
+    next.fonds_propres_pct = pctFromAmount(prixTotal, next.fonds_propres);
+  } else if (hasFinancialValue(next.fonds_propres)) {
+    next.fonds_propres_pct = pctFromAmount(prixTotal, next.fonds_propres);
+    next.hypotheque = round2(prixTotal - toNumber(next.fonds_propres));
+    next.hypotheque_pct = pctFromAmount(prixTotal, next.hypotheque);
+  } else if (hasFinancialValue(next.hypotheque)) {
+    next.hypotheque_pct = pctFromAmount(prixTotal, next.hypotheque);
+    next.fonds_propres = round2(prixTotal - toNumber(next.hypotheque));
+    next.fonds_propres_pct = pctFromAmount(prixTotal, next.fonds_propres);
+  } else if (prixTotal) {
+    next.fonds_propres = prixTotal;
+    next.fonds_propres_pct = 100;
   }
-
-  next.fonds_propres = round2(prixTotal - toNumber(next.hypotheque));
 
   if (hasFinancialValue(next.interets_hypothecaires_pct)) {
     next.interets_hypothecaires = amountFromPct(toNumber(next.hypotheque), next.interets_hypothecaires_pct);
@@ -84,17 +108,6 @@ function applyExcelStyleFinancialFormulas(data) {
   }
 
   return next;
-}
-
-function hasChangedFinancialFormulaValue(before, after) {
-  return [
-    'honoraires_sipa',
-    'hypotheque',
-    'fonds_propres',
-    'interets_hypothecaires',
-    'gestion',
-    'impot',
-  ].some((key) => before[key] !== after[key]);
 }
 
 function PctRow({ label, amount, onAmount, pct, onPct }) {
@@ -138,11 +151,13 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     statut: 'en_cours',
     prix_bien: null,
     versement_initial: null,
+    versement_initial_pct: null,
     amortissement_5_ans: null,
     honoraires_sipa: null,
     honoraires_sipa_pct: null,
     frais_dossier_bancaire: null,
     fonds_propres: null,
+    fonds_propres_pct: null,
     hypotheque: null,
     hypotheque_pct: null,
     revenus_locatifs: null,
@@ -177,7 +192,9 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       const data = { ...prev, ...initialData };
       const prixTotal = Number(data.prix_bien || 0) + Number(data.versement_initial || 0) + Number(data.amortissement_5_ans || 0) + Number(data.honoraires_sipa || 0) + Number(data.frais_dossier_bancaire || 0);
       const revenuNet = Number(data.revenus_locatifs || 0) - Number(data.charges_operationnelles || 0) - Number(data.interets_hypothecaires || 0) - Number(data.gestion || 0);
+      if (Number(data.prix_bien) > 0 && data.versement_initial != null) data.versement_initial_pct = Math.round((data.versement_initial / data.prix_bien) * 10000) / 100;
       if (Number(data.prix_bien) > 0 && data.honoraires_sipa != null) data.honoraires_sipa_pct = Math.round((data.honoraires_sipa / data.prix_bien) * 10000) / 100;
+      if (prixTotal > 0 && data.fonds_propres != null) data.fonds_propres_pct = Math.round((data.fonds_propres / prixTotal) * 10000) / 100;
       if (prixTotal > 0 && data.hypotheque != null) data.hypotheque_pct = Math.round((data.hypotheque / prixTotal) * 10000) / 100;
       if (Number(data.hypotheque) > 0 && data.interets_hypothecaires != null) data.interets_hypothecaires_pct = Math.round((data.interets_hypothecaires / data.hypotheque) * 10000) / 100;
       if (Number(data.revenus_locatifs) > 0 && data.gestion != null) data.gestion_pct = Math.round((data.gestion / data.revenus_locatifs) * 10000) / 100;
@@ -205,29 +222,43 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     }
   }, [initialData]);
 
-  const makeAmountHandler = useCallback((key, pctKey, getBase) => (value) => {
+  const [financingDriver, setFinancingDriver] = useState('hypotheque');
+
+  const makeAmountHandler = useCallback((key, pctKey, getBase, driver) => (value) => {
+    if (driver) setFinancingDriver(driver);
     setForm((prev) => {
       const base = getBase(prev);
+      const next = { ...prev, [key]: value };
       if (base && value !== null) {
         const pct = Math.round((value / base) * 10000) / 100;
-        return { ...prev, [key]: value, [pctKey]: pct };
+        next[pctKey] = pct;
+      } else {
+        next[pctKey] = null;
       }
-      return { ...prev, [key]: value, [pctKey]: null };
+      return recalculateFinancialState(next, { financingDriver: driver || financingDriver });
     });
-  }, []);
+  }, [financingDriver]);
 
-  const makePctHandler = useCallback((key, pctKey, getBase) => (value) => {
+  const makePctHandler = useCallback((key, pctKey, getBase, driver) => (value) => {
+    if (driver) setFinancingDriver(driver);
     setForm((prev) => {
       const base = getBase(prev);
+      const next = { ...prev, [pctKey]: value };
       if (base && value !== null) {
         const amount = round2(base * value / 100);
-        return { ...prev, [key]: amount, [pctKey]: value };
+        next[key] = amount;
+      } else {
+        next[key] = null;
       }
-      return { ...prev, [key]: null, [pctKey]: value };
+      return recalculateFinancialState(next, { financingDriver: driver || financingDriver });
     });
-  }, []);
+  }, [financingDriver]);
 
   const handlers = useMemo(() => {
+    const versementInitial = {
+      amount: makeAmountHandler('versement_initial', 'versement_initial_pct', (s) => Number(s.prix_bien || 0)),
+      pct: makePctHandler('versement_initial', 'versement_initial_pct', (s) => Number(s.prix_bien || 0)),
+    };
     const honoraires = {
       amount: makeAmountHandler('honoraires_sipa', 'honoraires_sipa_pct', (s) => Number(s.prix_bien || 0)),
       pct: makePctHandler('honoraires_sipa', 'honoraires_sipa_pct', (s) => Number(s.prix_bien || 0)),
@@ -235,10 +266,18 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     const hypotheque = {
       amount: makeAmountHandler('hypotheque', 'hypotheque_pct', (s) =>
         Number(s.prix_bien || 0) + Number(s.versement_initial || 0) + Number(s.amortissement_5_ans || 0) + Number(s.honoraires_sipa || 0) + Number(s.frais_dossier_bancaire || 0)
-      ),
+      , 'hypotheque'),
       pct: makePctHandler('hypotheque', 'hypotheque_pct', (s) =>
         Number(s.prix_bien || 0) + Number(s.versement_initial || 0) + Number(s.amortissement_5_ans || 0) + Number(s.honoraires_sipa || 0) + Number(s.frais_dossier_bancaire || 0)
-      ),
+      , 'hypotheque'),
+    };
+    const fondsPropres = {
+      amount: makeAmountHandler('fonds_propres', 'fonds_propres_pct', (s) =>
+        Number(s.prix_bien || 0) + Number(s.versement_initial || 0) + Number(s.amortissement_5_ans || 0) + Number(s.honoraires_sipa || 0) + Number(s.frais_dossier_bancaire || 0)
+      , 'fonds_propres'),
+      pct: makePctHandler('fonds_propres', 'fonds_propres_pct', (s) =>
+        Number(s.prix_bien || 0) + Number(s.versement_initial || 0) + Number(s.amortissement_5_ans || 0) + Number(s.honoraires_sipa || 0) + Number(s.frais_dossier_bancaire || 0)
+      , 'fonds_propres'),
     };
     const interets = {
       amount: makeAmountHandler('interets_hypothecaires', 'interets_hypothecaires_pct', (s) => Number(s.hypotheque || 0)),
@@ -264,35 +303,30 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         return rev - ch - int - ges;
       }),
     };
-    return { honoraires, hypotheque, interets, gestion, impot };
+    return { versementInitial, honoraires, hypotheque, fondsPropres, interets, gestion, impot };
   }, [makeAmountHandler, makePctHandler]);
 
   const set = (key) => (value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  useEffect(() => {
     setForm((prev) => {
-      const next = applyExcelStyleFinancialFormulas(prev);
-      return hasChangedFinancialFormulaValue(prev, next) ? next : prev;
+      const next = { ...prev, [key]: value };
+      if ([
+        'prix_bien',
+        'versement_initial',
+        'amortissement_5_ans',
+        'honoraires_sipa',
+        'frais_dossier_bancaire',
+        'hypotheque',
+        'fonds_propres',
+        'revenus_locatifs',
+        'charges_operationnelles',
+        'interets_hypothecaires',
+        'gestion',
+      ].includes(key)) {
+        return recalculateFinancialState(next, { financingDriver });
+      }
+      return next;
     });
-  }, [
-    form.prix_bien,
-    form.versement_initial,
-    form.amortissement_5_ans,
-    form.honoraires_sipa,
-    form.honoraires_sipa_pct,
-    form.frais_dossier_bancaire,
-    form.hypotheque,
-    form.hypotheque_pct,
-    form.revenus_locatifs,
-    form.charges_operationnelles,
-    form.interets_hypothecaires,
-    form.interets_hypothecaires_pct,
-    form.gestion,
-    form.gestion_pct,
-    form.impot_pct,
-  ]);
+  };
 
   const selectedProperty = properties.find((p) => p.id === form.property_id);
 
@@ -338,7 +372,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       return;
     }
 
-    const calculatedForm = applyExcelStyleFinancialFormulas(form);
+    const calculatedForm = recalculateFinancialState(form, { financingDriver });
 
     const customSipaData = customFinancialFields.length > 0
       ? customFinancialFields.map((cf) => ({
@@ -610,12 +644,13 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                   <InputField value={form.prix_bien} onChange={set('prix_bien')} prefix="CHF" />
                 </td>
               </tr>
-              <tr>
-                <td className="py-2.5 pr-4">Versement initial sur le compte de la copropriété</td>
-                <td className="py-2.5 pl-4">
-                  <InputField value={form.versement_initial} onChange={set('versement_initial')} prefix="CHF" />
-                </td>
-              </tr>
+              <PctRow
+                label="Versement initial sur le compte de la copropriété"
+                amount={form.versement_initial}
+                onAmount={handlers.versementInitial.amount}
+                pct={form.versement_initial_pct}
+                onPct={handlers.versementInitial.pct}
+              />
               <tr>
                 <td className="py-2.5 pr-4">Amortissement sur 5 ans</td>
                 <td className="py-2.5 pl-4">
@@ -641,14 +676,13 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                   {formatCHF(prixTotal)}
                 </td>
               </tr>
-              <tr>
-                <td className="py-2.5 pr-4">
-                  <span className="text-muted-foreground">Fonds propres</span>
-                </td>
-                <td className="py-2.5 pl-4 font-mono text-right">
-                  {formatCHF(form.fonds_propres)}
-                </td>
-              </tr>
+              <PctRow
+                label="Fonds propres"
+                amount={form.fonds_propres}
+                onAmount={handlers.fondsPropres.amount}
+                pct={form.fonds_propres_pct}
+                onPct={handlers.fondsPropres.pct}
+              />
               <PctRow
                 label="Hypothèque"
                 amount={form.hypotheque}
@@ -1163,7 +1197,15 @@ function TechnicalAnalysisView({
             </thead>
             <tbody>
               <ExcelAmountRow row={2} section="Acquisition" label="Prix du bien" value={form.prix_bien} onChange={set('prix_bien')} />
-              <ExcelAmountRow row={3} section="Acquisition" label="Versement initial copropriete" value={form.versement_initial} onChange={set('versement_initial')} />
+              <ExcelPctRow
+                row={3}
+                section="Acquisition"
+                label="Versement initial copropriete"
+                amount={form.versement_initial}
+                onAmount={handlers.versementInitial.amount}
+                pct={form.versement_initial_pct}
+                onPct={handlers.versementInitial.pct}
+              />
               <ExcelAmountRow row={4} section="Acquisition" label="Amortissement sur 5 ans" value={form.amortissement_5_ans} onChange={set('amortissement_5_ans')} />
               <ExcelPctRow
                 row={5}
@@ -1177,7 +1219,15 @@ function TechnicalAnalysisView({
               <ExcelAmountRow row={6} section="Acquisition" label="Frais de dossier bancaire" value={form.frais_dossier_bancaire} onChange={set('frais_dossier_bancaire')} />
               <ExcelComputedRow row={7} section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
 
-              <ExcelComputedRow row={8} section="Financement" label="Fonds propres" value={formatCHF(form.fonds_propres)} />
+              <ExcelPctRow
+                row={8}
+                section="Financement"
+                label="Fonds propres"
+                amount={form.fonds_propres}
+                onAmount={handlers.fondsPropres.amount}
+                pct={form.fonds_propres_pct}
+                onPct={handlers.fondsPropres.pct}
+              />
               <ExcelPctRow
                 row={9}
                 section="Financement"
