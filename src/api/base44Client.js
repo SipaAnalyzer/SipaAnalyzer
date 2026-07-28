@@ -171,6 +171,7 @@ const AUDIT_FIELDS = {
     banque_b_taux_hypothecaire: "Banque B - taux",
     banque_b_type_taux: "Banque B - type de taux",
     banque_b_marge_saron: "Banque B - marge SARON",
+    financial_custom_fields: "Champs financiers personnalises",
     banque_b_amortissement_annuel: "Banque B - amortissement",
     banque_b_evaluation: "Banque B - évaluation",
     sipa_data: "Données SIPA",

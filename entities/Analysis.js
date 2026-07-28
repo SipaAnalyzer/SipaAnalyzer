@@ -144,6 +144,11 @@
       "type": "object",
       "title": "Données SIPA"
     },
+    "financial_custom_fields": {
+      "type": "array",
+      "title": "Champs financiers personnalises",
+      "default": []
+    },
     "notes": {
       "type": "string",
       "title": "Notes / Informations complémentaires"

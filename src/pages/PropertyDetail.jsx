@@ -20,6 +20,7 @@ import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
 import { calculateAnalysis, formatCHF, formatPercent, normalizeAnalyses, WORKFLOW_STATUSES } from '../utils/calculations';
 import { formatSipaLabel, formatSipaValue, getDisplayableSipaRows, getSipaDisplayGroups, getSipaDisplayValues } from '../utils/excelImport';
+import { normalizeFinancialCustomFields, toPersistedFinancialCustomFields } from '../utils/financialCustomFields';
 import { exportAnalysisPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
 import { listAuditLogs, recordAuditLog } from '../utils/auditLogs';
@@ -523,13 +524,11 @@ function TechnicalAnalysisSnapshot({
     Number(analysis.honoraires_transaction_sipa_group || 0) +
     Number(analysis.frais_dossier_bancaire || 0)
   );
-  const customFields = analysis.sipa_data ? analysis.sipa_data.filter((entry) => entry._custom) : [];
+  const customFields = normalizeFinancialCustomFields(analysis.financial_custom_fields, analysis.sipa_data);
   const visibleCustomFields = customFields
-    .map((entry, index) => ({ entry, index }))
-    .filter(({ entry }) => {
-      const amount = entry.values?.find((value) => value.type === 'amount');
-      const pct = entry.values?.find((value) => value.type === 'pct');
-      return hasFinancialValue(amount?.value) || hasFinancialValue(pct?.value);
+    .map((field, index) => ({ field, index }))
+    .filter(({ field }) => {
+      return hasFinancialValue(field.amount) || hasFinancialValue(field.pct);
     });
   const canEdit = canEditAnalysis && !!draft;
   const exportBaseName = `${propertySafeName(property?.titre || property?.adresse || property?.ville || 'bien')}-${analysis.created_date ? moment(analysis.created_date).format('YYYY-MM-DD') : 'analyse'}`;
@@ -566,22 +565,13 @@ function TechnicalAnalysisSnapshot({
     if (!canEdit) return;
     setDraft((current) => {
       const base = current || analysis;
-      const customCursor = { current: -1 };
-      const sipaData = (base.sipa_data || []).map((entry) => {
-        if (!entry._custom) return entry;
-        customCursor.current += 1;
-        if (customCursor.current !== entryIndex) return entry;
-
-        const values = [...(entry.values || [])];
-        const existingIndex = values.findIndex((item) => item.type === valueType);
-        if (existingIndex >= 0) {
-          values[existingIndex] = { ...values[existingIndex], value };
-        } else {
-          values.push({ type: valueType, value });
-        }
-        return { ...entry, values };
-      });
-      return { ...base, sipa_data: sipaData };
+      const fields = normalizeFinancialCustomFields(base.financial_custom_fields, base.sipa_data);
+      const nextFields = fields.map((field, index) => (
+        index === entryIndex
+          ? { ...field, [valueType === 'pct' ? 'pct' : 'amount']: value }
+          : field
+      ));
+      return { ...base, financial_custom_fields: toPersistedFinancialCustomFields(nextFields) };
     });
   };
   const updateSipaImportedCell = (entryIndex, valueIndex, field, value) => {
@@ -699,17 +689,15 @@ function TechnicalAnalysisSnapshot({
               <ExcelOptionalReadRow row={22} section="Fiscalite" label="Impot" amount={analysis.impot} pct={percentOf(analysis.impot, analysis.revenu_net)} editable={canEdit} onAmountChange={(value) => updateDraftField('impot', value)} onPctChange={updatePctField('impot', 'impot_pct', analysis.revenu_net)} />
               <ExcelComputedRow row={23} section="Distribution" label="Revenu distribue" value={formatCHF(analysis.revenu_distribue)} strong />
               <ExcelComputedRow row={24} section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(analysis.revenu_distribue_fonds_propres)} />
-              {visibleCustomFields.map(({ entry, index }, visibleIndex) => {
-                const amount = entry.values?.find((value) => value.type === 'amount');
-                const pct = entry.values?.find((value) => value.type === 'pct');
+              {visibleCustomFields.map(({ field, index }, visibleIndex) => {
                 return (
                   <ExcelReadRow
-                    key={`${entry.label}-${index}`}
+                    key={`${field.name}-${index}`}
                     row={25 + visibleIndex}
                     section="Personnalisé"
-                    label={entry.label}
-                    amount={amount?.value}
-                    pct={pct?.value}
+                    label={field.name}
+                    amount={field.amount}
+                    pct={field.pct}
                     editable={canEdit}
                     onAmountChange={(value) => updateCustomField(index, 'amount', value ?? 0)}
                     onPctChange={(value) => updateCustomField(index, 'pct', value)}
@@ -1241,8 +1229,9 @@ function buildFinancialExportRows(analysis, customFields, prixTotal) {
   ];
 
   customFields.forEach((entry) => {
-    const amount = entry.values?.find((value) => value.type === 'amount');
-    const pct = entry.values?.find((value) => value.type === 'pct');
+    const amount = entry.values?.find((value) => value.type === 'amount') || { value: entry.amount };
+    const pct = entry.values?.find((value) => value.type === 'pct') || (entry.pct == null ? null : { value: entry.pct });
+    entry.label = entry.name || entry.label;
     rows.push(['Personnalisé', entry.label || '', amount?.value ?? '', pct?.value ?? '', '']);
   });
 
@@ -1416,6 +1405,7 @@ function buildTechnicalAnalysisPayload(analysis) {
   return {
     statut: analysis.statut,
     sipa_data: analysis.sipa_data || null,
+    financial_custom_fields: toPersistedFinancialCustomFields(analysis.financial_custom_fields || []),
     prix_bien: analysis.prix_bien,
     prix_achat: analysis.prix_achat,
     versement_initial: analysis.versement_initial,

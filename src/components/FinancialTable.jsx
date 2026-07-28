@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { formatCHF, formatPercent } from '../utils/calculations';
+import { getCustomFieldsAfter, normalizeFinancialCustomFields } from '../utils/financialCustomFields';
 import ExcelProjectionTables from './ExcelProjectionTables';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -48,9 +49,7 @@ export default function FinancialTable({ analysis, collapsible = false }) {
   const revenuNet = Number(analysis.revenu_net || 0);
   const revenuDistribue = Number(analysis.revenu_distribue || 0);
 
-  const customFields = analysis.sipa_data
-    ? analysis.sipa_data.filter((e) => e._custom)
-    : [];
+  const customFields = normalizeFinancialCustomFields(analysis.financial_custom_fields, analysis.sipa_data);
 
   return (
     <div className="space-y-6">
@@ -87,6 +86,36 @@ export default function FinancialTable({ analysis, collapsible = false }) {
 }
 
 function FinancialTableBody({ analysis, purchasePrice, purchaseSubtotal, prixTotal, revenuNet, revenuDistribue, customFields }) {
+  const renderCustomRows = (anchorKey) => getCustomFieldsAfter(customFields, anchorKey).map((field) => (
+    <CustomFieldRow key={field.id} field={field} />
+  ));
+  const anchoredKeys = [
+    'prix_bien',
+    'prix_achat',
+    'honoraires_sipa',
+    'construction',
+    'fonds_propres_achat',
+    'amortissement_5_ans',
+    'honoraires_transaction_sipa_group',
+    'frais_dossier_bancaire',
+    'prix_total',
+    'fonds_propres',
+    'versement_initial',
+    'target_benefice_sipa_fonds_propres',
+    'hypotheque',
+    'revenus_locatifs',
+    'rendement_brut',
+    'charges_operationnelles',
+    'interets_hypothecaires',
+    'gestion',
+    'revenu_net',
+    'rendement_net_fonds_propres',
+    'impot',
+    'revenu_distribue',
+    'revenu_distribue_fonds_propres',
+  ];
+  const unplacedCustomFields = customFields.filter((field) => !anchoredKeys.includes(field.insertAfter));
+
   return (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
@@ -98,49 +127,72 @@ function FinancialTableBody({ analysis, purchasePrice, purchaseSubtotal, prixTot
             </thead>
             <tbody className="divide-y divide-border/50">
               <Row label="Prix du bien" value={formatCHF(analysis.prix_bien)} />
+              {renderCustomRows('prix_bien')}
               <Row label="Prix d'achat" value={formatCHF(purchasePrice)} />
+              {renderCustomRows('prix_achat')}
               <Row label="Frais de transaction" amount={analysis.honoraires_sipa} base={purchasePrice} />
+              {renderCustomRows('honoraires_sipa')}
               <Row label="Construction" amount={analysis.construction} base={purchasePrice} />
+              {renderCustomRows('construction')}
               <Row label="Fonds propres achat" value={formatCHF(getPurchaseEquity(analysis))} />
+              {renderCustomRows('fonds_propres_achat')}
               <Row label="Versement initial sur le compte de la copropriété" value={formatCHF(analysis.versement_initial)} />
+              {renderCustomRows('versement_initial')}
               <Row label="Amortissement sur 5 ans" value={formatCHF(analysis.amortissement_5_ans)} />
+              {renderCustomRows('amortissement_5_ans')}
               <Row label="Honoraires de transaction SIPA" amount={analysis.honoraires_transaction_sipa_group} base={analysis.prix_bien} />
+              {renderCustomRows('honoraires_transaction_sipa_group')}
               <Row label="Frais de dossier bancaire" value={formatCHF(analysis.frais_dossier_bancaire)} />
-              <RowTotal label="Prix total" value={formatCHF(prixTotal)} />
+              {renderCustomRows('frais_dossier_bancaire')}
+              <RowTotal label="Prix total d'acquisition" value={formatCHF(prixTotal)} />
+              {renderCustomRows('prix_total')}
               <Row label="Fonds propres" value={formatCHF(analysis.fonds_propres)} />
+              {renderCustomRows('fonds_propres')}
               <Row label="Objectif bénéfice SIPA sur fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} base={getPurchaseEquity(analysis)} />
+              {renderCustomRows('target_benefice_sipa_fonds_propres')}
               <Row label="Hypothèque" amount={analysis.hypotheque} base={purchaseSubtotal} />
+              {renderCustomRows('hypotheque')}
               <tr className="border-t-2 border-border">
                 <Td className="text-muted-foreground">Revenus locatifs (hors charges)</Td>
                 <Td className="text-right font-mono">{formatCHF(analysis.revenus_locatifs)}</Td>
               </tr>
+              {renderCustomRows('revenus_locatifs')}
               <Row label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} muted />
+              {renderCustomRows('rendement_brut')}
               <Row label="Charges opérationnelles" value={formatCHF(analysis.charges_operationnelles)} />
+              {renderCustomRows('charges_operationnelles')}
               <Row label="Intérêt hypothécaire (Estimé en moyenne sur 5 ans)" amount={analysis.interets_hypothecaires} base={analysis.hypotheque} />
+              {renderCustomRows('interets_hypothecaires')}
               <Row label="Honoraires de gestion" amount={analysis.gestion} base={analysis.revenus_locatifs} />
+              {renderCustomRows('gestion')}
               <RowTotal label="Revenu net" value={formatCHF(revenuNet)} />
+              {renderCustomRows('revenu_net')}
               <Row label="Rendement net sur fonds propres" value={formatPercent(analysis.rendement_net_fonds_propres)} muted />
+              {renderCustomRows('rendement_net_fonds_propres')}
               <Row label="Impôt" amount={analysis.impot} base={revenuNet} />
+              {renderCustomRows('impot')}
               <RowTotal label="Revenu distribué" value={formatCHF(revenuDistribue)} />
+              {renderCustomRows('revenu_distribue')}
               <Row
                 label="Revenu distribué sur fonds propres"
                 value={formatPercent(analysis.revenu_distribue_fonds_propres)}
                 muted
                 footnote="Rendement estimatif basé sur un scénario projeté sur 5 ans"
               />
-              {customFields.length > 0 && (
+              {renderCustomRows('revenu_distribue_fonds_propres')}
+              {unplacedCustomFields.length > 0 && (
                 <tr className="border-t-2 border-dashed border-border/40">
                   <td colSpan={2} className="px-4 pt-3 pb-1 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
                     Lignes personnalisées
                   </td>
                 </tr>
               )}
-              {customFields.map((cf, i) => {
-                const amount = cf.values?.find((v) => v.type === 'amount');
-                const pct = cf.values?.find((v) => v.type === 'pct');
+              {unplacedCustomFields.map((cf, i) => {
+                const amount = { value: cf.amount };
+                const pct = cf.pct == null ? null : { value: cf.pct };
                 return (
                   <tr key={i}>
-                    <Td>{cf.label}</Td>
+                    <Td>{cf.name}</Td>
                     <Td className="text-right font-mono">
                       {formatCHF(amount?.value)}
                       {pct?.value != null && <span className="ml-2 text-xs text-muted-foreground">({pct.value.toFixed(2)}%)</span>}
@@ -165,6 +217,18 @@ function Row({ label, value, amount, base, muted, footnote }) {
       <Td className="text-right font-mono">
         {value || formatCHF(amount)}
         {pct != null && <span className="ml-2 text-xs text-muted-foreground">({pct.toFixed(2)}%)</span>}
+      </Td>
+    </tr>
+  );
+}
+
+function CustomFieldRow({ field }) {
+  return (
+    <tr className="border-dashed border-border/40">
+      <Td>{field.name}</Td>
+      <Td className="text-right font-mono">
+        {formatCHF(field.amount)}
+        {field.pct != null && <span className="ml-2 text-xs text-muted-foreground">({field.pct.toFixed(2)}%)</span>}
       </Td>
     </tr>
   );

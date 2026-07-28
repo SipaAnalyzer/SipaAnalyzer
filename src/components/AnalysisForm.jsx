@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent, WORKFLOW_STATUSES } from '../utils/calculations';
 import { extractAnalysisFieldsFromExcel, formatSipaLabel, formatSipaValue, getSipaDisplayGroups, getSipaDisplayValues } from '../utils/excelImport';
+import { FINANCIAL_CUSTOM_FIELD_ANCHORS, normalizeFinancialCustomFields, toPersistedFinancialCustomFields } from '../utils/financialCustomFields';
 import { fetchSaronRate } from '../utils/saronRate';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -244,6 +245,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     impot_pct: null,
     notes: '',
     sipa_data: null,
+    financial_custom_fields: [],
     banque_a_taux_hypothecaire: null,
     banque_a_type_taux: 'fixe',
     banque_a_marge_saron: 0.5,
@@ -282,22 +284,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   }, [initialData]);
 
   useEffect(() => {
-    if (!initialData?.sipa_data) return;
-    const custom = initialData.sipa_data.filter((e) => e._custom);
-    if (custom.length > 0) {
-      setCustomFinancialFields(
-        custom.map((e) => {
-          const amountVal = e.values?.find((v) => v.type === 'amount');
-          const pctVal = e.values?.find((v) => v.type === 'pct');
-          return {
-            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-            name: e.label,
-            amount: amountVal?.value || 0,
-            pct: pctVal?.value ?? null,
-          };
-        })
-      );
-    }
+    if (!initialData) return;
+    setCustomFinancialFields(normalizeFinancialCustomFields(initialData.financial_custom_fields, initialData.sipa_data));
   }, [initialData]);
 
   const [financingDriver, setFinancingDriver] = useState('hypotheque');
@@ -430,6 +418,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const [newCustomFieldName, setNewCustomFieldName] = useState('');
   const [newCustomFieldAmount, setNewCustomFieldAmount] = useState('');
   const [newCustomFieldPct, setNewCustomFieldPct] = useState('');
+  const [newCustomFieldInsertAfter, setNewCustomFieldInsertAfter] = useState('prix_total');
   const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
@@ -460,18 +449,10 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
 
     const calculatedForm = recalculateFinancialState(form, { financingDriver });
 
-    const customSipaData = customFinancialFields.length > 0
-      ? customFinancialFields.map((cf) => ({
-          label: cf.name,
-          values: [{ type: 'amount', value: cf.amount }, ...(cf.pct != null ? [{ type: 'pct', value: cf.pct }] : [])],
-          _custom: true,
-        }))
-      : [];
-
     const baseSipaData = Array.isArray(form.sipa_data)
       ? form.sipa_data.filter((entry) => !entry._custom)
       : [];
-    const mergedSipaData = [...baseSipaData, ...customSipaData];
+    const financialCustomFields = toPersistedFinancialCustomFields(customFinancialFields);
 
     const calculatedCalc = calculateAnalysis({
       ...calculatedForm,
@@ -484,7 +465,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     const payload = {
       property_id: calculatedForm.property_id,
       statut: calculatedForm.statut,
-      sipa_data: mergedSipaData.length > 0 ? mergedSipaData : null,
+      sipa_data: baseSipaData.length > 0 ? baseSipaData : null,
+      financial_custom_fields: financialCustomFields,
       prix_bien: calculatedForm.prix_bien,
       prix_achat: calculatedForm.prix_achat,
       versement_initial: calculatedForm.versement_initial,
@@ -565,7 +547,12 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
           const merged = [...prev];
           for (const cf of result.customFinancialFields) {
             if (!existing.has(cf.name)) {
-              merged.push({ ...cf, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) });
+              merged.push({
+                ...cf,
+                id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                insertAfter: cf.insertAfter || 'prix_total',
+                position: merged.length,
+              });
               existing.add(cf.name);
             }
           }
@@ -599,6 +586,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         name: newCustomFieldName.trim(),
         amount: Number(newCustomFieldAmount),
         pct: newCustomFieldPct !== '' ? parseFloat(newCustomFieldPct) : null,
+        insertAfter: newCustomFieldInsertAfter,
+        position: prev.length,
       },
     ]);
     setNewCustomFieldName('');
@@ -930,6 +919,23 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         />
                         <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
                       </div>
+                      <Select
+                        value={cf.insertAfter || 'prix_total'}
+                        onValueChange={(value) =>
+                          setCustomFinancialFields((prev) =>
+                            prev.map((f, j) => (j === i ? { ...f, insertAfter: value } : f))
+                          )
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-44 bg-background text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
+                            <SelectItem key={anchor.key} value={anchor.key}>Apres {anchor.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <button
                         type="button"
                         onClick={() => setCustomFinancialFields((prev) => prev.filter((_, j) => j !== i))}
@@ -948,15 +954,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                     value={newCustomFieldName}
                     onChange={(e) => setNewCustomFieldName(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
-                        setCustomFinancialFields((prev) => [
-                          ...prev,
-                          { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount), pct: newCustomFieldPct !== '' ? parseFloat(newCustomFieldPct) : null },
-                        ]);
-                        setNewCustomFieldName('');
-                        setNewCustomFieldAmount('');
-                        setNewCustomFieldPct('');
-                      }
+                      if (e.key === 'Enter') addCustomFinancialField();
                     }}
                     placeholder="Nouvelle ligne personnalisée..."
                     className="w-full bg-transparent border-0 px-0 py-1 text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
@@ -971,15 +969,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         value={newCustomFieldAmount}
                         onChange={(e) => setNewCustomFieldAmount(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter' && newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
-                            setCustomFinancialFields((prev) => [
-                              ...prev,
-                              { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount), pct: newCustomFieldPct !== '' ? parseFloat(newCustomFieldPct) : null },
-                            ]);
-                            setNewCustomFieldName('');
-                            setNewCustomFieldAmount('');
-                            setNewCustomFieldPct('');
-                          }
+                          if (e.key === 'Enter') addCustomFinancialField();
                         }}
                         placeholder="0"
                         className="w-full bg-transparent border-0 px-0 py-1 text-sm text-right font-mono text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
@@ -991,32 +981,26 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         value={newCustomFieldPct}
                         onChange={(e) => setNewCustomFieldPct(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter' && newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
-                            setCustomFinancialFields((prev) => [
-                              ...prev,
-                              { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount), pct: newCustomFieldPct !== '' ? parseFloat(newCustomFieldPct) : null },
-                            ]);
-                            setNewCustomFieldName('');
-                            setNewCustomFieldAmount('');
-                            setNewCustomFieldPct('');
-                          }
+                          if (e.key === 'Enter') addCustomFinancialField();
                         }}
                         placeholder="%"
                         className="w-full bg-transparent border-0 px-0 py-1 text-sm text-right font-mono text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
                       />
                     </div>
+                    <Select value={newCustomFieldInsertAfter} onValueChange={setNewCustomFieldInsertAfter}>
+                      <SelectTrigger className="h-8 w-44 bg-background text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
+                          <SelectItem key={anchor.key} value={anchor.key}>Apres {anchor.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <button
                       type="button"
                       onClick={() => {
-                        if (newCustomFieldName.trim() && Number(newCustomFieldAmount)) {
-                          setCustomFinancialFields((prev) => [
-                            ...prev,
-                            { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: newCustomFieldName.trim(), amount: Number(newCustomFieldAmount), pct: newCustomFieldPct !== '' ? parseFloat(newCustomFieldPct) : null },
-                          ]);
-                          setNewCustomFieldName('');
-                          setNewCustomFieldAmount('');
-                          setNewCustomFieldPct('');
-                        }
+                        addCustomFinancialField();
                       }}
                       className="inline-flex items-center justify-center rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                     >
@@ -1223,6 +1207,8 @@ Courtier : UBS, Valérie Zuber"
           setNewCustomFieldAmount={setNewCustomFieldAmount}
           newCustomFieldPct={newCustomFieldPct}
           setNewCustomFieldPct={setNewCustomFieldPct}
+          newCustomFieldInsertAfter={newCustomFieldInsertAfter}
+          setNewCustomFieldInsertAfter={setNewCustomFieldInsertAfter}
           addCustomFinancialField={addCustomFinancialField}
         />
       )}
@@ -1295,6 +1281,8 @@ function TechnicalAnalysisView({
   setNewCustomFieldAmount,
   newCustomFieldPct,
   setNewCustomFieldPct,
+  newCustomFieldInsertAfter,
+  setNewCustomFieldInsertAfter,
   addCustomFinancialField,
 }) {
   const addOnEnter = (event) => {
@@ -1479,7 +1467,20 @@ function TechnicalAnalysisView({
                       }
                     />
                   </ExcelCell>
-                  <ExcelCell align="right" className={EXCEL_LOCKED_CELL_CLASS}>
+                  <ExcelCell align="right" className={EXCEL_EDITABLE_CELL_CLASS}>
+                    <select
+                      value={cf.insertAfter || 'prix_total'}
+                      onChange={(event) =>
+                        setCustomFinancialFields((prev) =>
+                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, insertAfter: event.target.value } : item))
+                        )
+                      }
+                      className="h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
+                    >
+                      {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
+                        <option key={anchor.key} value={anchor.key}>Apres {anchor.label}</option>
+                      ))}
+                    </select>
                     <button
                       type="button"
                       onClick={() => setCustomFinancialFields((prev) => prev.filter((_, itemIndex) => itemIndex !== index))}
@@ -1510,7 +1511,16 @@ function TechnicalAnalysisView({
                 <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                   <ExcelNumberInput value={newCustomFieldPct} onChange={setNewCustomFieldPct} onKeyDown={addOnEnter} />
                 </ExcelCell>
-                <ExcelCell align="right" className={EXCEL_LOCKED_CELL_CLASS}>
+                <ExcelCell align="right" className={EXCEL_EDITABLE_CELL_CLASS}>
+                  <select
+                    value={newCustomFieldInsertAfter}
+                    onChange={(event) => setNewCustomFieldInsertAfter(event.target.value)}
+                    className="mr-2 h-6 max-w-44 bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
+                  >
+                    {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
+                      <option key={anchor.key} value={anchor.key}>Apres {anchor.label}</option>
+                    ))}
+                  </select>
                   <button
                     type="button"
                     onClick={addCustomFinancialField}
