@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { formatCHF, formatPercent } from '../utils/calculations';
+import { calculateAnalysis, formatCHF, formatPercent } from '../utils/calculations';
 import {
   getCustomFieldsAfter,
   getFinancialCustomFieldAmount,
@@ -52,9 +52,16 @@ export default function FinancialTable({ analysis, collapsible = false }) {
     getFinancialCustomFieldsTotal(customFields, analysis)
   );
   const purchaseSubtotal = getPurchaseSubtotal(analysis);
+  const adjustedAnalysis = {
+    ...analysis,
+    financial_custom_fields: customFields,
+    prix_total: prixTotal,
+    fonds_propres: Math.round(prixTotal - Number(analysis.hypotheque || 0)),
+  };
+  const adjustedCalc = calculateAnalysis(adjustedAnalysis);
 
-  const revenuNet = Number(analysis.revenu_net || 0);
-  const revenuDistribue = Number(analysis.revenu_distribue || 0);
+  const revenuNet = Number(adjustedCalc.revenu_net || 0);
+  const revenuDistribue = Number(adjustedCalc.revenu_distribue || 0);
 
   return (
     <div className="space-y-6">
@@ -73,10 +80,10 @@ export default function FinancialTable({ analysis, collapsible = false }) {
           </div>
           {collapsible ? (
             <CollapsibleContent>
-              <FinancialTableBody analysis={analysis} purchasePrice={purchasePrice} purchaseSubtotal={purchaseSubtotal} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
+              <FinancialTableBody analysis={adjustedAnalysis} calc={adjustedCalc} purchasePrice={purchasePrice} purchaseSubtotal={purchaseSubtotal} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
             </CollapsibleContent>
           ) : (
-            <FinancialTableBody analysis={analysis} purchasePrice={purchasePrice} purchaseSubtotal={purchaseSubtotal} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
+            <FinancialTableBody analysis={adjustedAnalysis} calc={adjustedCalc} purchasePrice={purchasePrice} purchaseSubtotal={purchaseSubtotal} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
           )}
         </div>
       </Collapsible>
@@ -90,7 +97,7 @@ export default function FinancialTable({ analysis, collapsible = false }) {
   );
 }
 
-function FinancialTableBody({ analysis, purchasePrice, purchaseSubtotal, prixTotal, revenuNet, revenuDistribue, customFields }) {
+function FinancialTableBody({ analysis, calc, purchasePrice, purchaseSubtotal, prixTotal, revenuNet, revenuDistribue, customFields }) {
   const renderCustomRows = (anchorKey) => getCustomFieldsAfter(customFields, anchorKey).map((field) => (
     <CustomFieldRow key={field.id} field={field} analysis={analysis} />
   ));
@@ -162,7 +169,7 @@ function FinancialTableBody({ analysis, purchasePrice, purchaseSubtotal, prixTot
                 <Td className="text-right font-mono">{formatCHF(analysis.revenus_locatifs)}</Td>
               </tr>
               {renderCustomRows('revenus_locatifs')}
-              <Row label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} muted />
+              <Row label="Taux de rendement brut" value={formatPercent(calc.rendement_brut)} muted />
               {renderCustomRows('rendement_brut')}
               <Row label="Charges opérationnelles" value={formatCHF(analysis.charges_operationnelles)} />
               {renderCustomRows('charges_operationnelles')}
@@ -172,7 +179,7 @@ function FinancialTableBody({ analysis, purchasePrice, purchaseSubtotal, prixTot
               {renderCustomRows('gestion')}
               <RowTotal label="Revenu net" value={formatCHF(revenuNet)} />
               {renderCustomRows('revenu_net')}
-              <Row label="Rendement net sur fonds propres" value={formatPercent(analysis.rendement_net_fonds_propres)} muted />
+              <Row label="Rendement net sur fonds propres" value={formatPercent(calc.rendement_net_fonds_propres)} muted />
               {renderCustomRows('rendement_net_fonds_propres')}
               <Row label="Impôt" amount={analysis.impot} base={revenuNet} />
               {renderCustomRows('impot')}
@@ -180,7 +187,7 @@ function FinancialTableBody({ analysis, purchasePrice, purchaseSubtotal, prixTot
               {renderCustomRows('revenu_distribue')}
               <Row
                 label="Revenu distribué sur fonds propres"
-                value={formatPercent(analysis.revenu_distribue_fonds_propres)}
+                value={formatPercent(calc.revenu_distribue_fonds_propres)}
                 muted
                 footnote="Rendement estimatif basé sur un scénario projeté sur 5 ans"
               />

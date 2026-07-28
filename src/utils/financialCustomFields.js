@@ -39,6 +39,22 @@ export const FINANCIAL_CUSTOM_ACQUISITION_ANCHORS = [
   'prix_total',
 ];
 
+export const FINANCIAL_CUSTOM_REVENUE_ANCHORS = [
+  'revenus_locatifs',
+];
+
+export const FINANCIAL_CUSTOM_OPERATING_EXPENSE_ANCHORS = [
+  'charges_operationnelles',
+  'interets_hypothecaires',
+  'gestion',
+  'revenu_net',
+];
+
+export const FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS = [
+  'impot',
+  'revenu_distribue',
+];
+
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null;
   const numeric = Number(value);
@@ -56,7 +72,7 @@ const legacySipaCustomFields = (sipaData = []) => {
       return {
         id: entry.id || `legacy-${index}`,
         name: entry.label || '',
-      amount: toNumberOrNull(amount?.value),
+        amount: toNumberOrNull(amount?.value),
         pct: toNumberOrNull(pct?.value),
         insertAfter: entry.insertAfter || DEFAULT_INSERT_AFTER,
         position: index,

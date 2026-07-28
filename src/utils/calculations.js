@@ -1,3 +1,10 @@
+import {
+  FINANCIAL_CUSTOM_OPERATING_EXPENSE_ANCHORS,
+  FINANCIAL_CUSTOM_REVENUE_ANCHORS,
+  FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS,
+  getFinancialCustomFieldsTotal,
+} from './financialCustomFields';
+
 const LOCATION_SCORES = {
   'Lausanne': 15, 'Neuchâtel': 15, 'Neuchatel': 15,
   'Genève': 13, 'Geneve': 13, 'Zurich': 13, 'Zürich': 13,
@@ -112,10 +119,14 @@ export function calculateAnalysis(data) {
   const hypotheque = Number(data.hypotheque || 0);
   const fondsPropres = Number(data.fonds_propres || 0);
   const impot = Number(data.impot || 0);
+  const customRevenue = getFinancialCustomFieldsTotal(data.financial_custom_fields, data, FINANCIAL_CUSTOM_REVENUE_ANCHORS);
+  const customOperatingExpenses = getFinancialCustomFieldsTotal(data.financial_custom_fields, data, FINANCIAL_CUSTOM_OPERATING_EXPENSE_ANCHORS);
+  const customTaxExpenses = getFinancialCustomFieldsTotal(data.financial_custom_fields, data, FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS);
+  const adjustedRevenusLocatifs = revenusLocatifs + customRevenue;
 
-  const revenuNet = revenusLocatifs - chargesOperationnelles - interetsHypothecaires - gestion;
-  const impotCalcule = impot;
-  const rendementBrut = prixBien > 0 ? (revenusLocatifs / prixBien) * 100 : 0;
+  const revenuNet = adjustedRevenusLocatifs - chargesOperationnelles - interetsHypothecaires - gestion - customOperatingExpenses;
+  const impotCalcule = impot + customTaxExpenses;
+  const rendementBrut = prixBien > 0 ? (adjustedRevenusLocatifs / prixBien) * 100 : 0;
   const rendementNetFP = fondsPropres > 0 ? (revenuNet / fondsPropres) * 100 : 0;
   const revenuDistribue = revenuNet - impotCalcule;
   const revenuDistribueFP = fondsPropres > 0 ? (revenuDistribue / fondsPropres) * 100 : 0;
@@ -271,4 +282,3 @@ export const NOTE_CONFIG = {
   C: { class: 'bg-lime-500/20 text-lime-400 border-lime-500/30' },
   D: { class: 'bg-red-500/20 text-red-400 border-red-500/30' },
 };
-import { getFinancialCustomFieldsTotal } from './financialCustomFields';
