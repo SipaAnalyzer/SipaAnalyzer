@@ -3,7 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent, WORKFLOW_STATUSES } from '../utils/calculations';
 import { extractAnalysisFieldsFromExcel, formatSipaLabel, formatSipaValue, getSipaDisplayGroups, getSipaDisplayValues } from '../utils/excelImport';
-import { FINANCIAL_CUSTOM_FIELD_ANCHORS, normalizeFinancialCustomFields, toPersistedFinancialCustomFields } from '../utils/financialCustomFields';
+import {
+  FINANCIAL_CUSTOM_FIELD_ANCHORS,
+  getFinancialCustomFieldsTotal,
+  normalizeFinancialCustomFields,
+  toPersistedFinancialCustomFields,
+} from '../utils/financialCustomFields';
 import { fetchSaronRate } from '../utils/saronRate';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -55,14 +60,29 @@ function getInvestorPrice(data) {
   return round2(getPurchaseSubtotal(data) + toNumber(data.target_benefice_sipa_fonds_propres));
 }
 
-function getAcquisitionTotal(data) {
+function getAcquisitionTotal(data, customFields = []) {
   return round2(
     getInvestorPrice(data) +
     toNumber(data.versement_initial) +
     toNumber(data.amortissement_5_ans) +
     toNumber(data.honoraires_transaction_sipa_group) +
-    toNumber(data.frais_dossier_bancaire)
+    toNumber(data.frais_dossier_bancaire) +
+    getFinancialCustomFieldsTotal(customFields, data)
   );
+}
+
+function applyCustomFinancialTotals(data, customFields, financingDriver = 'hypotheque') {
+  const next = { ...data, financial_custom_fields: toPersistedFinancialCustomFields(customFields) };
+  const prixTotal = getAcquisitionTotal(next, customFields);
+  if (financingDriver === 'fonds_propres' && hasFinancialValue(next.fonds_propres_pct)) {
+    next.fonds_propres = amountFromPct(prixTotal, next.fonds_propres_pct);
+    next.hypotheque = round2(prixTotal - toNumber(next.fonds_propres));
+  } else {
+    next.fonds_propres = round2(prixTotal - toNumber(next.hypotheque));
+    next.fonds_propres_pct = pctFromAmount(prixTotal, next.fonds_propres);
+  }
+  next.prix_total = prixTotal;
+  return next;
 }
 
 function getRevenuNet(data) {
@@ -418,7 +438,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const [newCustomFieldName, setNewCustomFieldName] = useState('');
   const [newCustomFieldAmount, setNewCustomFieldAmount] = useState('');
   const [newCustomFieldPct, setNewCustomFieldPct] = useState('');
-  const [newCustomFieldInsertAfter, setNewCustomFieldInsertAfter] = useState('prix_total');
+  const [newCustomFieldInsertAfter, setNewCustomFieldInsertAfter] = useState('frais_dossier_bancaire');
   const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
@@ -429,15 +449,20 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     return () => { cancelled = true; };
   }, []);
 
+  const calculatedDisplayForm = useMemo(
+    () => applyCustomFinancialTotals(form, customFinancialFields, financingDriver),
+    [form, customFinancialFields, financingDriver]
+  );
+
   const calc = useMemo(() => calculateAnalysis({
-    ...form,
+    ...calculatedDisplayForm,
     ville: selectedProperty?.ville,
     canton: selectedProperty?.canton,
     surface: selectedProperty?.surface,
     annee_construction: selectedProperty?.annee_construction,
-  }), [form, selectedProperty]);
+  }), [calculatedDisplayForm, selectedProperty]);
 
-  const prixTotal = useMemo(() => getAcquisitionTotal(form), [form]);
+  const prixTotal = calculatedDisplayForm.prix_total;
 
   const handleSubmit = async () => {
     setSubmitError('');
@@ -447,7 +472,11 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       return;
     }
 
-    const calculatedForm = recalculateFinancialState(form, { financingDriver });
+    const calculatedForm = applyCustomFinancialTotals(
+      recalculateFinancialState(form, { financingDriver }),
+      customFinancialFields,
+      financingDriver
+    );
 
     const baseSipaData = Array.isArray(form.sipa_data)
       ? form.sipa_data.filter((entry) => !entry._custom)
@@ -500,7 +529,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       capital_projection: calculatedForm.capital_projection,
       ...(calculatedForm.etat_batiment ? { etat_batiment: calculatedForm.etat_batiment } : {}),
       ...(calculatedForm.emplacement_bien ? { emplacement_bien: calculatedForm.emplacement_bien } : {}),
-      prix_total: getAcquisitionTotal(calculatedForm),
+      prix_total: calculatedForm.prix_total,
       rendement_brut: calculatedCalc.rendement_brut,
       revenu_net: calculatedCalc.revenu_net,
       rendement_net_fonds_propres: calculatedCalc.rendement_net_fonds_propres,
@@ -577,15 +606,17 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   };
 
   const addCustomFinancialField = () => {
-    if (!newCustomFieldName.trim() || !Number(newCustomFieldAmount)) return;
+    const hasAmount = newCustomFieldAmount !== '' && newCustomFieldAmount !== null && newCustomFieldAmount !== undefined;
+    const hasPct = newCustomFieldPct !== '' && newCustomFieldPct !== null && newCustomFieldPct !== undefined;
+    if (!newCustomFieldName.trim() || (!hasAmount && !hasPct)) return;
 
     setCustomFinancialFields((prev) => [
       ...prev,
       {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         name: newCustomFieldName.trim(),
-        amount: Number(newCustomFieldAmount),
-        pct: newCustomFieldPct !== '' ? parseFloat(newCustomFieldPct) : null,
+        amount: hasAmount ? Number(newCustomFieldAmount) : null,
+        pct: hasPct ? parseFloat(newCustomFieldPct) : null,
         insertAfter: newCustomFieldInsertAfter,
         position: prev.length,
       },
@@ -785,9 +816,9 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
               </tr>
               <PctRow
                 label="Fonds propres"
-                amount={form.fonds_propres}
+                amount={calculatedDisplayForm.fonds_propres}
                 onAmount={handlers.fondsPropres.amount}
-                pct={form.fonds_propres_pct}
+                pct={calculatedDisplayForm.fonds_propres_pct}
                 onPct={handlers.fondsPropres.pct}
               />
               <PctRow
@@ -898,7 +929,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           value={cf.amount}
                           onChange={(e) =>
                             setCustomFinancialFields((prev) =>
-                              prev.map((f, j) => (j === i ? { ...f, amount: Number(e.target.value) || 0 } : f))
+                              prev.map((f, j) => (j === i ? { ...f, amount: e.target.value === '' ? null : Number(e.target.value) || 0 } : f))
                             )
                           }
                           placeholder="0"
@@ -1373,9 +1404,9 @@ function TechnicalAnalysisView({
                 row={12}
                 section="Financement"
                 label="Fonds propres"
-                amount={form.fonds_propres}
+                amount={calculatedDisplayForm.fonds_propres}
                 onAmount={handlers.fondsPropres.amount}
-                pct={form.fonds_propres_pct}
+                pct={calculatedDisplayForm.fonds_propres_pct}
                 onPct={handlers.fondsPropres.pct}
               />
               <ExcelPctRow
@@ -1453,7 +1484,7 @@ function TechnicalAnalysisView({
                       value={cf.amount}
                       onChange={(value) =>
                         setCustomFinancialFields((prev) =>
-                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, amount: value ?? 0 } : item))
+                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, amount: value } : item))
                         )
                       }
                     />

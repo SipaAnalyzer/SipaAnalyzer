@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { formatCHF, formatPercent } from '../utils/calculations';
-import { getCustomFieldsAfter, normalizeFinancialCustomFields } from '../utils/financialCustomFields';
+import {
+  getCustomFieldsAfter,
+  getFinancialCustomFieldAmount,
+  getFinancialCustomFieldsTotal,
+  normalizeFinancialCustomFields,
+} from '../utils/financialCustomFields';
 import ExcelProjectionTables from './ExcelProjectionTables';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -37,19 +42,19 @@ export default function FinancialTable({ analysis, collapsible = false }) {
   if (!analysis) return null;
 
   const purchasePrice = getPurchasePrice(analysis);
+  const customFields = normalizeFinancialCustomFields(analysis.financial_custom_fields, analysis.sipa_data);
   const prixTotal = Math.round(
     Number(analysis.prix_bien || 0) +
     Number(analysis.versement_initial || 0) +
     Number(analysis.amortissement_5_ans || 0) +
     Number(analysis.honoraires_transaction_sipa_group || 0) +
-    Number(analysis.frais_dossier_bancaire || 0)
+    Number(analysis.frais_dossier_bancaire || 0) +
+    getFinancialCustomFieldsTotal(customFields, analysis)
   );
   const purchaseSubtotal = getPurchaseSubtotal(analysis);
 
   const revenuNet = Number(analysis.revenu_net || 0);
   const revenuDistribue = Number(analysis.revenu_distribue || 0);
-
-  const customFields = normalizeFinancialCustomFields(analysis.financial_custom_fields, analysis.sipa_data);
 
   return (
     <div className="space-y-6">
@@ -87,7 +92,7 @@ export default function FinancialTable({ analysis, collapsible = false }) {
 
 function FinancialTableBody({ analysis, purchasePrice, purchaseSubtotal, prixTotal, revenuNet, revenuDistribue, customFields }) {
   const renderCustomRows = (anchorKey) => getCustomFieldsAfter(customFields, anchorKey).map((field) => (
-    <CustomFieldRow key={field.id} field={field} />
+    <CustomFieldRow key={field.id} field={field} analysis={analysis} />
   ));
   const anchoredKeys = [
     'prix_bien',
@@ -188,7 +193,7 @@ function FinancialTableBody({ analysis, purchasePrice, purchaseSubtotal, prixTot
                 </tr>
               )}
               {unplacedCustomFields.map((cf, i) => {
-                const amount = { value: cf.amount };
+                const amount = { value: getFinancialCustomFieldAmount(cf, analysis) };
                 const pct = cf.pct == null ? null : { value: cf.pct };
                 return (
                   <tr key={i}>
@@ -222,12 +227,13 @@ function Row({ label, value, amount, base, muted, footnote }) {
   );
 }
 
-function CustomFieldRow({ field }) {
+function CustomFieldRow({ field, analysis }) {
+  const amount = getFinancialCustomFieldAmount(field, analysis);
   return (
     <tr className="border-dashed border-border/40">
       <Td>{field.name}</Td>
       <Td className="text-right font-mono">
-        {formatCHF(field.amount)}
+        {formatCHF(amount)}
         {field.pct != null && <span className="ml-2 text-xs text-muted-foreground">({field.pct.toFixed(2)}%)</span>}
       </Td>
     </tr>

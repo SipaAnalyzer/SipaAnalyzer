@@ -20,7 +20,12 @@ import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
 import { calculateAnalysis, formatCHF, formatPercent, normalizeAnalyses, WORKFLOW_STATUSES } from '../utils/calculations';
 import { formatSipaLabel, formatSipaValue, getDisplayableSipaRows, getSipaDisplayGroups, getSipaDisplayValues } from '../utils/excelImport';
-import { normalizeFinancialCustomFields, toPersistedFinancialCustomFields } from '../utils/financialCustomFields';
+import {
+  getFinancialCustomFieldAmount,
+  getFinancialCustomFieldsTotal,
+  normalizeFinancialCustomFields,
+  toPersistedFinancialCustomFields,
+} from '../utils/financialCustomFields';
 import { exportAnalysisPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
 import { listAuditLogs, recordAuditLog } from '../utils/auditLogs';
@@ -517,14 +522,15 @@ function TechnicalAnalysisSnapshot({
 }) {
   const purchasePrice = getPurchasePrice(analysis);
   const purchaseSubtotal = getPurchaseSubtotal(analysis);
+  const customFields = normalizeFinancialCustomFields(analysis.financial_custom_fields, analysis.sipa_data);
   const prixTotal = Math.round(
     Number(analysis.prix_bien || 0) +
     Number(analysis.versement_initial || 0) +
     Number(analysis.amortissement_5_ans || 0) +
     Number(analysis.honoraires_transaction_sipa_group || 0) +
-    Number(analysis.frais_dossier_bancaire || 0)
+    Number(analysis.frais_dossier_bancaire || 0) +
+    getFinancialCustomFieldsTotal(customFields, analysis)
   );
-  const customFields = normalizeFinancialCustomFields(analysis.financial_custom_fields, analysis.sipa_data);
   const visibleCustomFields = customFields
     .map((field, index) => ({ field, index }))
     .filter(({ field }) => {
@@ -696,7 +702,7 @@ function TechnicalAnalysisSnapshot({
                     row={25 + visibleIndex}
                     section="Personnalisé"
                     label={field.name}
-                    amount={field.amount}
+                    amount={getFinancialCustomFieldAmount(field, analysis)}
                     pct={field.pct}
                     editable={canEdit}
                     onAmountChange={(value) => updateCustomField(index, 'amount', value ?? 0)}
@@ -1229,7 +1235,7 @@ function buildFinancialExportRows(analysis, customFields, prixTotal) {
   ];
 
   customFields.forEach((entry) => {
-    const amount = entry.values?.find((value) => value.type === 'amount') || { value: entry.amount };
+    const amount = entry.values?.find((value) => value.type === 'amount') || { value: getFinancialCustomFieldAmount(entry, analysis) };
     const pct = entry.values?.find((value) => value.type === 'pct') || (entry.pct == null ? null : { value: entry.pct });
     entry.label = entry.name || entry.label;
     rows.push(['Personnalisé', entry.label || '', amount?.value ?? '', pct?.value ?? '', '']);
@@ -1360,12 +1366,20 @@ function normalizeAnalysisDraft(draft, property) {
   const honorairesTransactionGroup = transactionGroupPct != null
     ? Math.round(prixBien * transactionGroupPct / 100)
     : Number(draft.honoraires_transaction_sipa_group || 0);
+  const draftForCustomFields = {
+    ...draft,
+    prix_bien: prixBien,
+    honoraires_transaction_sipa_group: honorairesTransactionGroup,
+    fonds_propres_achat: Math.round(fondsPropresAchat),
+  };
+  const customFields = normalizeFinancialCustomFields(draft.financial_custom_fields, draft.sipa_data);
   const prixTotal = Math.round(
     prixBien +
     Number(draft.versement_initial || 0) +
     Number(draft.amortissement_5_ans || 0) +
     honorairesTransactionGroup +
-    Number(draft.frais_dossier_bancaire || 0)
+    Number(draft.frais_dossier_bancaire || 0) +
+    getFinancialCustomFieldsTotal(customFields, draftForCustomFields)
   );
   const normalizedDraft = {
     ...draft,
@@ -1405,7 +1419,7 @@ function buildTechnicalAnalysisPayload(analysis) {
   return {
     statut: analysis.statut,
     sipa_data: analysis.sipa_data || null,
-    financial_custom_fields: toPersistedFinancialCustomFields(analysis.financial_custom_fields || []),
+    financial_custom_fields: toPersistedFinancialCustomFields(normalizeFinancialCustomFields(analysis.financial_custom_fields, analysis.sipa_data)),
     prix_bien: analysis.prix_bien,
     prix_achat: analysis.prix_achat,
     versement_initial: analysis.versement_initial,

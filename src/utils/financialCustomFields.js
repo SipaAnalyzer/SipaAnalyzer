@@ -26,6 +26,19 @@ export const FINANCIAL_CUSTOM_FIELD_ANCHORS = [
 
 const DEFAULT_INSERT_AFTER = 'prix_total';
 
+export const FINANCIAL_CUSTOM_ACQUISITION_ANCHORS = [
+  'prix_bien',
+  'prix_achat',
+  'honoraires_sipa',
+  'construction',
+  'fonds_propres_achat',
+  'versement_initial',
+  'amortissement_5_ans',
+  'honoraires_transaction_sipa_group',
+  'frais_dossier_bancaire',
+  'prix_total',
+];
+
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null;
   const numeric = Number(value);
@@ -43,7 +56,7 @@ const legacySipaCustomFields = (sipaData = []) => {
       return {
         id: entry.id || `legacy-${index}`,
         name: entry.label || '',
-        amount: toNumberOrNull(amount?.value) ?? 0,
+      amount: toNumberOrNull(amount?.value),
         pct: toNumberOrNull(pct?.value),
         insertAfter: entry.insertAfter || DEFAULT_INSERT_AFTER,
         position: index,
@@ -60,7 +73,7 @@ export function normalizeFinancialCustomFields(fields = [], legacySipaData = [])
     .map((field, index) => ({
       id: field.id || `custom-${index}`,
       name: field.name || field.label || '',
-      amount: toNumberOrNull(field.amount) ?? 0,
+      amount: toNumberOrNull(field.amount),
       pct: toNumberOrNull(field.pct),
       insertAfter: field.insertAfter || field.after || field.anchor || DEFAULT_INSERT_AFTER,
       position: Number.isFinite(Number(field.position)) ? Number(field.position) : index,
@@ -74,7 +87,7 @@ export function toPersistedFinancialCustomFields(fields = []) {
     .map((field, index) => ({
       id: field.id || `custom-${index}`,
       label: field.name.trim(),
-      amount: toNumberOrNull(field.amount) ?? 0,
+      amount: toNumberOrNull(field.amount),
       pct: toNumberOrNull(field.pct),
       insertAfter: field.insertAfter || DEFAULT_INSERT_AFTER,
       position: Number.isFinite(Number(field.position)) ? Number(field.position) : index,
@@ -85,4 +98,35 @@ export function getCustomFieldsAfter(fields = [], anchorKey) {
   return normalizeFinancialCustomFields(fields)
     .filter((field) => (field.insertAfter || DEFAULT_INSERT_AFTER) === anchorKey)
     .sort((a, b) => a.position - b.position);
+}
+
+export function getFinancialCustomFieldBase(field, data = {}) {
+  const key = field?.insertAfter || DEFAULT_INSERT_AFTER;
+  if (key === 'prix_achat') return toNumberOrNull(data.prix_achat) ?? toNumberOrNull(data.prix_bien) ?? 0;
+  if (key === 'prix_total') return toNumberOrNull(data.prix_total) ?? 0;
+  if (key === 'fonds_propres_achat') return toNumberOrNull(data.fonds_propres_achat) ?? 0;
+  if (key === 'rendement_brut') return toNumberOrNull(data.rendement_brut) ?? 0;
+  if (key === 'revenu_net') return toNumberOrNull(data.revenu_net) ?? 0;
+  if (key === 'rendement_net_fonds_propres') return toNumberOrNull(data.rendement_net_fonds_propres) ?? 0;
+  if (key === 'revenu_distribue') return toNumberOrNull(data.revenu_distribue) ?? 0;
+  if (key === 'revenu_distribue_fonds_propres') return toNumberOrNull(data.revenu_distribue_fonds_propres) ?? 0;
+  return toNumberOrNull(data[key]) ?? 0;
+}
+
+export function getFinancialCustomFieldAmount(field, data = {}) {
+  const amount = toNumberOrNull(field?.amount);
+  if (amount !== null) return amount;
+
+  const pct = toNumberOrNull(field?.pct);
+  if (pct === null) return null;
+
+  const base = getFinancialCustomFieldBase(field, data);
+  return Math.round(base * pct) / 100;
+}
+
+export function getFinancialCustomFieldsTotal(fields = [], data = {}, anchors = FINANCIAL_CUSTOM_ACQUISITION_ANCHORS) {
+  const acceptedAnchors = new Set(anchors);
+  return normalizeFinancialCustomFields(fields)
+    .filter((field) => acceptedAnchors.has(field.insertAfter || DEFAULT_INSERT_AFTER))
+    .reduce((total, field) => total + Number(getFinancialCustomFieldAmount(field, data) || 0), 0);
 }

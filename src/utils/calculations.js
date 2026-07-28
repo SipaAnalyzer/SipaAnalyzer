@@ -147,7 +147,7 @@ export function calculateAnalysis(data) {
   const note = noteFromScore(scoreGlobal);
 
   return {
-    prix_total: Math.round(prixBien + Number(data.versement_initial || 0) + Number(data.amortissement_5_ans || 0) + Number(data.honoraires_transaction_sipa_group || 0) + Number(data.frais_dossier_bancaire || 0)),
+    prix_total: Math.round(prixBien + Number(data.versement_initial || 0) + Number(data.amortissement_5_ans || 0) + Number(data.honoraires_transaction_sipa_group || 0) + Number(data.frais_dossier_bancaire || 0) + getFinancialCustomFieldsTotal(data.financial_custom_fields, data)),
     rendement_brut: round2(rendementBrut),
     revenu_net: Math.round(revenuNet),
     rendement_net_fonds_propres: round2(rendementNetFP),
@@ -271,3 +271,4 @@ export const NOTE_CONFIG = {
   C: { class: 'bg-lime-500/20 text-lime-400 border-lime-500/30' },
   D: { class: 'bg-red-500/20 text-red-400 border-red-500/30' },
 };
+import { getFinancialCustomFieldsTotal } from './financialCustomFields';
