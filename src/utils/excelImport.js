@@ -11,6 +11,8 @@ export function formatSipaLabel(entry, entries = [], index = 0) {
   const label = entry?.label || '';
   const normalized = normalizeText(label);
   if (normalized === 'prix total') return "Prix total d'acquisition";
+  const translatedLabel = SIPA_LABEL_TRANSLATIONS[normalized];
+  if (translatedLabel) return translatedLabel;
   if (normalized !== 'prix du bien') return label;
 
   const occurrence = entries
@@ -22,6 +24,24 @@ export function formatSipaLabel(entry, entries = [], index = 0) {
   if (occurrence >= 3) return 'Prix total';
   return 'Prix bien';
 }
+
+const SIPA_LABEL_TRANSLATIONS = {
+  'target benefice sipa fonds prop': 'Objectif bénéfice SIPA sur fonds propres',
+  'target benefice sipa fonds propres': 'Objectif bénéfice SIPA sur fonds propres',
+  'sipa total': 'Total SIPA',
+  'sipa of fonds prop': 'Part SIPA des fonds propres',
+  'net yield our purchase price net revenue': "Rendement net sur prix d'achat",
+  'bank loan to net income as': 'Revenu net / valorisation bancaire',
+  'sipa trading': 'SIPA Trading',
+  'sipa immo': 'SIPA Immobilier',
+  'usb model': 'Modèle UBS',
+  'of 1st mortgage': 'Part 1er rang hypothécaire',
+  'of 2nd mortgage': 'Part 2e rang hypothécaire',
+  'charge on rent': 'Charge sur loyer',
+  'alt max mortgage shitty valuation': 'Hypothèque maximale alternative',
+  'valuation banque': 'Valorisation bancaire',
+  'vaulation banque': 'Valorisation bancaire',
+};
 
 export function parseNotesToRows(notes) {
   if (!notes) return [];
@@ -369,13 +389,13 @@ function extractProjectionTables(rows, fields) {
 
 function buildOperatingProjection(rows) {
   const definitions = [
-    { key: 'income', label: 'Income', aliases: ['income'], type: 'amount' },
-    { key: 'costs', label: 'Costs', aliases: ['costs'], type: 'amount' },
-    { key: 'interest_rate', label: 'Interest rate', aliases: ['interest rate'], type: 'percent' },
-    { key: 'interest_paid', label: 'Interest paid', aliases: ['interest paid'], type: 'amount' },
-    { key: 'ebt', label: 'EBT', aliases: ['ebt'], type: 'amount' },
-    { key: 'tax', label: 'Tax', aliases: ['tax'], type: 'amount' },
-    { key: 'dividend', label: 'Dividend', aliases: ['dividend'], type: 'amount' },
+    { key: 'income', label: 'Revenus', aliases: ['income'], type: 'amount' },
+    { key: 'costs', label: 'Coûts', aliases: ['costs'], type: 'amount' },
+    { key: 'interest_rate', label: "Taux d'intérêt", aliases: ['interest rate'], type: 'percent' },
+    { key: 'interest_paid', label: 'Intérêts payés', aliases: ['interest paid'], type: 'amount' },
+    { key: 'ebt', label: 'Résultat avant impôt', aliases: ['ebt'], type: 'amount' },
+    { key: 'tax', label: 'Impôt', aliases: ['tax'], type: 'amount' },
+    { key: 'dividend', label: 'Dividende', aliases: ['dividend'], type: 'amount' },
   ];
 
   const projectionRows = definitions.map((definition) => {
@@ -399,10 +419,10 @@ function buildOperatingProjection(rows) {
 function buildCapitalProjection(rows) {
   const definitions = [
     { key: 'amortization', label: 'Amortissement dette', aliases: ['amortissement dette'], type: 'amount' },
-    { key: 'debt', label: 'Debt', aliases: ['debt'], type: 'amount' },
-    { key: 'value', label: 'Value', aliases: ['value'], type: 'amount' },
-    { key: 'cashflow', label: 'IRR cash-flow', aliases: ['irr'], type: 'amount' },
-    { key: 'dividend_yield', label: 'Dividend Yield', aliases: ['dividend yield'], type: 'percent' },
+    { key: 'debt', label: 'Dette', aliases: ['debt'], type: 'amount' },
+    { key: 'value', label: 'Valeur', aliases: ['value'], type: 'amount' },
+    { key: 'cashflow', label: 'Flux de trésorerie TRI', aliases: ['irr'], type: 'amount' },
+    { key: 'dividend_yield', label: 'Rendement distribué', aliases: ['dividend yield'], type: 'percent' },
   ];
 
   const debtCell = findLabelCell(rows, ['debt']);

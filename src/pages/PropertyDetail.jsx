@@ -683,11 +683,11 @@ function TechnicalAnalysisSnapshot({
               <ExcelComputedRow row={6} section="Financement" label="Fonds propres achat" value={formatCHF(getPurchaseEquity(analysis))} />
               <ExcelOptionalReadRow row={7} section="Acquisition" label="Versement initial copropriete" amount={analysis.versement_initial} editable={canEdit} onAmountChange={(value) => updateDraftField('versement_initial', value)} />
               <ExcelOptionalReadRow row={8} section="Acquisition" label="Amortissement sur 5 ans" amount={analysis.amortissement_5_ans} editable={canEdit} onAmountChange={(value) => updateDraftField('amortissement_5_ans', value)} />
-              <ExcelReadRow row={9} section="Acquisition" label="Honoraires transaction SIPA Group" amount={analysis.honoraires_transaction_sipa_group} pct={percentOf(analysis.honoraires_transaction_sipa_group, analysis.prix_bien)} editable={canEdit} onAmountChange={(value) => updateDraftField('honoraires_transaction_sipa_group', value)} onPctChange={updatePctField('honoraires_transaction_sipa_group', 'honoraires_transaction_sipa_group_pct', analysis.prix_bien)} />
+              <ExcelReadRow row={9} section="Acquisition" label="Honoraires de transaction SIPA" amount={analysis.honoraires_transaction_sipa_group} pct={percentOf(analysis.honoraires_transaction_sipa_group, analysis.prix_bien)} editable={canEdit} onAmountChange={(value) => updateDraftField('honoraires_transaction_sipa_group', value)} onPctChange={updatePctField('honoraires_transaction_sipa_group', 'honoraires_transaction_sipa_group_pct', analysis.prix_bien)} />
               <ExcelOptionalReadRow row={10} section="Acquisition" label="Frais de dossier bancaire" amount={analysis.frais_dossier_bancaire} editable={canEdit} onAmountChange={(value) => updateDraftField('frais_dossier_bancaire', value)} />
               <ExcelComputedRow row={11} section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
               <ExcelOptionalReadRow row={12} section="Financement" label="Fonds propres" amount={analysis.fonds_propres} editable={canEdit} onAmountChange={(value) => updateDraftField('fonds_propres', value)} />
-              <ExcelReadRow row={13} section="Financement" label="Target benefice SIPA fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} pct={percentOf(analysis.target_benefice_sipa_fonds_propres, getPurchaseEquity(analysis))} editable={canEdit} onAmountChange={updateAmountWithPct('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', 'fonds_propres_achat')} onPctChange={updatePctField('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', getPurchaseEquity(analysis))} />
+              <ExcelReadRow row={13} section="Financement" label="Objectif bénéfice SIPA sur fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} pct={percentOf(analysis.target_benefice_sipa_fonds_propres, getPurchaseEquity(analysis))} editable={canEdit} onAmountChange={updateAmountWithPct('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', 'fonds_propres_achat')} onPctChange={updatePctField('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', getPurchaseEquity(analysis))} />
               <ExcelOptionalReadRow row={14} section="Financement" label="Hypotheque" amount={analysis.hypotheque} pct={percentOf(analysis.hypotheque, purchaseSubtotal)} editable={canEdit} onAmountChange={(value) => updateDraftField('hypotheque', value)} onPctChange={updatePctField('hypotheque', 'hypotheque_pct', purchaseSubtotal)} />
               <ExcelOptionalReadRow row={15} section="Exploitation" label="Revenus locatifs hors charges" amount={analysis.revenus_locatifs} editable={canEdit} onAmountChange={(value) => updateDraftField('revenus_locatifs', value)} />
               <ExcelComputedRow row={16} section="Exploitation" label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} />
@@ -706,7 +706,7 @@ function TechnicalAnalysisSnapshot({
                   <ExcelReadRow
                     key={`${entry.label}-${index}`}
                     row={25 + visibleIndex}
-                    section="Personnalise"
+                    section="Personnalisé"
                     label={entry.label}
                     amount={amount?.value}
                     pct={pct?.value}
@@ -724,7 +724,7 @@ function TechnicalAnalysisSnapshot({
 
       {!publicOnly && renderSection('Hypothèses bancaires techniques', (
       <InlineCollapsibleSection
-        title="Hypotheses bancaires techniques"
+        title="Hypothèses bancaires techniques"
         rows={bankExportRows}
         filename={`${exportBaseName}-hypotheses-bancaires`}
         collapsible={canCollapseSections}
@@ -745,7 +745,7 @@ function TechnicalAnalysisSnapshot({
                 <ExcelHeaderCell align="right">Taux base</ExcelHeaderCell>
                 <ExcelHeaderCell align="right">Marge SARON</ExcelHeaderCell>
                 <ExcelHeaderCell align="right">Amortissement</ExcelHeaderCell>
-                <ExcelHeaderCell>Evaluation</ExcelHeaderCell>
+                <ExcelHeaderCell>Évaluation</ExcelHeaderCell>
               </tr>
             </thead>
             <tbody>
@@ -1018,7 +1018,7 @@ function ExcelProjectionSheet({ title, projection, editable, onCellChange, onAss
               <>
                 <tr>
                   <ExcelRowNumber>{projection.rows.length + 2}</ExcelRowNumber>
-                  <ExcelCell className="bg-[#e2f0d9] font-bold">Hypotheses</ExcelCell>
+                  <ExcelCell className="bg-[#e2f0d9] font-bold">Hypothèses</ExcelCell>
                   {projection.columns.map((column) => <ExcelCell key={column} className="bg-[#e2f0d9]" />)}
                 </tr>
                 {Object.entries(projection.assumptions).map(([key, value], index) => (
@@ -1206,11 +1206,11 @@ function buildFinancialExportRows(analysis, customFields, prixTotal) {
     ['Financement', 'Fonds propres achat', getPurchaseEquity(analysis) ?? '', '', ''],
     ['Acquisition', 'Versement initial copropriete', analysis.versement_initial ?? '', '', ''],
     ['Acquisition', 'Amortissement sur 5 ans', analysis.amortissement_5_ans ?? '', '', ''],
-    ['Acquisition', 'Honoraires transaction SIPA Group', analysis.honoraires_transaction_sipa_group ?? '', percentOf(analysis.honoraires_transaction_sipa_group, analysis.prix_bien) ?? '', ''],
+    ['Acquisition', 'Honoraires de transaction SIPA', analysis.honoraires_transaction_sipa_group ?? '', percentOf(analysis.honoraires_transaction_sipa_group, analysis.prix_bien) ?? '', ''],
     ['Acquisition', 'Frais de dossier bancaire', analysis.frais_dossier_bancaire ?? '', '', ''],
     ['Acquisition', 'Prix total', '', '', prixTotal ?? ''],
     ['Financement', 'Fonds propres', analysis.fonds_propres ?? '', '', ''],
-    ['Financement', 'Target benefice SIPA fonds propres', analysis.target_benefice_sipa_fonds_propres ?? '', analysis.target_benefice_sipa_fonds_propres_pct ?? percentOf(analysis.target_benefice_sipa_fonds_propres, getPurchaseEquity(analysis)) ?? '', ''],
+    ['Financement', 'Objectif bénéfice SIPA sur fonds propres', analysis.target_benefice_sipa_fonds_propres ?? '', analysis.target_benefice_sipa_fonds_propres_pct ?? percentOf(analysis.target_benefice_sipa_fonds_propres, getPurchaseEquity(analysis)) ?? '', ''],
     ['Financement', 'Hypotheque', analysis.hypotheque ?? '', percentOf(analysis.hypotheque, purchaseSubtotal) ?? '', ''],
     ['Exploitation', 'Revenus locatifs hors charges', analysis.revenus_locatifs ?? '', '', ''],
     ['Exploitation', 'Taux de rendement brut', '', '', analysis.rendement_brut ?? ''],
@@ -1227,7 +1227,7 @@ function buildFinancialExportRows(analysis, customFields, prixTotal) {
   customFields.forEach((entry) => {
     const amount = entry.values?.find((value) => value.type === 'amount');
     const pct = entry.values?.find((value) => value.type === 'pct');
-    rows.push(['Personnalise', entry.label || '', amount?.value ?? '', pct?.value ?? '', '']);
+    rows.push(['Personnalisé', entry.label || '', amount?.value ?? '', pct?.value ?? '', '']);
   });
 
   return [
@@ -1242,7 +1242,7 @@ function buildFinancialExportRows(analysis, customFields, prixTotal) {
 
 function buildBankExportRows(analysis) {
   return [
-    ['Banque', 'Type de taux', 'Taux base', 'Marge SARON', 'Amortissement', 'Evaluation'],
+    ['Banque', 'Type de taux', 'Taux base', 'Marge SARON', 'Amortissement', 'Évaluation'],
     ['Banque A', analysis.banque_a_type_taux || 'fixe', analysis.banque_a_taux_hypothecaire ?? '', analysis.banque_a_marge_saron ?? '', analysis.banque_a_amortissement_annuel ?? '', analysis.banque_a_evaluation || ''],
     ['Banque B', analysis.banque_b_type_taux || 'fixe', analysis.banque_b_taux_hypothecaire ?? '', analysis.banque_b_marge_saron ?? '', analysis.banque_b_amortissement_annuel ?? '', analysis.banque_b_evaluation || ''],
   ];
@@ -1266,7 +1266,7 @@ function buildProjectionExportRows(projection) {
 
   if (projection.assumptions && Object.keys(projection.assumptions).length > 0) {
     rows.push([]);
-    rows.push(['Hypotheses', 'Valeur']);
+    rows.push(['Hypothèses', 'Valeur']);
     Object.entries(projection.assumptions).forEach(([key, value]) => {
       rows.push([formatAssumptionLabel(key), value ?? '']);
     });
@@ -1473,12 +1473,12 @@ function formatProjectionValue(value, type) {
 
 function formatAssumptionLabel(key) {
   const labels = {
-    price_increase: 'Price increase',
-    sales_price: 'Sales price',
-    exit_debt: 'Debt sortie',
+    price_increase: 'Hausse du prix',
+    sales_price: 'Prix de vente',
+    exit_debt: 'Dette à la sortie',
     net: 'Net',
-    irr: 'IRR',
-    average_dividend_yield: 'Dividend Yield moyen',
+    irr: 'TRI',
+    average_dividend_yield: 'Rendement distribué moyen',
   };
   return labels[key] || key;
 }
@@ -1627,7 +1627,7 @@ function PropertyPresentation({ property, latest, comments, updateCouleur }) {
               <MetricCard label="Prix total" value={formatCHF(latest.prix_total)} />
               <MetricCard label="Rdt. distribue / FP" value={formatPercent(latest.revenu_distribue_fonds_propres)} highlight />
               <MetricCard label="Prix d'achat" value={formatCHF(getPurchasePrice(latest))} />
-              <MetricCard label="SIPA total income" value={formatCHF(getSipaTotalIncome(latest))} highlight emphasis />
+              <MetricCard label="Revenu total SIPA" value={formatCHF(getSipaTotalIncome(latest))} highlight emphasis />
             </div>
 
             <div className="mt-6 pt-5 border-t border-border">
@@ -1721,7 +1721,7 @@ function AnalysisSummary({ property, selected, selectedAnalysisId, canEdit, canE
         <MetricCard label="Prix total" value={formatCHF(selected.prix_total)} />
         <MetricCard label="Rdt. distribue / FP" value={formatPercent(selected.revenu_distribue_fonds_propres)} highlight />
         <MetricCard label="Prix d'achat" value={formatCHF(getPurchasePrice(selected))} />
-        <MetricCard label="SIPA total income" value={formatCHF(getSipaTotalIncome(selected))} highlight emphasis />
+        <MetricCard label="Revenu total SIPA" value={formatCHF(getSipaTotalIncome(selected))} highlight emphasis />
       </div>
     </div>
   );

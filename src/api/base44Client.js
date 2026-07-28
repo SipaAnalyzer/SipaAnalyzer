@@ -151,7 +151,7 @@ const AUDIT_FIELDS = {
     amortissement_5_ans: "Amortissement sur 5 ans",
     honoraires_sipa: "Frais de transaction",
     construction: "Construction",
-    honoraires_transaction_sipa_group: "Honoraires transaction SIPA Group",
+    honoraires_transaction_sipa_group: "Honoraires de transaction SIPA",
     frais_dossier_bancaire: "Frais de dossier bancaire",
     fonds_propres: "Fonds propres",
     fonds_propres_achat: "Fonds propres achat",

@@ -666,7 +666,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
           <div>
             <h3 className="font-heading font-semibold text-sm">Vue d'analyse</h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Basculez entre la vue actuelle et une grille technique editable.
+              Basculez entre la vue actuelle et une grille technique modifiable.
             </p>
           </div>
           <div className="inline-flex rounded-lg border border-border bg-background p-1">
@@ -776,7 +776,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                 </td>
               </tr>
               <PctRow
-                label="Honoraires transaction SIPA Group"
+                label="Honoraires de transaction SIPA"
                 amount={form.honoraires_transaction_sipa_group}
                 onAmount={handlers.honorairesTransactionSipaGroup.amount}
                 pct={form.honoraires_transaction_sipa_group_pct}
@@ -1294,11 +1294,11 @@ function TechnicalAnalysisView({
           <div>
             <h3 className="font-heading font-semibold">Vue technique</h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Grille editable type Excel. Les cellules calculees se mettent a jour automatiquement.
+              Grille modifiable type Excel. Les cellules calculées se mettent à jour automatiquement.
             </p>
           </div>
           <span className="rounded-md border border-border bg-background px-3 py-1 text-xs font-mono text-muted-foreground">
-            Mode edition directe
+            Mode édition directe
           </span>
         </div>
 
@@ -1355,7 +1355,7 @@ function TechnicalAnalysisView({
               <ExcelPctRow
                 row={9}
                 section="Acquisition"
-                label="Honoraires transaction SIPA Group"
+                label="Honoraires de transaction SIPA"
                 amount={form.honoraires_transaction_sipa_group}
                 onAmount={handlers.honorairesTransactionSipaGroup.amount}
                 pct={form.honoraires_transaction_sipa_group_pct}
@@ -1376,7 +1376,7 @@ function TechnicalAnalysisView({
               <ExcelPctRow
                 row={13}
                 section="Financement"
-                label="Target benefice SIPA fonds propres"
+                label="Objectif bénéfice SIPA sur fonds propres"
                 amount={form.target_benefice_sipa_fonds_propres}
                 onAmount={handlers.targetBeneficeSipa.amount}
                 pct={form.target_benefice_sipa_fonds_propres_pct}
@@ -1430,7 +1430,7 @@ function TechnicalAnalysisView({
               {customFinancialFields.map((cf, index) => (
                 <tr key={cf.id}>
                   <ExcelRowNumber>{25 + index}</ExcelRowNumber>
-                  <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>Personnalise</ExcelCell>
+                  <ExcelCell className={EXCEL_LOCKED_CELL_CLASS}>Personnalisé</ExcelCell>
                   <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                     <input
                       type="text"
@@ -1510,7 +1510,7 @@ function TechnicalAnalysisView({
       </section>
 
       <section className="bg-card rounded-xl border border-border p-6">
-        <h3 className="font-heading font-semibold mb-5">Hypotheses bancaires techniques</h3>
+        <h3 className="font-heading font-semibold mb-5">Hypothèses bancaires techniques</h3>
         <div className="overflow-x-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
           <table className="w-full min-w-[980px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
             <thead>
@@ -1528,7 +1528,7 @@ function TechnicalAnalysisView({
                 <ExcelHeaderCell align="right">Marge SARON %</ExcelHeaderCell>
                 <ExcelHeaderCell align="right">Taux effectif</ExcelHeaderCell>
                 <ExcelHeaderCell align="right">Amortissement CHF</ExcelHeaderCell>
-                <ExcelHeaderCell>Evaluation</ExcelHeaderCell>
+                <ExcelHeaderCell>Évaluation</ExcelHeaderCell>
               </tr>
             </thead>
             <tbody>
@@ -1827,7 +1827,7 @@ function ExcelProjectionSheet({ title, projection, editable, onCellChange, onAss
               <>
                 <tr>
                   <ExcelRowNumber>{projection.rows.length + 2}</ExcelRowNumber>
-                  <ExcelCell className={`${EXCEL_LOCKED_CELL_CLASS} font-bold text-black`}>Hypotheses</ExcelCell>
+                  <ExcelCell className={`${EXCEL_LOCKED_CELL_CLASS} font-bold text-black`}>Hypothèses</ExcelCell>
                   {projection.columns.map((column) => <ExcelCell key={column} className={EXCEL_LOCKED_CELL_CLASS} />)}
                 </tr>
                 {Object.entries(projection.assumptions).map(([key, value], index) => (
@@ -1904,12 +1904,12 @@ function formatProjectionValue(value, type) {
 
 function formatAssumptionLabel(key) {
   const labels = {
-    price_increase: 'Price increase',
-    sales_price: 'Sales price',
-    exit_debt: 'Debt sortie',
+    price_increase: 'Hausse du prix',
+    sales_price: 'Prix de vente',
+    exit_debt: 'Dette à la sortie',
     net: 'Net',
-    irr: 'IRR',
-    average_dividend_yield: 'Dividend Yield moyen',
+    irr: 'TRI',
+    average_dividend_yield: 'Rendement distribué moyen',
   };
   return labels[key] || key;
 }

@@ -6,21 +6,21 @@ import { formatCHF } from '../utils/calculations';
 import { ChevronDown } from 'lucide-react';
 
 const OPERATING_ROWS = [
-  { key: 'income', label: 'Income', type: 'amount' },
-  { key: 'costs', label: 'Costs', type: 'amount' },
-  { key: 'interest_rate', label: 'Interest rate', type: 'percent' },
-  { key: 'interest_paid', label: 'Interest paid', type: 'amount' },
-  { key: 'ebt', label: 'EBT', type: 'amount' },
-  { key: 'tax', label: 'Tax', type: 'amount' },
-  { key: 'dividend', label: 'Dividend', type: 'amount' },
+  { key: 'income', label: 'Revenus', type: 'amount' },
+  { key: 'costs', label: 'Coûts', type: 'amount' },
+  { key: 'interest_rate', label: "Taux d'intérêt", type: 'percent' },
+  { key: 'interest_paid', label: 'Intérêts payés', type: 'amount' },
+  { key: 'ebt', label: 'Résultat avant impôt', type: 'amount' },
+  { key: 'tax', label: 'Impôt', type: 'amount' },
+  { key: 'dividend', label: 'Dividende', type: 'amount' },
 ];
 
 const CAPITAL_ROWS = [
   { key: 'amortization', label: 'Amortissement dette', type: 'amount' },
-  { key: 'debt', label: 'Debt', type: 'amount' },
-  { key: 'value', label: 'Value', type: 'amount' },
-  { key: 'cashflow', label: 'IRR cash-flow', type: 'amount' },
-  { key: 'dividend_yield', label: 'Dividend Yield', type: 'percent' },
+  { key: 'debt', label: 'Dette', type: 'amount' },
+  { key: 'value', label: 'Valeur', type: 'amount' },
+  { key: 'cashflow', label: 'Flux de trésorerie TRI', type: 'amount' },
+  { key: 'dividend_yield', label: 'Rendement distribué', type: 'percent' },
 ];
 
 export function createEmptyExcelProjections() {
@@ -146,12 +146,12 @@ function ProjectionTable({ title, projection, editable, onChange, footer, collap
 function CapitalAssumptions({ projection, onChange, editable }) {
   const assumptions = projection.assumptions || {};
   const items = [
-    { key: 'price_increase', label: 'Price increase', type: 'percent' },
-    { key: 'sales_price', label: 'Sales price', type: 'amount' },
-    { key: 'exit_debt', label: 'Debt sortie', type: 'amount' },
+    { key: 'price_increase', label: 'Hausse du prix', type: 'percent' },
+    { key: 'sales_price', label: 'Prix de vente', type: 'amount' },
+    { key: 'exit_debt', label: 'Dette à la sortie', type: 'amount' },
     { key: 'net', label: 'Net', type: 'amount' },
-    { key: 'irr', label: 'IRR', type: 'percent' },
-    { key: 'average_dividend_yield', label: 'Dividend Yield moyen', type: 'percent' },
+    { key: 'irr', label: 'TRI', type: 'percent' },
+    { key: 'average_dividend_yield', label: 'Rendement distribué moyen', type: 'percent' },
   ];
 
   return (

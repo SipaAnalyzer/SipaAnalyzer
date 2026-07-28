@@ -292,7 +292,7 @@ export default function Properties() {
                           <p className="text-xs font-mono font-medium text-primary">{formatPercent(p.latestAnalysis.revenu_distribue_fonds_propres)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-muted-foreground">SIPA total income</p>
+                          <p className="text-[10px] text-muted-foreground">Revenu total SIPA</p>
                           <p className="text-xs font-mono font-medium">{formatCHF(getSipaTotalIncome(p.latestAnalysis))}</p>
                         </div>
                       </div>

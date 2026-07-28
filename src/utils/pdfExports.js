@@ -342,7 +342,7 @@ function analysisRows(analysis) {
     { label: 'Fonds propres achat', value: formatCHF(analysis?.fonds_propres_achat) },
     { label: 'Versement initial copropriete', value: formatCHF(analysis?.versement_initial) },
     { label: 'Amortissement sur 5 ans', value: formatCHF(analysis?.amortissement_5_ans) },
-    { label: 'Honoraires transaction SIPA Group', value: formatCHF(analysis?.honoraires_transaction_sipa_group) },
+    { label: 'Honoraires de transaction SIPA', value: formatCHF(analysis?.honoraires_transaction_sipa_group) },
     { label: 'Frais de dossier bancaire', value: formatCHF(analysis?.frais_dossier_bancaire) },
     { label: 'Prix total', value: formatCHF(analysis?.prix_total), highlight: true },
     { label: 'Fonds propres', value: formatCHF(analysis?.fonds_propres) },
@@ -435,11 +435,11 @@ export function exportAnalysisPdf(property, analysis, sections) {
   }
 
   if (opts.banks) {
-    sectionTitle(doc, state, 'Scenarios bancaires');
+    sectionTitle(doc, state, 'Scénarios bancaires');
     simpleTable(
       doc,
       state,
-      ['Scenario', 'Taux', 'Amort. annuel', 'Evaluation'],
+      ['Scénario', 'Taux', 'Amort. annuel', 'Évaluation'],
       bankRows(analysis),
       [28, 25, 38, 88]
     );

@@ -104,11 +104,11 @@ function FinancialTableBody({ analysis, purchasePrice, purchaseSubtotal, prixTot
               <Row label="Fonds propres achat" value={formatCHF(getPurchaseEquity(analysis))} />
               <Row label="Versement initial sur le compte de la copropriété" value={formatCHF(analysis.versement_initial)} />
               <Row label="Amortissement sur 5 ans" value={formatCHF(analysis.amortissement_5_ans)} />
-              <Row label="Honoraires transaction SIPA Group" amount={analysis.honoraires_transaction_sipa_group} base={analysis.prix_bien} />
+              <Row label="Honoraires de transaction SIPA" amount={analysis.honoraires_transaction_sipa_group} base={analysis.prix_bien} />
               <Row label="Frais de dossier bancaire" value={formatCHF(analysis.frais_dossier_bancaire)} />
               <RowTotal label="Prix total" value={formatCHF(prixTotal)} />
               <Row label="Fonds propres" value={formatCHF(analysis.fonds_propres)} />
-              <Row label="Target bénéfice SIPA fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} base={getPurchaseEquity(analysis)} />
+              <Row label="Objectif bénéfice SIPA sur fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} base={getPurchaseEquity(analysis)} />
               <Row label="Hypothèque" amount={analysis.hypotheque} base={purchaseSubtotal} />
               <tr className="border-t-2 border-border">
                 <Td className="text-muted-foreground">Revenus locatifs (hors charges)</Td>

@@ -624,7 +624,7 @@ export default function Presentation() {
                       <Metric label="Prix total" value={formatCHF(property.analysis.prix_total)} />
                       <Metric label="Rdt. distribue / FP" value={formatPercent(property.analysis.revenu_distribue_fonds_propres)} highlight />
                       <Metric label="Prix d'achat" value={formatCHF(getPurchasePrice(property.analysis))} />
-                      <Metric label="SIPA total income" value={formatCHF(getSipaTotalIncome(property.analysis))} highlight />
+                      <Metric label="Revenu total SIPA" value={formatCHF(getSipaTotalIncome(property.analysis))} highlight />
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border/50">
