@@ -19,7 +19,7 @@ import CommentSection from '../components/CommentSection';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
 import { calculateAnalysis, formatCHF, formatPercent, normalizeAnalyses, WORKFLOW_STATUSES } from '../utils/calculations';
-import { formatSipaLabel, formatSipaValue, getSipaDisplayValues } from '../utils/excelImport';
+import { formatSipaLabel, formatSipaValue, getDisplayableSipaRows, getSipaDisplayValues } from '../utils/excelImport';
 import { exportAnalysisPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
 import { listAuditLogs, recordAuditLog } from '../utils/auditLogs';
@@ -808,11 +808,11 @@ function SipaImportedDataTable({ analysis, collapsible = false }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
-            {analysis.sipa_data.filter((e) => !e._custom).map((entry, i, entries) => {
-              const display = getSipaDisplayValues(entry, entries, i);
+            {getDisplayableSipaRows(analysis.sipa_data).map(({ entry, index, entries }) => {
+              const display = getSipaDisplayValues(entry, entries, index);
               return (
-                <tr key={i}>
-                  <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">{formatSipaLabel(entry, entries, i)}</td>
+                <tr key={index}>
+                  <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">{formatSipaLabel(entry, entries, index)}</td>
                   <td className="py-2.5 pl-4 text-sm">
                     <div className="flex flex-wrap gap-2">
                       {display.values.map((v, j) => (
@@ -904,7 +904,7 @@ function TableExportButtons({ rows, filename }) {
 }
 
 function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBaseName, collapsible = false }) {
-  const rows = analysis.sipa_data.filter((entry) => !entry._custom);
+  const rows = getDisplayableSipaRows(analysis.sipa_data).map((item) => item.entry);
   const maxValues = Math.max(1, ...rows.map((entry) => entry.values?.length || 0));
   const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, maxValues + 1);
   const exportRows = buildSipaExportRows(rows, maxValues);

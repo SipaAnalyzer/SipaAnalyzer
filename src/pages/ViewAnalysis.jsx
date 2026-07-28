@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
-import { formatSipaLabel, formatSipaValue, getSipaDisplayValues } from '../utils/excelImport';
+import { formatSipaLabel, formatSipaValue, getDisplayableSipaRows, getSipaDisplayValues } from '../utils/excelImport';
 import { exportAnalysisPdf } from '../utils/pdfExports';
 import { usePermissions } from '@/hooks/usePermissions';
 import PdfExportDialog from '../components/PdfExportDialog';
@@ -128,11 +128,11 @@ export default function ViewAnalysis() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {analysis.sipa_data.filter((e) => !e._custom).map((entry, i, entries) => {
-                  const display = getSipaDisplayValues(entry, entries, i);
+                {getDisplayableSipaRows(analysis.sipa_data).map(({ entry, index, entries }) => {
+                  const display = getSipaDisplayValues(entry, entries, index);
                   return (
-                    <tr key={i}>
-                      <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">{formatSipaLabel(entry, entries, i)}</td>
+                    <tr key={index}>
+                      <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">{formatSipaLabel(entry, entries, index)}</td>
                       <td className="py-2.5 pl-4 text-sm">
                         <div className="flex flex-wrap gap-2">
                           {display.values.map((v, j) => (

@@ -48,6 +48,22 @@ export function getSipaDisplayValues(entry, entries = [], index = 0) {
   return { values, percentages };
 }
 
+export function hasSipaDisplayValues(entry, entries = [], index = 0) {
+  const display = getSipaDisplayValues(entry, entries, index);
+  return [...display.values, ...display.percentages].some((value) => {
+    if (value?.type === 'text') return String(value.value || '').trim() !== '';
+    const numeric = Number(value?.value || 0);
+    return Number.isFinite(numeric) && numeric !== 0;
+  });
+}
+
+export function getDisplayableSipaRows(entries = []) {
+  const source = entries.filter((entry) => !entry?._custom);
+  return source
+    .map((entry, index) => ({ entry, index, entries: source }))
+    .filter(({ entry, entries, index }) => hasSipaDisplayValues(entry, entries, index));
+}
+
 const SIPA_LABEL_TRANSLATIONS = {
   'target benefice sipa fonds prop': 'Objectif bénéfice SIPA sur fonds propres',
   'target benefice sipa fonds propres': 'Objectif bénéfice SIPA sur fonds propres',
