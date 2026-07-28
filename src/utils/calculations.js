@@ -138,7 +138,6 @@ export function calculateAnalysis(data) {
   ), 100);
 
   function noteFromScore(s) {
-    if (s >= 85) return 'S';
     if (s >= 70) return 'A';
     if (s >= 55) return 'B';
     if (s >= 40) return 'C';
