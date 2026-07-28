@@ -298,8 +298,7 @@ export default function PropertyDetail() {
               {canViewFullAnalysis ? (
                 <>
                   <AnalysisViewModeToggle value={analysisViewMode} onChange={setAnalysisViewMode} />
-                  <AnalysisSection title="Synthèse" defaultOpen>
-                    <AnalysisSummary
+                  <AnalysisSummary
                       property={property}
                       selected={displayedAnalysis}
                       selectedAnalysisId={selectedAnalysisId}
@@ -307,8 +306,8 @@ export default function PropertyDetail() {
                       canEditAnalysis={canEditAnalysis}
                       isUpdatingStatus={updatePropertyStatus.isPending}
                       onStatusChange={(status) => updatePropertyStatus.mutate(status)}
+                      collapsible
                     />
-                  </AnalysisSection>
                   {analysisViewMode === 'simplified' ? (
                     <>
                       <FinancialTable analysis={displayedAnalysis} collapsible />
@@ -1631,49 +1630,66 @@ function PropertyMeta({ property, compact = false }) {
   );
 }
 
-function AnalysisSummary({ property, selected, selectedAnalysisId, canEdit, canEditAnalysis, isUpdatingStatus, onStatusChange }) {
-  return (
-    <div className="bg-card rounded-xl border border-border p-6">
-      {canEditAnalysis && selected?.id && (
-        <div className="mb-5 flex justify-end">
-          <Link to={`/edit-analysis/${selected.id}`}>
-            <Button size="sm" variant="outline" className="gap-2">
-              <Pencil className="h-3.5 w-3.5" />
-              Modifier l'analyse
-            </Button>
-          </Link>
-        </div>
-      )}
-
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
-        <div className="flex items-center gap-4">
-          <ScoreGauge score={selected.score_global || 0} size={110} />
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <ScoreBadge note={selected.note} />
-              <StatusBadge statut={selected.statut} />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {selectedAnalysisId ? 'Analyse sélectionnée' : 'Dernière analyse'}
-            </p>
+function AnalysisSummary({ property, selected, selectedAnalysisId, canEdit, canEditAnalysis, isUpdatingStatus, onStatusChange, collapsible = false }) {
+  const [open, setOpen] = useState(true);
+  const content = (
+    <div className="flex flex-col lg:flex-row gap-6 items-start">
+      <div className="flex items-center gap-4">
+        <ScoreGauge score={selected.score_global || 0} size={110} />
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <ScoreBadge note={selected.note} />
+            <StatusBadge statut={selected.statut} />
           </div>
-        </div>
-
-        <QuickPropertyStatusSelect
-          status={property?.statut || 'en_cours'}
-          canEdit={canEdit}
-          disabled={isUpdatingStatus}
-          onChange={onStatusChange}
-        />
-
-        <div className="flex-1 grid grid-cols-2 xl:grid-cols-4 gap-4">
-          <MetricCard label="Prix total" value={formatCHF(selected.prix_total)} />
-          <MetricCard label="Rdt. distribue / FP" value={formatPercent(selected.revenu_distribue_fonds_propres)} highlight />
-          <MetricCard label="Prix d'achat" value={formatCHF(selected.prix_bien)} />
-          <MetricCard label="SIPA total income" value={formatCHF(getSipaTotalIncome(selected))} highlight emphasis />
+          <p className="text-xs text-muted-foreground">
+            {selectedAnalysisId ? 'Analyse sélectionnée' : 'Dernière analyse'}
+          </p>
         </div>
       </div>
+
+      <QuickPropertyStatusSelect
+        status={property?.statut || 'en_cours'}
+        canEdit={canEdit}
+        disabled={isUpdatingStatus}
+        onChange={onStatusChange}
+      />
+
+      <div className="flex-1 grid grid-cols-2 xl:grid-cols-4 gap-4">
+        <MetricCard label="Prix total" value={formatCHF(selected.prix_total)} />
+        <MetricCard label="Rdt. distribue / FP" value={formatPercent(selected.revenu_distribue_fonds_propres)} highlight />
+        <MetricCard label="Prix d'achat" value={formatCHF(selected.prix_bien)} />
+        <MetricCard label="SIPA total income" value={formatCHF(getSipaTotalIncome(selected))} highlight emphasis />
+      </div>
     </div>
+  );
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div className="bg-card rounded-xl border border-border p-6">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <h3 className="font-heading font-semibold">Synthèse</h3>
+          <div className="flex items-center gap-2">
+            {canEditAnalysis && selected?.id && (
+              <Link to={`/edit-analysis/${selected.id}`}>
+                <Button size="sm" variant="outline" className="gap-2">
+                  <Pencil className="h-3.5 w-3.5" />
+                  Modifier l'analyse
+                </Button>
+              </Link>
+            )}
+            {collapsible && (
+              <CollapsibleTrigger asChild>
+                <Button type="button" variant="ghost" size="sm" className="gap-2">
+                  {open ? 'Réduire' : 'Déplier'}
+                  <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+            )}
+          </div>
+        </div>
+        {collapsible ? <CollapsibleContent>{content}</CollapsibleContent> : content}
+      </div>
+    </Collapsible>
   );
 }
 

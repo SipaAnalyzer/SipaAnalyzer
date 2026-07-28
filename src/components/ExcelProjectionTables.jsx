@@ -1,5 +1,9 @@
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { formatCHF } from '../utils/calculations';
+import { ChevronDown } from 'lucide-react';
 
 const OPERATING_ROWS = [
   { key: 'income', label: 'Income', type: 'amount' },
@@ -46,6 +50,7 @@ export default function ExcelProjectionTables({
   onOperatingChange,
   onCapitalChange,
   editable = false,
+  collapsible = false,
 }) {
   const hasData = hasProjectionData(operatingProjection) || hasProjectionData(capitalProjection);
 
@@ -61,6 +66,7 @@ export default function ExcelProjectionTables({
         projection={operating}
         editable={editable}
         onChange={onOperatingChange}
+        collapsible={collapsible}
       />
       <ProjectionTable
         title="Dette, valeur et rendement"
@@ -68,15 +74,16 @@ export default function ExcelProjectionTables({
         editable={editable}
         onChange={onCapitalChange}
         footer={<CapitalAssumptions projection={capital} onChange={onCapitalChange} editable={editable} />}
+        collapsible={collapsible}
       />
     </div>
   );
 }
 
-function ProjectionTable({ title, projection, editable, onChange, footer }) {
-  return (
-    <section className="bg-card rounded-xl border border-border p-6">
-      <h3 className="font-heading font-semibold mb-5">{title}</h3>
+function ProjectionTable({ title, projection, editable, onChange, footer, collapsible = false }) {
+  const [open, setOpen] = useState(true);
+  const content = (
+    <>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
@@ -113,7 +120,26 @@ function ProjectionTable({ title, projection, editable, onChange, footer }) {
         </table>
       </div>
       {footer}
+    </>
+  );
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+    <section className="bg-card rounded-xl border border-border p-6">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h3 className="font-heading font-semibold">{title}</h3>
+        {collapsible && (
+          <CollapsibleTrigger asChild>
+            <Button type="button" variant="ghost" size="sm" className="gap-2">
+              {open ? 'Réduire' : 'Déplier'}
+              <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+            </Button>
+          </CollapsibleTrigger>
+        )}
+      </div>
+      {collapsible ? <CollapsibleContent>{content}</CollapsibleContent> : content}
     </section>
+    </Collapsible>
   );
 }
 

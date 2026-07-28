@@ -57,6 +57,7 @@ export default function FinancialTable({ analysis, collapsible = false }) {
       <ExcelProjectionTables
         operatingProjection={analysis.operating_projection}
         capitalProjection={analysis.capital_projection}
+        collapsible={collapsible}
       />
     </div>
   );
