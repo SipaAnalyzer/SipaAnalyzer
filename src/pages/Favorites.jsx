@@ -124,9 +124,9 @@ export default function Favorites() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-muted-foreground">Rdt. net/FP</p>
+                      <p className="text-[10px] text-muted-foreground">Rdt. distribué / FP</p>
                       <p className="text-xs font-mono font-medium text-primary">
-                        {formatPercent(property.latestAnalysis.rendement_net_fonds_propres)}
+                        {formatPercent(property.latestAnalysis.revenu_distribue_fonds_propres)}
                       </p>
                     </div>
                   </div>
