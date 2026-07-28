@@ -9,6 +9,8 @@ export function formatSipaValue(v) {
 
 export function formatSipaLabel(entry, entries = [], index = 0) {
   const label = entry?.label || '';
+  if (getSipaSection(entry, entries, index) === 'commercialisation') return label;
+
   const normalized = normalizeText(label);
   if (normalized === 'prix total') return "Prix total d'acquisition";
   const translatedLabel = SIPA_LABEL_TRANSLATIONS[normalized];
@@ -34,6 +36,7 @@ export function getSipaDisplayValues(entry, entries = [], index = 0) {
 
   (entry?.values || []).forEach((value) => {
     if (!value) return;
+    if (value.type !== 'text' && Number(value.value || 0) === 0) return;
     if (value.type === 'pct') {
       if (!hidePercent) percentages.push(value);
       return;
@@ -62,6 +65,34 @@ export function getDisplayableSipaRows(entries = []) {
   return source
     .map((entry, index) => ({ entry, index, entries: source }))
     .filter(({ entry, entries, index }) => hasSipaDisplayValues(entry, entries, index));
+}
+
+export const SIPA_SECTION_LABELS = {
+  commercialisation: 'Commercialisation du bien par SIPA Group',
+  achat: 'Achat du bien par SIPA Group',
+};
+
+export function getSipaDisplayGroups(entries = []) {
+  return Object.entries(SIPA_SECTION_LABELS)
+    .map(([section, title]) => ({
+      section,
+      title,
+      rows: getDisplayableSipaRows(entries).filter(({ entry, entries, index }) =>
+        getSipaSection(entry, entries, index) === section
+      ),
+    }))
+    .filter((group) => group.rows.length > 0);
+}
+
+function getSipaSection(entry, entries = [], index = 0) {
+  if (entry?._section) return entry._section;
+
+  const priceOccurrences = entries
+    .slice(0, index + 1)
+    .filter((item) => normalizeText(item?.label) === 'prix du bien')
+    .length;
+
+  return priceOccurrences >= 2 ? 'achat' : 'commercialisation';
 }
 
 const SIPA_LABEL_TRANSLATIONS = {
@@ -326,6 +357,9 @@ const SIPA_LABELS = [
 ];
 
 function extractSipaData(rows) {
+  const structuredEntries = extractStructuredSipaData(rows);
+  if (structuredEntries.length) return structuredEntries;
+
   const entries = [];
 
   for (const row of rows) {
@@ -362,6 +396,73 @@ function extractSipaData(rows) {
   }
 
   return entries.length ? entries : null;
+}
+
+function extractStructuredSipaData(rows) {
+  const ranges = [
+    { section: 'commercialisation', start: 0, end: 24 },
+    { section: 'achat', start: 30, end: 74 },
+  ];
+
+  const entries = [];
+
+  for (const range of ranges) {
+    for (let rowIndex = range.start; rowIndex <= range.end && rowIndex < rows.length; rowIndex += 1) {
+      const row = rows[rowIndex];
+      if (!row) continue;
+
+      const labelCell = row[0];
+      if (!labelCell || typeof labelCell !== 'string') continue;
+      const label = labelCell.trim();
+      if (!label) continue;
+
+      const values = [];
+      for (let col = 1; col <= 6 && col < row.length; col += 1) {
+        const value = toSipaCellValue(row[col], col, label);
+        if (value) values.push(value);
+      }
+
+      if (values.length) {
+        entries.push({
+          label,
+          values,
+          _section: range.section,
+          _source_row: rowIndex + 1,
+        });
+      }
+    }
+  }
+
+  return entries;
+}
+
+function toSipaCellValue(cellValue, colIndex, label) {
+  if (cellValue == null || cellValue === '') return null;
+
+  if (typeof cellValue === 'string') {
+    const text = cellValue.trim();
+    if (!text || text === '.') return null;
+    const looksLikePercent = /^[-+]?\d+(?:[.,]\d+)?\s*%$/.test(text);
+    const containsLetters = /[a-zA-ZÀ-ÿ]/.test(text);
+    if (containsLetters && !looksLikePercent) return { type: 'text', value: text };
+  }
+
+  const parsed = parseNumber(cellValue);
+  if (parsed == null) {
+    const text = String(cellValue).trim();
+    return text ? { type: 'text', value: text } : null;
+  }
+
+  const normalizedLabel = normalizeText(label);
+  const value = Math.abs(parsed) <= 1 && parsed !== 0 ? round2(parsed * 100) : (Math.abs(parsed) > 100 ? Math.round(parsed) : round2(parsed));
+
+  if (typeof cellValue === 'string' && cellValue.includes('%')) return { type: 'pct', value };
+  if (Math.abs(parsed) <= 1 && parsed !== 0) return { type: 'pct', value };
+  if (colIndex === 4 || Math.abs(parsed) > 100) return { type: 'amount', value };
+  if (normalizedLabel.includes('hypotheque') || normalizedLabel.includes('rendement') || normalizedLabel.includes('benefice') || normalizedLabel.includes('charge on rent')) {
+    return { type: 'pct', value };
+  }
+  return { type: 'number', value };
 }
 
 function extractMetadataNotes(rows) {
@@ -637,6 +738,7 @@ function extractRows(rows, fields, seenLabels) {
 
       FIELD_DEFINITIONS.forEach((field) => {
         if (!matchesField(label, field.labels) || fields[field.key] != null) return;
+        if (field.key === 'construction' && label !== 'construction') return;
 
         const value = findPrimaryTableValue(rows, rowIndex, colIndex, field.kind) ??
           findNearbyValue(rows, rowIndex, colIndex, field.kind);
