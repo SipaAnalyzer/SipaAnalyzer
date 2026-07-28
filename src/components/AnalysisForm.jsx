@@ -957,13 +957,13 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                       if (e.key === 'Enter') addCustomFinancialField();
                     }}
                     placeholder="Nouvelle ligne personnalisée..."
-                    className="w-full bg-transparent border-0 px-0 py-1 text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </td>
                 <td className="py-2 pl-4">
                   <div className="flex items-center gap-2 justify-end">
-                    <div className="relative w-24">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">CHF</span>
+                    <div className="relative w-32">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">CHF</span>
                       <input
                         type="number"
                         value={newCustomFieldAmount}
@@ -972,10 +972,10 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           if (e.key === 'Enter') addCustomFinancialField();
                         }}
                         placeholder="0"
-                        className="w-full bg-transparent border-0 px-0 py-1 text-sm text-right font-mono text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+                        className="w-full rounded-md border border-border bg-background py-2 pl-10 pr-3 text-right text-sm font-mono text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
                     </div>
-                    <div className="relative w-16">
+                    <div className="relative w-24">
                       <input
                         type="number"
                         value={newCustomFieldPct}
@@ -984,11 +984,12 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           if (e.key === 'Enter') addCustomFinancialField();
                         }}
                         placeholder="%"
-                        className="w-full bg-transparent border-0 px-0 py-1 text-sm text-right font-mono text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+                        className="w-full rounded-md border border-border bg-background py-2 pl-3 pr-8 text-right text-sm font-mono text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
                       />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                     </div>
                     <Select value={newCustomFieldInsertAfter} onValueChange={setNewCustomFieldInsertAfter}>
-                      <SelectTrigger className="h-8 w-44 bg-background text-xs">
+                      <SelectTrigger className="h-10 w-48 bg-background text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
