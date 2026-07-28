@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ScoreGauge from '../components/ScoreGauge';
 import ScoreBadge from '../components/ScoreBadge';
@@ -42,6 +43,7 @@ import {
   FileText,
   TrendingUp,
   Car,
+  ChevronDown,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -70,6 +72,8 @@ export default function PropertyDetail() {
   const canCreateAnalysis = isAdmin || permissions.can_create_analysis;
   const canEditAnalysis = isAdmin || permissions.can_edit_analysis;
   const canDeleteAnalysis = isAdmin || permissions.can_delete_analysis;
+  const analysisRole = normalizeRole(permissions?.role);
+  const canViewFullAnalysis = isAdmin || ['super_admin', 'admin', 'direction'].includes(analysisRole);
 
   const { data: property, isLoading: lp } = useQuery({
     queryKey: ['property', propertyId],
@@ -291,21 +295,58 @@ export default function PropertyDetail() {
         <TabsContent value="analyse" className="mt-5 space-y-6">
           {displayedAnalysis ? (
             <>
-              <AnalysisViewModeToggle value={analysisViewMode} onChange={setAnalysisViewMode} />
-              <AnalysisSummary
-                property={property}
-                selected={displayedAnalysis}
-                selectedAnalysisId={selectedAnalysisId}
-                canEdit={canEdit}
-                canEditAnalysis={canEditAnalysis}
-                isUpdatingStatus={updatePropertyStatus.isPending}
-                onStatusChange={(status) => updatePropertyStatus.mutate(status)}
-              />
-              {analysisViewMode === 'simplified' ? (
+              {canViewFullAnalysis ? (
                 <>
-                  <FinancialTable analysis={displayedAnalysis} />
-                  {displayedAnalysis.sipa_data && displayedAnalysis.sipa_data.filter((e) => !e._custom).length > 0 && (
-                    <SipaImportedDataTable analysis={displayedAnalysis} />
+                  <AnalysisViewModeToggle value={analysisViewMode} onChange={setAnalysisViewMode} />
+                  <AnalysisSection title="Synthèse" defaultOpen>
+                    <AnalysisSummary
+                      property={property}
+                      selected={displayedAnalysis}
+                      selectedAnalysisId={selectedAnalysisId}
+                      canEdit={canEdit}
+                      canEditAnalysis={canEditAnalysis}
+                      isUpdatingStatus={updatePropertyStatus.isPending}
+                      onStatusChange={(status) => updatePropertyStatus.mutate(status)}
+                    />
+                  </AnalysisSection>
+                  {analysisViewMode === 'simplified' ? (
+                    <>
+                      <AnalysisSection title="Tableau financier" defaultOpen>
+                        <FinancialTable analysis={displayedAnalysis} />
+                      </AnalysisSection>
+                      {displayedAnalysis.sipa_data && displayedAnalysis.sipa_data.filter((e) => !e._custom).length > 0 && (
+                        <AnalysisSection title="Investissement SIPA" defaultOpen>
+                          <SipaImportedDataTable analysis={displayedAnalysis} />
+                        </AnalysisSection>
+                      )}
+                      <AnalysisSection title="Projection 5 ans" defaultOpen>
+                        <Projection5Ans analysis={displayedAnalysis} />
+                      </AnalysisSection>
+                    </>
+                  ) : (
+                    <TechnicalAnalysisSnapshot
+                      property={property}
+                      analysis={displayedAnalysis}
+                      draft={technicalDraft || displayedAnalysis}
+                      setDraft={setTechnicalDraft}
+                      canEditAnalysis={canEditAnalysis}
+                      isSaving={updateTechnicalAnalysis.isPending}
+                      onSave={saveTechnicalDraft}
+                      canCollapseSections
+                    />
+                  )}
+                  {normalizedAnalyses.length > 1 && (
+                    <AnalysisSection title="Historique des analyses" defaultOpen>
+                      <AnalysisHistory
+                        property={property}
+                        analyses={normalizedAnalyses}
+                        selectedAnalysisId={selectedAnalysisId}
+                        setSelectedAnalysisId={setSelectedAnalysisId}
+                        canEditAnalysis={canEditAnalysis}
+                        canDeleteAnalysis={canDeleteAnalysis}
+                        deleteAnalysis={deleteAnalysis}
+                      />
+                    </AnalysisSection>
                   )}
                 </>
               ) : (
@@ -314,22 +355,12 @@ export default function PropertyDetail() {
                   analysis={displayedAnalysis}
                   draft={technicalDraft || displayedAnalysis}
                   setDraft={setTechnicalDraft}
-                  canEditAnalysis={canEditAnalysis}
+                  canEditAnalysis={false}
                   isSaving={updateTechnicalAnalysis.isPending}
                   onSave={saveTechnicalDraft}
+                  publicOnly
                 />
               )}
-              
-              {analysisViewMode === 'simplified' && <Projection5Ans analysis={displayedAnalysis} />}
-              <AnalysisHistory
-                property={property}
-                analyses={normalizedAnalyses}
-                selectedAnalysisId={selectedAnalysisId}
-                setSelectedAnalysisId={setSelectedAnalysisId}
-                canEditAnalysis={canEditAnalysis}
-                canDeleteAnalysis={canDeleteAnalysis}
-                deleteAnalysis={deleteAnalysis}
-              />
             </>
           ) : (
             <EmptyAnalysis canCreateAnalysis={canCreateAnalysis} propertyId={propertyId} />
@@ -410,7 +441,40 @@ function AnalysisViewModeToggle({ value, onChange }) {
   );
 }
 
-function TechnicalAnalysisSnapshot({ property, analysis, draft, setDraft, canEditAnalysis, isSaving, onSave }) {
+function AnalysisSection({ title, children, defaultOpen = true, collapsible = true }) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  if (!collapsible) return children;
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="space-y-3">
+      <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
+        <h3 className="font-heading text-sm font-semibold">{title}</h3>
+        <CollapsibleTrigger asChild>
+          <Button type="button" variant="ghost" size="sm" className="gap-2">
+            {open ? 'Réduire' : 'Déplier'}
+            <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-3">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function TechnicalAnalysisSnapshot({
+  property,
+  analysis,
+  draft,
+  setDraft,
+  canEditAnalysis,
+  isSaving,
+  onSave,
+  publicOnly = false,
+  canCollapseSections = false,
+}) {
   const prixTotal = Math.round(
     Number(analysis.prix_bien || 0) +
     Number(analysis.versement_initial || 0) +
@@ -430,6 +494,11 @@ function TechnicalAnalysisSnapshot({ property, analysis, draft, setDraft, canEdi
   const exportBaseName = `${propertySafeName(property?.titre || property?.adresse || property?.ville || 'bien')}-${analysis.created_date ? moment(analysis.created_date).format('YYYY-MM-DD') : 'analyse'}`;
   const financialExportRows = buildFinancialExportRows(analysis, customFields, prixTotal);
   const bankExportRows = buildBankExportRows(analysis);
+  const renderSection = (title, content, defaultOpen = true) => (
+    <AnalysisSection title={title} defaultOpen={defaultOpen} collapsible={canCollapseSections}>
+      {content}
+    </AnalysisSection>
+  );
   const updateDraftField = (key, value) => {
     if (!canEdit) return;
     setDraft((current) => ({ ...(current || analysis), [key]: value }));
@@ -529,6 +598,7 @@ function TechnicalAnalysisSnapshot({ property, analysis, draft, setDraft, canEdi
 
   return (
     <div className="space-y-6">
+      {!publicOnly && renderSection('Tableau financier technique', (
       <section className="bg-card rounded-xl border border-border p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
           <SectionHeading
@@ -611,7 +681,9 @@ function TechnicalAnalysisSnapshot({ property, analysis, draft, setDraft, canEdi
           </table>
         </div>
       </section>
+      ))}
 
+      {!publicOnly && renderSection('Hypothèses bancaires techniques', (
       <section className="bg-card rounded-xl border border-border p-4">
         <SectionHeading
           title="Hypotheses bancaires techniques"
@@ -645,16 +717,18 @@ function TechnicalAnalysisSnapshot({ property, analysis, draft, setDraft, canEdi
           </table>
         </div>
       </section>
+      ))}
 
-      {analysis.sipa_data && analysis.sipa_data.filter((entry) => !entry._custom).length > 0 && (
+      {analysis.sipa_data && analysis.sipa_data.filter((entry) => !entry._custom).length > 0 && renderSection('Investissement SIPA', (
         <ExcelSipaInvestmentSheet
           analysis={analysis}
           editable={canEdit}
           onCellChange={updateSipaImportedCell}
           exportBaseName={exportBaseName}
         />
-      )}
+      ))}
 
+      {renderSection('Projection exploitation', (
       <ExcelProjectionSheet
         title="Projection exploitation"
         projection={normalizeProjectionDraft(analysis.operating_projection, createEmptyExcelProjections().operating_projection)}
@@ -663,7 +737,9 @@ function TechnicalAnalysisSnapshot({ property, analysis, draft, setDraft, canEdi
         exportBaseName={exportBaseName}
         exportSlug="projection-exploitation"
       />
+      ))}
 
+      {renderSection('Dette, valeur et rendement', (
       <ExcelProjectionSheet
         title="Dette, valeur et rendement"
         projection={normalizeProjectionDraft(analysis.capital_projection, createEmptyExcelProjections().capital_projection)}
@@ -673,6 +749,7 @@ function TechnicalAnalysisSnapshot({ property, analysis, draft, setDraft, canEdi
         exportBaseName={exportBaseName}
         exportSlug="dette-valeur-rendement"
       />
+      ))}
     </div>
   );
 }
@@ -1312,6 +1389,15 @@ function percentOf(amount, base) {
   const numericBase = Number(base || 0);
   if (!numericBase) return null;
   return Math.round((numericAmount / numericBase) * 10000) / 100;
+}
+
+function normalizeRole(role) {
+  return String(role || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s-]+/g, '_');
 }
 
 function getSipaTotalIncome(analysis) {
