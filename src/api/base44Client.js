@@ -146,6 +146,7 @@ const AUDIT_FIELDS = {
   },
   analysis: {
     prix_bien: "Prix du bien",
+    prix_achat: "Prix d'achat",
     versement_initial: "Versement initial",
     amortissement_5_ans: "Amortissement sur 5 ans",
     honoraires_sipa: "Frais de transaction",

@@ -10,6 +10,10 @@
       "type": "number",
       "title": "Prix du bien"
     },
+    "prix_achat": {
+      "type": "number",
+      "title": "Prix d'achat"
+    },
     "versement_initial": {
       "type": "number",
       "title": "Versement initial",

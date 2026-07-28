@@ -26,6 +26,11 @@ import { Button } from '@/components/ui/button';
 
 const safeNumber = (value) => Number(value) || 0;
 
+const getPurchasePrice = (analysis) =>
+  analysis?.prix_achat !== null && analysis?.prix_achat !== undefined && analysis?.prix_achat !== ''
+    ? Number(analysis.prix_achat || 0)
+    : Number(analysis?.prix_bien || 0);
+
 const average = (items, selector) => {
   const values = items.map(selector).filter((value) => Number.isFinite(value));
   if (values.length === 0) return 0;
@@ -618,7 +623,7 @@ export default function Presentation() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-3 mt-3 border-t border-border/50">
                       <Metric label="Prix total" value={formatCHF(property.analysis.prix_total)} />
                       <Metric label="Rdt. distribue / FP" value={formatPercent(property.analysis.revenu_distribue_fonds_propres)} highlight />
-                      <Metric label="Prix d'achat" value={formatCHF(property.analysis.prix_bien)} />
+                      <Metric label="Prix d'achat" value={formatCHF(getPurchasePrice(property.analysis))} />
                       <Metric label="SIPA total income" value={formatCHF(getSipaTotalIncome(property.analysis))} highlight />
                     </div>
                   ) : (

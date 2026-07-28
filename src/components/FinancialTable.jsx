@@ -9,13 +9,20 @@ function Td({ children, className }) {
   return <td className={`py-2.5 px-4 ${className || ''}`}>{children}</td>;
 }
 
+function getPurchasePrice(analysis) {
+  return analysis.prix_achat !== null && analysis.prix_achat !== undefined && analysis.prix_achat !== ''
+    ? Number(analysis.prix_achat || 0)
+    : Number(analysis.prix_bien || 0);
+}
+
 export default function FinancialTable({ analysis, collapsible = false }) {
   const [open, setOpen] = useState(true);
 
   if (!analysis) return null;
 
+  const purchasePrice = getPurchasePrice(analysis);
   const prixTotal = Math.round(
-    Number(analysis.prix_bien || 0) +
+    purchasePrice +
     Number(analysis.versement_initial || 0) +
     Number(analysis.amortissement_5_ans || 0) +
     Number(analysis.honoraires_sipa || 0) +
@@ -46,10 +53,10 @@ export default function FinancialTable({ analysis, collapsible = false }) {
           </div>
           {collapsible ? (
             <CollapsibleContent>
-              <FinancialTableBody analysis={analysis} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
+              <FinancialTableBody analysis={analysis} purchasePrice={purchasePrice} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
             </CollapsibleContent>
           ) : (
-            <FinancialTableBody analysis={analysis} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
+            <FinancialTableBody analysis={analysis} purchasePrice={purchasePrice} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
           )}
         </div>
       </Collapsible>
@@ -63,7 +70,7 @@ export default function FinancialTable({ analysis, collapsible = false }) {
   );
 }
 
-function FinancialTableBody({ analysis, prixTotal, revenuNet, revenuDistribue, customFields }) {
+function FinancialTableBody({ analysis, purchasePrice, prixTotal, revenuNet, revenuDistribue, customFields }) {
   return (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
@@ -75,9 +82,10 @@ function FinancialTableBody({ analysis, prixTotal, revenuNet, revenuDistribue, c
             </thead>
             <tbody className="divide-y divide-border/50">
               <Row label="Prix du bien" value={formatCHF(analysis.prix_bien)} />
+              <Row label="Prix d'achat" value={formatCHF(purchasePrice)} />
               <Row label="Versement initial sur le compte de la copropriété" value={formatCHF(analysis.versement_initial)} />
               <Row label="Amortissement sur 5 ans" value={formatCHF(analysis.amortissement_5_ans)} />
-              <Row label="Frais de transaction" amount={analysis.honoraires_sipa} base={analysis.prix_bien} />
+              <Row label="Frais de transaction" amount={analysis.honoraires_sipa} base={purchasePrice} />
               <Row label="Frais de dossier bancaire" value={formatCHF(analysis.frais_dossier_bancaire)} />
               <RowTotal label="Prix total" value={formatCHF(prixTotal)} />
               <Row label="Fonds propres" value={formatCHF(analysis.fonds_propres)} />

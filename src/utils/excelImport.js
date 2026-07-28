@@ -526,6 +526,16 @@ function extractRows(rows, fields, seenLabels) {
       const label = normalizeText(cellValue);
       if (!label) return;
 
+      if (matchesField(label, ['prix du bien']) && fields.prix_bien != null && fields.prix_achat == null) {
+        const value = findPrimaryTableValue(rows, rowIndex, colIndex, 'amount') ??
+          findNearbyValue(rows, rowIndex, colIndex, 'amount');
+        if (value != null) {
+          fields.prix_achat = normalizeFieldValue(value, 'amount');
+          seenLabels.push(`${String(cellValue)} (prix d'achat)`);
+          return;
+        }
+      }
+
       FIELD_DEFINITIONS.forEach((field) => {
         if (!matchesField(label, field.labels) || fields[field.key] != null) return;
 
@@ -654,11 +664,13 @@ function normalizeFieldValue(value, kind) {
 }
 
 function applyDerivedPercentages(fields) {
-  if (fields.honoraires_sipa_pct == null && fields.prix_bien > 0 && fields.honoraires_sipa != null) {
-    fields.honoraires_sipa_pct = round2((fields.honoraires_sipa / fields.prix_bien) * 100);
+  const purchasePrice = fields.prix_achat != null ? Number(fields.prix_achat || 0) : Number(fields.prix_bien || 0);
+
+  if (fields.honoraires_sipa_pct == null && purchasePrice > 0 && fields.honoraires_sipa != null) {
+    fields.honoraires_sipa_pct = round2((fields.honoraires_sipa / purchasePrice) * 100);
   }
 
-  const prixTotal = Number(fields.prix_bien || 0) +
+  const prixTotal = purchasePrice +
     Number(fields.versement_initial || 0) +
     Number(fields.amortissement_5_ans || 0) +
     Number(fields.honoraires_sipa || 0) +

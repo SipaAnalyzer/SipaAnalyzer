@@ -330,8 +330,13 @@ function propertyRows(property) {
 }
 
 function analysisRows(analysis) {
+  const purchasePrice = analysis?.prix_achat !== null && analysis?.prix_achat !== undefined && analysis?.prix_achat !== ''
+    ? analysis.prix_achat
+    : analysis?.prix_bien;
+
   return [
     { label: 'Prix du bien', value: formatCHF(analysis?.prix_bien) },
+    { label: "Prix d'achat", value: formatCHF(purchasePrice) },
     { label: 'Versement initial copropriete', value: formatCHF(analysis?.versement_initial) },
     { label: 'Amortissement sur 5 ans', value: formatCHF(analysis?.amortissement_5_ans) },
     { label: 'Honoraires Sipa Immobilier SA', value: formatCHF(analysis?.honoraires_sipa) },

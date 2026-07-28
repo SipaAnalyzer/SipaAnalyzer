@@ -404,6 +404,7 @@ export default function Comparator() {
                   },
 
                   { label: 'Prix du bien', field: 'prix_bien', editable: true },
+                  { label: "Prix d'achat", field: 'prix_achat', editable: true },
                   { label: 'Fonds propres', field: 'fonds_propres', editable: true },
                   { label: 'Hypothèque', field: 'hypotheque', editable: true },
                   { label: 'Prix total', fn: (a) => formatCHF(a?.prix_total), editable: false },
