@@ -9,7 +9,9 @@ export function formatSipaValue(v) {
 
 export function formatSipaLabel(entry, entries = [], index = 0) {
   const label = entry?.label || '';
-  if (normalizeText(label) !== 'prix du bien') return label;
+  const normalized = normalizeText(label);
+  if (normalized === 'prix total') return "Prix total d'acquisition";
+  if (normalized !== 'prix du bien') return label;
 
   const occurrence = entries
     .slice(0, index + 1)
