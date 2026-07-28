@@ -25,6 +25,29 @@ export function formatSipaLabel(entry, entries = [], index = 0) {
   return 'Prix bien';
 }
 
+export function getSipaDisplayValues(entry, entries = [], index = 0) {
+  const label = formatSipaLabel(entry, entries, index);
+  const hidePercent = label === 'Prix bien';
+  const seenValues = new Set();
+  const values = [];
+  const percentages = [];
+
+  (entry?.values || []).forEach((value) => {
+    if (!value) return;
+    if (value.type === 'pct') {
+      if (!hidePercent) percentages.push(value);
+      return;
+    }
+
+    const signature = `${value.type}:${value.value}`;
+    if (label === "Prix d'achat" && seenValues.has(signature)) return;
+    seenValues.add(signature);
+    values.push(value);
+  });
+
+  return { values, percentages };
+}
+
 const SIPA_LABEL_TRANSLATIONS = {
   'target benefice sipa fonds prop': 'Objectif bénéfice SIPA sur fonds propres',
   'target benefice sipa fonds propres': 'Objectif bénéfice SIPA sur fonds propres',

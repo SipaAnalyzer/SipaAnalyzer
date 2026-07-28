@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent, WORKFLOW_STATUSES } from '../utils/calculations';
-import { extractAnalysisFieldsFromExcel, formatSipaLabel, formatSipaValue } from '../utils/excelImport';
+import { extractAnalysisFieldsFromExcel, formatSipaLabel, formatSipaValue, getSipaDisplayValues } from '../utils/excelImport';
 import { fetchSaronRate } from '../utils/saronRate';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -1052,21 +1052,32 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                     <tr className="border-b border-border">
                       <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
                       <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeurs</th>
+                      <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-32">%</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {form.sipa_data.filter((e) => !e._custom).map((entry, i, entries) => (
-                      <tr key={i}>
-                        <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">{formatSipaLabel(entry, entries, i)}</td>
-                        <td className="py-2 pl-4 text-sm">
-                          <div className="flex flex-wrap gap-2">
-                            {entry.values.map((v, j) => (
-                              <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {form.sipa_data.filter((e) => !e._custom).map((entry, i, entries) => {
+                      const display = getSipaDisplayValues(entry, entries, i);
+                      return (
+                        <tr key={i}>
+                          <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">{formatSipaLabel(entry, entries, i)}</td>
+                          <td className="py-2 pl-4 text-sm">
+                            <div className="flex flex-wrap gap-2">
+                              {display.values.map((v, j) => (
+                                <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 pl-4 text-sm text-right">
+                            <div className="flex flex-wrap justify-end gap-2">
+                              {display.percentages.map((v, j) => (
+                                <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
