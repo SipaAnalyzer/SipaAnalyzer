@@ -7,6 +7,20 @@ export function formatSipaValue(v) {
   return v.value;
 }
 
+export function formatSipaLabel(entry, entries = [], index = 0) {
+  const label = entry?.label || '';
+  if (normalizeText(label) !== 'prix du bien') return label;
+
+  const occurrence = entries
+    .slice(0, index + 1)
+    .filter((item) => normalizeText(item?.label) === 'prix du bien')
+    .length;
+
+  if (occurrence === 2) return "Prix d'achat";
+  if (occurrence >= 3) return 'Prix total';
+  return 'Prix bien';
+}
+
 export function parseNotesToRows(notes) {
   if (!notes) return [];
   return notes

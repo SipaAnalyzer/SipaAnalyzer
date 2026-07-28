@@ -19,7 +19,7 @@ import CommentSection from '../components/CommentSection';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
 import { calculateAnalysis, formatCHF, formatPercent, normalizeAnalyses, WORKFLOW_STATUSES } from '../utils/calculations';
-import { formatSipaValue } from '../utils/excelImport';
+import { formatSipaLabel, formatSipaValue } from '../utils/excelImport';
 import { exportAnalysisPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
 import { listAuditLogs, recordAuditLog } from '../utils/auditLogs';
@@ -807,9 +807,9 @@ function SipaImportedDataTable({ analysis, collapsible = false }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-border/50">
-            {analysis.sipa_data.filter((e) => !e._custom).map((entry, i) => (
+            {analysis.sipa_data.filter((e) => !e._custom).map((entry, i, entries) => (
               <tr key={i}>
-                <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">{entry.label}</td>
+                <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">{formatSipaLabel(entry, entries, i)}</td>
                 <td className="py-2.5 pl-4 text-sm">
                   <div className="flex flex-wrap gap-2">
                     {entry.values.map((v, j) => (
@@ -928,12 +928,12 @@ function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBase
                   {editable ? (
                     <input
                       type="text"
-                      value={entry.label || ''}
+                      value={formatSipaLabel(entry, rows, rowIndex)}
                       onChange={(event) => onCellChange(rowIndex, null, 'label', event.target.value)}
                       className="h-6 w-full bg-transparent px-2 text-black outline-none focus:bg-[#fff2cc]"
                     />
                   ) : (
-                    entry.label
+                    formatSipaLabel(entry, rows, rowIndex)
                   )}
                 </ExcelCell>
                 {Array.from({ length: maxValues }, (_, valueIndex) => {
@@ -1251,8 +1251,8 @@ function buildBankExportRows(analysis) {
 function buildSipaExportRows(rows, maxValues) {
   return [
     ['Rubrique', ...Array.from({ length: maxValues }, (_, index) => `Valeur ${index + 1}`)],
-    ...rows.map((entry) => [
-      entry.label || '',
+    ...rows.map((entry, index) => [
+      formatSipaLabel(entry, rows, index),
       ...Array.from({ length: maxValues }, (_, index) => entry.values?.[index]?.value ?? ''),
     ]),
   ];

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent, WORKFLOW_STATUSES } from '../utils/calculations';
-import { extractAnalysisFieldsFromExcel, formatSipaValue } from '../utils/excelImport';
+import { extractAnalysisFieldsFromExcel, formatSipaLabel, formatSipaValue } from '../utils/excelImport';
 import { fetchSaronRate } from '../utils/saronRate';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -1055,9 +1055,9 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {form.sipa_data.filter((e) => !e._custom).map((entry, i) => (
+                    {form.sipa_data.filter((e) => !e._custom).map((entry, i, entries) => (
                       <tr key={i}>
-                        <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">{entry.label}</td>
+                        <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">{formatSipaLabel(entry, entries, i)}</td>
                         <td className="py-2 pl-4 text-sm">
                           <div className="flex flex-wrap gap-2">
                             {entry.values.map((v, j) => (
@@ -1747,7 +1747,7 @@ function ExcelSipaInvestmentSheet({ sipaData, onChange }) {
                 <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                   <input
                     type="text"
-                    value={entry.label || ''}
+                    value={formatSipaLabel(entry, rows, rowIndex)}
                     onChange={(event) => updateCell(rowIndex, null, 'label', event.target.value)}
                     className={EXCEL_TEXT_INPUT_CLASS}
                   />
