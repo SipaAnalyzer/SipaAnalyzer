@@ -311,17 +311,11 @@ export default function PropertyDetail() {
                   </AnalysisSection>
                   {analysisViewMode === 'simplified' ? (
                     <>
-                      <AnalysisSection title="Tableau financier" defaultOpen>
-                        <FinancialTable analysis={displayedAnalysis} />
-                      </AnalysisSection>
+                      <FinancialTable analysis={displayedAnalysis} collapsible />
                       {displayedAnalysis.sipa_data && displayedAnalysis.sipa_data.filter((e) => !e._custom).length > 0 && (
-                        <AnalysisSection title="Investissement SIPA" defaultOpen>
-                          <SipaImportedDataTable analysis={displayedAnalysis} />
-                        </AnalysisSection>
+                        <SipaImportedDataTable analysis={displayedAnalysis} collapsible />
                       )}
-                      <AnalysisSection title="Projection 5 ans" defaultOpen>
-                        <Projection5Ans analysis={displayedAnalysis} />
-                      </AnalysisSection>
+                      <Projection5Ans analysis={displayedAnalysis} collapsible />
                     </>
                   ) : (
                     <TechnicalAnalysisSnapshot
@@ -797,13 +791,9 @@ function TechnicalAnalysisSnapshot({
   );
 }
 
-function SipaImportedDataTable({ analysis }) {
-  return (
-    <section className="bg-card rounded-xl border border-border p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <TrendingUp className="h-4 w-4 text-primary" />
-        <h3 className="font-heading font-semibold">Investissement SIPA</h3>
-      </div>
+function SipaImportedDataTable({ analysis, collapsible = false }) {
+  const [open, setOpen] = useState(true);
+  const content = (
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] text-sm">
           <thead>
@@ -828,7 +818,28 @@ function SipaImportedDataTable({ analysis }) {
           </tbody>
         </table>
       </div>
+  );
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <section className="bg-card rounded-xl border border-border p-6">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <h3 className="font-heading font-semibold">Investissement SIPA</h3>
+          </div>
+          {collapsible && (
+            <CollapsibleTrigger asChild>
+              <Button type="button" variant="ghost" size="sm" className="gap-2">
+                {open ? 'Réduire' : 'Déplier'}
+                <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+          )}
+        </div>
+        {collapsible ? <CollapsibleContent>{content}</CollapsibleContent> : content}
     </section>
+    </Collapsible>
   );
 }
 

@@ -1,12 +1,14 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCHF } from '../utils/calculations';
 import { fetchSaronRate } from '../utils/saronRate';
-import { Loader2 } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
 
-function BankInputs({ name, color, state, setState, hypo, prixTotal, saronRate, saronLoading }) {
+function BankInputs({ name, color, state, setState, hypo: _hypo, prixTotal, saronRate, saronLoading }) {
   const borderClass = color === 'amber' ? 'border-amber-500/25' : 'border-emerald-500/25';
   const bgClass = color === 'amber' ? 'bg-amber-500/5' : 'bg-emerald-500/5';
   const textClass = color === 'amber' ? 'text-amber-400' : 'text-emerald-400';
@@ -254,7 +256,7 @@ function ProjectionTable({ label, color, data, outflows }) {
   );
 }
 
-export default function Projection5Ans({ analysis }) {
+export default function Projection5Ans({ analysis, collapsible = false }) {
   const hypo = Number(analysis?.hypotheque || 0);
   const prixBien = Number(analysis?.prix_bien || 0);
   const prixTotal = Number(analysis?.prix_total) || Math.round(prixBien
@@ -272,6 +274,7 @@ export default function Projection5Ans({ analysis }) {
     : 0;
   const [saronRate, setSaronRate] = useState(null);
   const [saronLoading, setSaronLoading] = useState(true);
+  const [open, setOpen] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -345,23 +348,8 @@ export default function Projection5Ans({ analysis }) {
     return rev - ch - ges - imp;
   }, [analysis]);
 
-  return (
-    <div className="bg-card rounded-xl border border-border p-6">
-      <div className="flex items-center justify-between mb-5">
-        <h3 className="font-heading font-semibold">Projection 5 ans</h3>
-        {saronLoading && (
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            SARON...
-          </div>
-        )}
-        {!saronLoading && saronRate != null && (
-          <div className="text-xs text-muted-foreground">
-            SARON: <span className="font-mono font-medium">{saronRate.toFixed(3)}%</span>
-          </div>
-        )}
-      </div>
-
+  const content = (
+    <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
         <BankInputs name="Banque A" color="amber" state={bankA} setState={setBankA} hypo={hypo} prixTotal={prixTotal} saronRate={saronRate} saronLoading={saronLoading} />
         <BankInputs name="Banque B" color="emerald" state={bankB} setState={setBankB} hypo={hypo} prixTotal={prixTotal} saronRate={saronRate} saronLoading={saronLoading} />
@@ -374,9 +362,42 @@ export default function Projection5Ans({ analysis }) {
         </div>
       ) : (
         <p className="text-sm text-muted-foreground text-center py-4">
-          Ajustez les paramètres bancaires pour voir la projection
+          Ajustez les paramÃ¨tres bancaires pour voir la projection
         </p>
       )}
+    </>
+  );
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+    <div className="bg-card rounded-xl border border-border p-6">
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <h3 className="font-heading font-semibold">Projection 5 ans</h3>
+        <div className="flex items-center gap-2">
+        {saronLoading && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            SARON...
+          </div>
+        )}
+        {!saronLoading && saronRate != null && (
+          <div className="text-xs text-muted-foreground">
+            SARON: <span className="font-mono font-medium">{saronRate.toFixed(3)}%</span>
+          </div>
+        )}
+        {collapsible && (
+          <CollapsibleTrigger asChild>
+            <Button type="button" variant="ghost" size="sm" className="gap-2">
+              {open ? 'Réduire' : 'Déplier'}
+              <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+            </Button>
+          </CollapsibleTrigger>
+        )}
+        </div>
+      </div>
+
+      {collapsible ? <CollapsibleContent>{content}</CollapsibleContent> : content}
     </div>
+    </Collapsible>
   );
 }

@@ -1,11 +1,17 @@
+import { useState } from 'react';
 import { formatCHF, formatPercent } from '../utils/calculations';
 import ExcelProjectionTables from './ExcelProjectionTables';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown } from 'lucide-react';
 
 function Td({ children, className }) {
   return <td className={`py-2.5 px-4 ${className || ''}`}>{children}</td>;
 }
 
-export default function FinancialTable({ analysis }) {
+export default function FinancialTable({ analysis, collapsible = false }) {
+  const [open, setOpen] = useState(true);
+
   if (!analysis) return null;
 
   const prixTotal = Math.round(
@@ -25,8 +31,39 @@ export default function FinancialTable({ analysis }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
-        <h3 className="font-heading font-semibold mb-5">TABLEAU FINANCIER</h3>
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
+          <div className="flex items-center justify-between gap-3 mb-5">
+            <h3 className="font-heading font-semibold">TABLEAU FINANCIER</h3>
+            {collapsible && (
+              <CollapsibleTrigger asChild>
+                <Button type="button" variant="ghost" size="sm" className="gap-2">
+                  {open ? 'Réduire' : 'Déplier'}
+                  <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+            )}
+          </div>
+          {collapsible ? (
+            <CollapsibleContent>
+              <FinancialTableBody analysis={analysis} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
+            </CollapsibleContent>
+          ) : (
+            <FinancialTableBody analysis={analysis} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
+          )}
+        </div>
+      </Collapsible>
+
+      <ExcelProjectionTables
+        operatingProjection={analysis.operating_projection}
+        capitalProjection={analysis.capital_projection}
+      />
+    </div>
+  );
+}
+
+function FinancialTableBody({ analysis, prixTotal, revenuNet, revenuDistribue, customFields }) {
+  return (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
             <thead>
@@ -86,13 +123,6 @@ export default function FinancialTable({ analysis }) {
             </tbody>
           </table>
         </div>
-      </div>
-
-      <ExcelProjectionTables
-        operatingProjection={analysis.operating_projection}
-        capitalProjection={analysis.capital_projection}
-      />
-    </div>
   );
 }
 
