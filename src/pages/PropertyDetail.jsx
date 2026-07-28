@@ -14,7 +14,7 @@ import ScoreBadge from '../components/ScoreBadge';
 import StatusBadge from '../components/StatusBadge';
 import Projection5Ans from '../components/Projection5Ans';
 import FinancialTable from '../components/FinancialTable';
-import { createEmptyExcelProjections } from '../components/ExcelProjectionTables';
+import ExcelProjectionTables, { createEmptyExcelProjections } from '../components/ExcelProjectionTables';
 import CommentSection from '../components/CommentSection';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
@@ -343,16 +343,15 @@ export default function PropertyDetail() {
                   )}
                 </>
               ) : (
-                <TechnicalAnalysisSnapshot
-                  property={property}
-                  analysis={displayedAnalysis}
-                  draft={technicalDraft || displayedAnalysis}
-                  setDraft={setTechnicalDraft}
-                  canEditAnalysis={false}
-                  isSaving={updateTechnicalAnalysis.isPending}
-                  onSave={saveTechnicalDraft}
-                  publicOnly
-                />
+                <>
+                  {displayedAnalysis.sipa_data && displayedAnalysis.sipa_data.filter((e) => !e._custom).length > 0 && (
+                    <SipaImportedDataTable analysis={displayedAnalysis} />
+                  )}
+                  <ExcelProjectionTables
+                    operatingProjection={displayedAnalysis.operating_projection}
+                    capitalProjection={displayedAnalysis.capital_projection}
+                  />
+                </>
               )}
             </>
           ) : (
