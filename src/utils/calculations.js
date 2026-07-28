@@ -105,9 +105,6 @@ function getLocationScore(data) {
 
 export function calculateAnalysis(data) {
   const prixBien = Number(data.prix_bien || 0);
-  const prixAchat = data.prix_achat !== null && data.prix_achat !== undefined && data.prix_achat !== ''
-    ? Number(data.prix_achat || 0)
-    : prixBien;
   const revenusLocatifs = Number(data.revenus_locatifs || 0);
   const chargesOperationnelles = Number(data.charges_operationnelles || 0);
   const interetsHypothecaires = Number(data.interets_hypothecaires || 0);
@@ -118,7 +115,7 @@ export function calculateAnalysis(data) {
 
   const revenuNet = revenusLocatifs - chargesOperationnelles - interetsHypothecaires - gestion;
   const impotCalcule = impot;
-  const rendementBrut = prixAchat > 0 ? (revenusLocatifs / prixAchat) * 100 : 0;
+  const rendementBrut = prixBien > 0 ? (revenusLocatifs / prixBien) * 100 : 0;
   const rendementNetFP = fondsPropres > 0 ? (revenuNet / fondsPropres) * 100 : 0;
   const revenuDistribue = revenuNet - impotCalcule;
   const revenuDistribueFP = fondsPropres > 0 ? (revenuDistribue / fondsPropres) * 100 : 0;
@@ -151,7 +148,7 @@ export function calculateAnalysis(data) {
   const note = noteFromScore(scoreGlobal);
 
   return {
-    prix_total: Math.round(prixAchat + Number(data.versement_initial || 0) + Number(data.amortissement_5_ans || 0) + Number(data.honoraires_sipa || 0) + Number(data.frais_dossier_bancaire || 0)),
+    prix_total: Math.round(prixBien + Number(data.versement_initial || 0) + Number(data.amortissement_5_ans || 0) + Number(data.honoraires_transaction_sipa_group || 0) + Number(data.frais_dossier_bancaire || 0)),
     rendement_brut: round2(rendementBrut),
     revenu_net: Math.round(revenuNet),
     rendement_net_fonds_propres: round2(rendementNetFP),

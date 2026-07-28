@@ -15,6 +15,21 @@ function getPurchasePrice(analysis) {
     : Number(analysis.prix_bien || 0);
 }
 
+function getPurchaseSubtotal(analysis) {
+  return (
+    getPurchasePrice(analysis) +
+    Number(analysis.honoraires_sipa || 0) +
+    Number(analysis.construction || 0)
+  );
+}
+
+function getPurchaseEquity(analysis) {
+  if (analysis.fonds_propres_achat !== null && analysis.fonds_propres_achat !== undefined && analysis.fonds_propres_achat !== '') {
+    return Number(analysis.fonds_propres_achat || 0);
+  }
+  return getPurchaseSubtotal(analysis) - Number(analysis.hypotheque || 0);
+}
+
 export default function FinancialTable({ analysis, collapsible = false }) {
   const [open, setOpen] = useState(true);
 
@@ -22,12 +37,13 @@ export default function FinancialTable({ analysis, collapsible = false }) {
 
   const purchasePrice = getPurchasePrice(analysis);
   const prixTotal = Math.round(
-    purchasePrice +
+    Number(analysis.prix_bien || 0) +
     Number(analysis.versement_initial || 0) +
     Number(analysis.amortissement_5_ans || 0) +
-    Number(analysis.honoraires_sipa || 0) +
+    Number(analysis.honoraires_transaction_sipa_group || 0) +
     Number(analysis.frais_dossier_bancaire || 0)
   );
+  const purchaseSubtotal = getPurchaseSubtotal(analysis);
 
   const revenuNet = Number(analysis.revenu_net || 0);
   const revenuDistribue = Number(analysis.revenu_distribue || 0);
@@ -53,10 +69,10 @@ export default function FinancialTable({ analysis, collapsible = false }) {
           </div>
           {collapsible ? (
             <CollapsibleContent>
-              <FinancialTableBody analysis={analysis} purchasePrice={purchasePrice} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
+              <FinancialTableBody analysis={analysis} purchasePrice={purchasePrice} purchaseSubtotal={purchaseSubtotal} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
             </CollapsibleContent>
           ) : (
-            <FinancialTableBody analysis={analysis} purchasePrice={purchasePrice} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
+            <FinancialTableBody analysis={analysis} purchasePrice={purchasePrice} purchaseSubtotal={purchaseSubtotal} prixTotal={prixTotal} revenuNet={revenuNet} revenuDistribue={revenuDistribue} customFields={customFields} />
           )}
         </div>
       </Collapsible>
@@ -70,7 +86,7 @@ export default function FinancialTable({ analysis, collapsible = false }) {
   );
 }
 
-function FinancialTableBody({ analysis, purchasePrice, prixTotal, revenuNet, revenuDistribue, customFields }) {
+function FinancialTableBody({ analysis, purchasePrice, purchaseSubtotal, prixTotal, revenuNet, revenuDistribue, customFields }) {
   return (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
@@ -83,14 +99,17 @@ function FinancialTableBody({ analysis, purchasePrice, prixTotal, revenuNet, rev
             <tbody className="divide-y divide-border/50">
               <Row label="Prix du bien" value={formatCHF(analysis.prix_bien)} />
               <Row label="Prix d'achat" value={formatCHF(purchasePrice)} />
+              <Row label="Frais de transaction" amount={analysis.honoraires_sipa} base={purchasePrice} />
+              <Row label="Construction" amount={analysis.construction} base={purchasePrice} />
+              <Row label="Fonds propres achat" value={formatCHF(getPurchaseEquity(analysis))} />
               <Row label="Versement initial sur le compte de la copropriété" value={formatCHF(analysis.versement_initial)} />
               <Row label="Amortissement sur 5 ans" value={formatCHF(analysis.amortissement_5_ans)} />
-              <Row label="Frais de transaction" amount={analysis.honoraires_sipa} base={purchasePrice} />
+              <Row label="Honoraires transaction SIPA Group" amount={analysis.honoraires_transaction_sipa_group} base={analysis.prix_bien} />
               <Row label="Frais de dossier bancaire" value={formatCHF(analysis.frais_dossier_bancaire)} />
               <RowTotal label="Prix total" value={formatCHF(prixTotal)} />
               <Row label="Fonds propres" value={formatCHF(analysis.fonds_propres)} />
-              <Row label="Target bénéfice SIPA fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} base={analysis.fonds_propres} />
-              <Row label="Hypothèque" amount={analysis.hypotheque} base={prixTotal} />
+              <Row label="Target bénéfice SIPA fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} base={getPurchaseEquity(analysis)} />
+              <Row label="Hypothèque" amount={analysis.hypotheque} base={purchaseSubtotal} />
               <tr className="border-t-2 border-border">
                 <Td className="text-muted-foreground">Revenus locatifs (hors charges)</Td>
                 <Td className="text-right font-mono">{formatCHF(analysis.revenus_locatifs)}</Td>

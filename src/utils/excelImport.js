@@ -26,7 +26,9 @@ const FIELD_DEFINITIONS = [
   { key: 'prix_bien', labels: ['prix du bien original', 'prix du bien', 'prix investor'], kind: 'amount' },
   { key: 'versement_initial', labels: ['versement initial sur le compte de la copropriete', 'versement initial sur le compte de la spv'], kind: 'amount' },
   { key: 'amortissement_5_ans', labels: ['amortissement sur 5 ans', 'amortization years'], kind: 'amount' },
-  { key: 'honoraires_sipa', pctKey: 'honoraires_sipa_pct', labels: ['honoraires transaction sipa', 'frais de transaction'], kind: 'amount' },
+  { key: 'honoraires_transaction_sipa_group', pctKey: 'honoraires_transaction_sipa_group_pct', labels: ['honoraires transaction sipa group', 'honoraires transaction sipa'], kind: 'amount' },
+  { key: 'honoraires_sipa', pctKey: 'honoraires_sipa_pct', labels: ['frais de transaction'], kind: 'amount' },
+  { key: 'construction', pctKey: 'construction_pct', labels: ['construction'], kind: 'amount' },
   { key: 'frais_dossier_bancaire', labels: ['frais de dossier bancaire', 'commission broker hypotheque', 'commission broker autres charges'], kind: 'amount' },
   { key: 'fonds_propres', labels: ['fonds propres', 'fond propre'], kind: 'amount' },
   { key: 'target_benefice_sipa_fonds_propres', pctKey: 'target_benefice_sipa_fonds_propres_pct', labels: ['target benefice sipa fonds prop', 'target benefice sipa fonds propres'], kind: 'amount' },
@@ -45,7 +47,9 @@ const FIELD_DEFINITIONS = [
 ];
 
 const PCT_LABELS = new Map([
-  ['honoraires_sipa_pct', ['honoraires transaction sipa', 'frais de transaction']],
+  ['honoraires_transaction_sipa_group_pct', ['honoraires transaction sipa group', 'honoraires transaction sipa']],
+  ['honoraires_sipa_pct', ['frais de transaction']],
+  ['construction_pct', ['construction']],
   ['target_benefice_sipa_fonds_propres_pct', ['target benefice sipa fonds prop', 'target benefice sipa fonds propres']],
   ['hypotheque_pct', ['hypotheque']],
   ['interets_hypothecaires_pct', ['interet hypothecaire']],
@@ -125,6 +129,10 @@ function normalizeBlankOptionalFields(fields) {
   if (Number(fields.honoraires_sipa || 0) === 0) {
     delete fields.honoraires_sipa;
     delete fields.honoraires_sipa_pct;
+  }
+  if (Number(fields.construction || 0) === 0) {
+    delete fields.construction;
+    delete fields.construction_pct;
   }
 }
 
@@ -536,6 +544,22 @@ function extractRows(rows, fields, seenLabels) {
         }
       }
 
+      if (matchesField(label, ['fonds propres']) && fields.fonds_propres != null) {
+        const value = findPrimaryTableValue(rows, rowIndex, colIndex, 'amount') ??
+          findNearbyValue(rows, rowIndex, colIndex, 'amount');
+        if (value != null) {
+          fields.fonds_propres_achat = normalizeFieldValue(value, 'amount');
+          seenLabels.push(`${String(cellValue)} (achat)`);
+          return;
+        }
+      }
+
+      if (matchesField(label, ['hypotheque']) && fields.hypotheque != null) {
+        const percent = findPrimaryTablePercent(rows, rowIndex, colIndex, label) ??
+          findNearbyPercent(rows, rowIndex, colIndex, label);
+        if (percent != null) fields.hypotheque_pct = percent;
+      }
+
       FIELD_DEFINITIONS.forEach((field) => {
         if (!matchesField(label, field.labels) || fields[field.key] != null) return;
 
@@ -670,28 +694,35 @@ function applyDerivedPercentages(fields) {
     fields.honoraires_sipa_pct = round2((fields.honoraires_sipa / purchasePrice) * 100);
   }
 
-  const prixTotal = purchasePrice +
-    Number(fields.versement_initial || 0) +
-    Number(fields.amortissement_5_ans || 0) +
-    Number(fields.honoraires_sipa || 0) +
-    Number(fields.frais_dossier_bancaire || 0);
+  if (fields.construction_pct == null && purchasePrice > 0 && fields.construction != null) {
+    fields.construction_pct = round2((fields.construction / purchasePrice) * 100);
+  }
 
-  if (fields.hypotheque_pct == null && prixTotal > 0 && fields.hypotheque != null) {
-    fields.hypotheque_pct = round2((fields.hypotheque / prixTotal) * 100);
+  const purchaseSubtotal = purchasePrice +
+    Number(fields.honoraires_sipa || 0) +
+    Number(fields.construction || 0);
+
+  if (fields.hypotheque_pct == null && purchaseSubtotal > 0 && fields.hypotheque != null) {
+    fields.hypotheque_pct = round2((fields.hypotheque / purchaseSubtotal) * 100);
   }
 
   if (
     fields.target_benefice_sipa_fonds_propres_pct == null &&
-    fields.fonds_propres > 0 &&
+    (fields.fonds_propres_achat || fields.fonds_propres) > 0 &&
     fields.target_benefice_sipa_fonds_propres != null
   ) {
+    const targetBase = Number(fields.fonds_propres_achat || fields.fonds_propres || 0);
     fields.target_benefice_sipa_fonds_propres_pct = round2(
-      (fields.target_benefice_sipa_fonds_propres / fields.fonds_propres) * 100
+      (fields.target_benefice_sipa_fonds_propres / targetBase) * 100
     );
   }
 
   if (fields.interets_hypothecaires_pct == null && fields.hypotheque > 0 && fields.interets_hypothecaires != null) {
     fields.interets_hypothecaires_pct = round2((fields.interets_hypothecaires / fields.hypotheque) * 100);
+  }
+
+  if (fields.honoraires_transaction_sipa_group_pct == null && fields.prix_bien > 0 && fields.honoraires_transaction_sipa_group != null) {
+    fields.honoraires_transaction_sipa_group_pct = round2((fields.honoraires_transaction_sipa_group / fields.prix_bien) * 100);
   }
 
   if (fields.gestion_pct == null && fields.revenus_locatifs > 0 && fields.gestion != null) {

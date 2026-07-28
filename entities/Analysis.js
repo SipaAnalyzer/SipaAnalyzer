@@ -29,6 +29,16 @@
       "title": "Honoraires SIPA",
       "default": 0
     },
+    "construction": {
+      "type": "number",
+      "title": "Construction",
+      "default": 0
+    },
+    "honoraires_transaction_sipa_group": {
+      "type": "number",
+      "title": "Honoraires transaction SIPA Group",
+      "default": 0
+    },
     "prix_total": {
       "type": "number",
       "title": "Prix total"
@@ -36,6 +46,11 @@
     "fonds_propres": {
       "type": "number",
       "title": "Fonds propres"
+    },
+    "fonds_propres_achat": {
+      "type": "number",
+      "title": "Fonds propres achat",
+      "default": 0
     },
     "target_benefice_sipa_fonds_propres": {
       "type": "number",

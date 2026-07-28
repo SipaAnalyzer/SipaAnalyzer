@@ -337,9 +337,12 @@ function analysisRows(analysis) {
   return [
     { label: 'Prix du bien', value: formatCHF(analysis?.prix_bien) },
     { label: "Prix d'achat", value: formatCHF(purchasePrice) },
+    { label: 'Frais de transaction', value: formatCHF(analysis?.honoraires_sipa) },
+    { label: 'Construction', value: formatCHF(analysis?.construction) },
+    { label: 'Fonds propres achat', value: formatCHF(analysis?.fonds_propres_achat) },
     { label: 'Versement initial copropriete', value: formatCHF(analysis?.versement_initial) },
     { label: 'Amortissement sur 5 ans', value: formatCHF(analysis?.amortissement_5_ans) },
-    { label: 'Honoraires Sipa Immobilier SA', value: formatCHF(analysis?.honoraires_sipa) },
+    { label: 'Honoraires transaction SIPA Group', value: formatCHF(analysis?.honoraires_transaction_sipa_group) },
     { label: 'Frais de dossier bancaire', value: formatCHF(analysis?.frais_dossier_bancaire) },
     { label: 'Prix total', value: formatCHF(analysis?.prix_total), highlight: true },
     { label: 'Fonds propres', value: formatCHF(analysis?.fonds_propres) },

@@ -515,11 +515,12 @@ function TechnicalAnalysisSnapshot({
   canCollapseSections = false,
 }) {
   const purchasePrice = getPurchasePrice(analysis);
+  const purchaseSubtotal = getPurchaseSubtotal(analysis);
   const prixTotal = Math.round(
-    purchasePrice +
+    Number(analysis.prix_bien || 0) +
     Number(analysis.versement_initial || 0) +
     Number(analysis.amortissement_5_ans || 0) +
-    Number(analysis.honoraires_sipa || 0) +
+    Number(analysis.honoraires_transaction_sipa_group || 0) +
     Number(analysis.frais_dossier_bancaire || 0)
   );
   const customFields = analysis.sipa_data ? analysis.sipa_data.filter((entry) => entry._custom) : [];
@@ -677,31 +678,34 @@ function TechnicalAnalysisSnapshot({
             <tbody>
               <ExcelOptionalReadRow row={2} section="Acquisition" label="Prix du bien" amount={analysis.prix_bien} editable={canEdit} onAmountChange={(value) => updateDraftField('prix_bien', value)} />
               <ExcelOptionalReadRow row={3} section="Acquisition" label="Prix d'achat" amount={analysis.prix_achat} editable={canEdit} onAmountChange={(value) => updateDraftField('prix_achat', value)} />
-              <ExcelOptionalReadRow row={4} section="Acquisition" label="Versement initial copropriete" amount={analysis.versement_initial} editable={canEdit} onAmountChange={(value) => updateDraftField('versement_initial', value)} />
-              <ExcelOptionalReadRow row={5} section="Acquisition" label="Amortissement sur 5 ans" amount={analysis.amortissement_5_ans} editable={canEdit} onAmountChange={(value) => updateDraftField('amortissement_5_ans', value)} />
-              <ExcelReadRow row={6} section="Acquisition" label="Frais de transaction" amount={analysis.honoraires_sipa} pct={percentOf(analysis.honoraires_sipa, purchasePrice)} editable={canEdit} onAmountChange={(value) => updateDraftField('honoraires_sipa', value)} onPctChange={updatePctField('honoraires_sipa', 'honoraires_sipa_pct', purchasePrice)} />
-              <ExcelOptionalReadRow row={7} section="Acquisition" label="Frais de dossier bancaire" amount={analysis.frais_dossier_bancaire} editable={canEdit} onAmountChange={(value) => updateDraftField('frais_dossier_bancaire', value)} />
-              <ExcelComputedRow row={8} section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
-              <ExcelOptionalReadRow row={9} section="Financement" label="Fonds propres" amount={analysis.fonds_propres} editable={canEdit} onAmountChange={(value) => updateDraftField('fonds_propres', value)} />
-              <ExcelReadRow row={10} section="Financement" label="Target benefice SIPA fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} pct={percentOf(analysis.target_benefice_sipa_fonds_propres, analysis.fonds_propres)} editable={canEdit} onAmountChange={updateAmountWithPct('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', 'fonds_propres')} onPctChange={updatePctField('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', analysis.fonds_propres)} />
-              <ExcelOptionalReadRow row={11} section="Financement" label="Hypotheque" amount={analysis.hypotheque} pct={percentOf(analysis.hypotheque, prixTotal)} editable={canEdit} onAmountChange={(value) => updateDraftField('hypotheque', value)} onPctChange={updatePctField('hypotheque', 'hypotheque_pct', prixTotal)} />
-              <ExcelOptionalReadRow row={12} section="Exploitation" label="Revenus locatifs hors charges" amount={analysis.revenus_locatifs} editable={canEdit} onAmountChange={(value) => updateDraftField('revenus_locatifs', value)} />
-              <ExcelComputedRow row={13} section="Exploitation" label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} />
-              <ExcelOptionalReadRow row={14} section="Exploitation" label="Charges operationnelles" amount={analysis.charges_operationnelles} editable={canEdit} onAmountChange={(value) => updateDraftField('charges_operationnelles', value)} />
-              <ExcelOptionalReadRow row={15} section="Exploitation" label="Interet hypothecaire moyen 5 ans" amount={analysis.interets_hypothecaires} pct={percentOf(analysis.interets_hypothecaires, analysis.hypotheque)} editable={canEdit} onAmountChange={(value) => updateDraftField('interets_hypothecaires', value)} onPctChange={updatePctField('interets_hypothecaires', 'interets_hypothecaires_pct', analysis.hypotheque)} />
-              <ExcelOptionalReadRow row={16} section="Exploitation" label="Honoraires de gestion" amount={analysis.gestion} pct={percentOf(analysis.gestion, analysis.revenus_locatifs)} editable={canEdit} onAmountChange={(value) => updateDraftField('gestion', value)} onPctChange={updatePctField('gestion', 'gestion_pct', analysis.revenus_locatifs)} />
-              <ExcelComputedRow row={17} section="Exploitation" label="Revenu net" value={formatCHF(analysis.revenu_net)} strong />
-              <ExcelComputedRow row={18} section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(analysis.rendement_net_fonds_propres)} />
-              <ExcelOptionalReadRow row={19} section="Fiscalite" label="Impot" amount={analysis.impot} pct={percentOf(analysis.impot, analysis.revenu_net)} editable={canEdit} onAmountChange={(value) => updateDraftField('impot', value)} onPctChange={updatePctField('impot', 'impot_pct', analysis.revenu_net)} />
-              <ExcelComputedRow row={20} section="Distribution" label="Revenu distribue" value={formatCHF(analysis.revenu_distribue)} strong />
-              <ExcelComputedRow row={21} section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(analysis.revenu_distribue_fonds_propres)} />
+              <ExcelReadRow row={4} section="Acquisition" label="Frais de transaction" amount={analysis.honoraires_sipa} pct={percentOf(analysis.honoraires_sipa, purchasePrice)} editable={canEdit} onAmountChange={(value) => updateDraftField('honoraires_sipa', value)} onPctChange={updatePctField('honoraires_sipa', 'honoraires_sipa_pct', purchasePrice)} />
+              <ExcelReadRow row={5} section="Acquisition" label="Construction" amount={analysis.construction} pct={percentOf(analysis.construction, purchasePrice)} editable={canEdit} onAmountChange={(value) => updateDraftField('construction', value)} onPctChange={updatePctField('construction', 'construction_pct', purchasePrice)} />
+              <ExcelComputedRow row={6} section="Financement" label="Fonds propres achat" value={formatCHF(getPurchaseEquity(analysis))} />
+              <ExcelOptionalReadRow row={7} section="Acquisition" label="Versement initial copropriete" amount={analysis.versement_initial} editable={canEdit} onAmountChange={(value) => updateDraftField('versement_initial', value)} />
+              <ExcelOptionalReadRow row={8} section="Acquisition" label="Amortissement sur 5 ans" amount={analysis.amortissement_5_ans} editable={canEdit} onAmountChange={(value) => updateDraftField('amortissement_5_ans', value)} />
+              <ExcelReadRow row={9} section="Acquisition" label="Honoraires transaction SIPA Group" amount={analysis.honoraires_transaction_sipa_group} pct={percentOf(analysis.honoraires_transaction_sipa_group, analysis.prix_bien)} editable={canEdit} onAmountChange={(value) => updateDraftField('honoraires_transaction_sipa_group', value)} onPctChange={updatePctField('honoraires_transaction_sipa_group', 'honoraires_transaction_sipa_group_pct', analysis.prix_bien)} />
+              <ExcelOptionalReadRow row={10} section="Acquisition" label="Frais de dossier bancaire" amount={analysis.frais_dossier_bancaire} editable={canEdit} onAmountChange={(value) => updateDraftField('frais_dossier_bancaire', value)} />
+              <ExcelComputedRow row={11} section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
+              <ExcelOptionalReadRow row={12} section="Financement" label="Fonds propres" amount={analysis.fonds_propres} editable={canEdit} onAmountChange={(value) => updateDraftField('fonds_propres', value)} />
+              <ExcelReadRow row={13} section="Financement" label="Target benefice SIPA fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} pct={percentOf(analysis.target_benefice_sipa_fonds_propres, getPurchaseEquity(analysis))} editable={canEdit} onAmountChange={updateAmountWithPct('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', 'fonds_propres_achat')} onPctChange={updatePctField('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', getPurchaseEquity(analysis))} />
+              <ExcelOptionalReadRow row={14} section="Financement" label="Hypotheque" amount={analysis.hypotheque} pct={percentOf(analysis.hypotheque, purchaseSubtotal)} editable={canEdit} onAmountChange={(value) => updateDraftField('hypotheque', value)} onPctChange={updatePctField('hypotheque', 'hypotheque_pct', purchaseSubtotal)} />
+              <ExcelOptionalReadRow row={15} section="Exploitation" label="Revenus locatifs hors charges" amount={analysis.revenus_locatifs} editable={canEdit} onAmountChange={(value) => updateDraftField('revenus_locatifs', value)} />
+              <ExcelComputedRow row={16} section="Exploitation" label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} />
+              <ExcelOptionalReadRow row={17} section="Exploitation" label="Charges operationnelles" amount={analysis.charges_operationnelles} editable={canEdit} onAmountChange={(value) => updateDraftField('charges_operationnelles', value)} />
+              <ExcelOptionalReadRow row={18} section="Exploitation" label="Interet hypothecaire moyen 5 ans" amount={analysis.interets_hypothecaires} pct={percentOf(analysis.interets_hypothecaires, analysis.hypotheque)} editable={canEdit} onAmountChange={(value) => updateDraftField('interets_hypothecaires', value)} onPctChange={updatePctField('interets_hypothecaires', 'interets_hypothecaires_pct', analysis.hypotheque)} />
+              <ExcelOptionalReadRow row={19} section="Exploitation" label="Honoraires de gestion" amount={analysis.gestion} pct={percentOf(analysis.gestion, analysis.revenus_locatifs)} editable={canEdit} onAmountChange={(value) => updateDraftField('gestion', value)} onPctChange={updatePctField('gestion', 'gestion_pct', analysis.revenus_locatifs)} />
+              <ExcelComputedRow row={20} section="Exploitation" label="Revenu net" value={formatCHF(analysis.revenu_net)} strong />
+              <ExcelComputedRow row={21} section="Exploitation" label="Rendement net sur fonds propres" value={formatPercent(analysis.rendement_net_fonds_propres)} />
+              <ExcelOptionalReadRow row={22} section="Fiscalite" label="Impot" amount={analysis.impot} pct={percentOf(analysis.impot, analysis.revenu_net)} editable={canEdit} onAmountChange={(value) => updateDraftField('impot', value)} onPctChange={updatePctField('impot', 'impot_pct', analysis.revenu_net)} />
+              <ExcelComputedRow row={23} section="Distribution" label="Revenu distribue" value={formatCHF(analysis.revenu_distribue)} strong />
+              <ExcelComputedRow row={24} section="Distribution" label="Revenu distribue / fonds propres" value={formatPercent(analysis.revenu_distribue_fonds_propres)} />
               {visibleCustomFields.map(({ entry, index }, visibleIndex) => {
                 const amount = entry.values?.find((value) => value.type === 'amount');
                 const pct = entry.values?.find((value) => value.type === 'pct');
                 return (
                   <ExcelReadRow
                     key={`${entry.label}-${index}`}
-                    row={22 + visibleIndex}
+                    row={25 + visibleIndex}
                     section="Personnalise"
                     label={entry.label}
                     amount={amount?.value}
@@ -1192,18 +1196,22 @@ function ExcelNumberInput({ value, onChange, suffix = '' }) {
 
 function buildFinancialExportRows(analysis, customFields, prixTotal) {
   const purchasePrice = getPurchasePrice(analysis);
+  const purchaseSubtotal = getPurchaseSubtotal(analysis);
   const header = ['Bloc', 'Rubrique', 'Montant CHF', '%', 'Calcul'];
   const rows = [
     ['Acquisition', 'Prix du bien', analysis.prix_bien ?? '', '', ''],
     ['Acquisition', "Prix d'achat", analysis.prix_achat ?? '', '', ''],
+    ['Acquisition', 'Frais de transaction', analysis.honoraires_sipa ?? '', percentOf(analysis.honoraires_sipa, purchasePrice) ?? '', ''],
+    ['Acquisition', 'Construction', analysis.construction ?? '', percentOf(analysis.construction, purchasePrice) ?? '', ''],
+    ['Financement', 'Fonds propres achat', getPurchaseEquity(analysis) ?? '', '', ''],
     ['Acquisition', 'Versement initial copropriete', analysis.versement_initial ?? '', '', ''],
     ['Acquisition', 'Amortissement sur 5 ans', analysis.amortissement_5_ans ?? '', '', ''],
-    ['Acquisition', 'Frais de transaction', analysis.honoraires_sipa ?? '', percentOf(analysis.honoraires_sipa, purchasePrice) ?? '', ''],
+    ['Acquisition', 'Honoraires transaction SIPA Group', analysis.honoraires_transaction_sipa_group ?? '', percentOf(analysis.honoraires_transaction_sipa_group, analysis.prix_bien) ?? '', ''],
     ['Acquisition', 'Frais de dossier bancaire', analysis.frais_dossier_bancaire ?? '', '', ''],
     ['Acquisition', 'Prix total', '', '', prixTotal ?? ''],
     ['Financement', 'Fonds propres', analysis.fonds_propres ?? '', '', ''],
-    ['Financement', 'Target benefice SIPA fonds propres', analysis.target_benefice_sipa_fonds_propres ?? '', analysis.target_benefice_sipa_fonds_propres_pct ?? percentOf(analysis.target_benefice_sipa_fonds_propres, analysis.fonds_propres) ?? '', ''],
-    ['Financement', 'Hypotheque', analysis.hypotheque ?? '', percentOf(analysis.hypotheque, prixTotal) ?? '', ''],
+    ['Financement', 'Target benefice SIPA fonds propres', analysis.target_benefice_sipa_fonds_propres ?? '', analysis.target_benefice_sipa_fonds_propres_pct ?? percentOf(analysis.target_benefice_sipa_fonds_propres, getPurchaseEquity(analysis)) ?? '', ''],
+    ['Financement', 'Hypotheque', analysis.hypotheque ?? '', percentOf(analysis.hypotheque, purchaseSubtotal) ?? '', ''],
     ['Exploitation', 'Revenus locatifs hors charges', analysis.revenus_locatifs ?? '', '', ''],
     ['Exploitation', 'Taux de rendement brut', '', '', analysis.rendement_brut ?? ''],
     ['Exploitation', 'Charges operationnelles', analysis.charges_operationnelles ?? '', '', ''],
@@ -1323,15 +1331,43 @@ function normalizeAnalysisDraft(draft, property) {
   if (!draft) return null;
 
   const purchasePrice = getPurchasePrice(draft);
+  const transactionFees = Number(draft.honoraires_sipa || 0);
+  const construction = Number(draft.construction || 0);
+  const purchaseSubtotal = purchasePrice + transactionFees + construction;
+  const hypotheque = Number(draft.hypotheque || 0);
+  const fondsPropresAchat = purchaseSubtotal - hypotheque;
+  const targetPct = hasFinancialValue(draft.target_benefice_sipa_fonds_propres_pct)
+    ? Number(draft.target_benefice_sipa_fonds_propres_pct || 0)
+    : percentOf(draft.target_benefice_sipa_fonds_propres, fondsPropresAchat);
+  const targetBenefice = targetPct != null
+    ? Math.round(fondsPropresAchat * targetPct / 100)
+    : Number(draft.target_benefice_sipa_fonds_propres || 0);
+  const prixBien = hasFinancialValue(draft.prix_achat)
+    ? Math.round(purchaseSubtotal + targetBenefice)
+    : Number(draft.prix_bien || 0);
+  const transactionGroupPct = hasFinancialValue(draft.honoraires_transaction_sipa_group_pct)
+    ? Number(draft.honoraires_transaction_sipa_group_pct || 0)
+    : percentOf(draft.honoraires_transaction_sipa_group, prixBien);
+  const honorairesTransactionGroup = transactionGroupPct != null
+    ? Math.round(prixBien * transactionGroupPct / 100)
+    : Number(draft.honoraires_transaction_sipa_group || 0);
   const prixTotal = Math.round(
-    purchasePrice +
+    prixBien +
     Number(draft.versement_initial || 0) +
     Number(draft.amortissement_5_ans || 0) +
-    Number(draft.honoraires_sipa || 0) +
+    honorairesTransactionGroup +
     Number(draft.frais_dossier_bancaire || 0)
   );
-  const calc = calculateAnalysis({
+  const normalizedDraft = {
     ...draft,
+    prix_bien: prixBien,
+    fonds_propres_achat: Math.round(fondsPropresAchat),
+    target_benefice_sipa_fonds_propres: targetBenefice,
+    honoraires_transaction_sipa_group: honorairesTransactionGroup,
+    fonds_propres: Math.round(prixTotal - hypotheque),
+  };
+  const calc = calculateAnalysis({
+    ...normalizedDraft,
     ville: property?.ville,
     canton: property?.canton,
     surface: property?.surface,
@@ -1339,7 +1375,7 @@ function normalizeAnalysisDraft(draft, property) {
   });
 
   return {
-    ...draft,
+    ...normalizedDraft,
     prix_total: prixTotal,
     rendement_brut: calc.rendement_brut,
     revenu_net: calc.revenu_net,
@@ -1365,8 +1401,11 @@ function buildTechnicalAnalysisPayload(analysis) {
     versement_initial: analysis.versement_initial,
     amortissement_5_ans: analysis.amortissement_5_ans,
     honoraires_sipa: analysis.honoraires_sipa,
+    construction: analysis.construction,
+    honoraires_transaction_sipa_group: analysis.honoraires_transaction_sipa_group,
     frais_dossier_bancaire: analysis.frais_dossier_bancaire,
     fonds_propres: analysis.fonds_propres,
+    fonds_propres_achat: analysis.fonds_propres_achat,
     target_benefice_sipa_fonds_propres: analysis.target_benefice_sipa_fonds_propres,
     target_benefice_sipa_fonds_propres_pct: analysis.target_benefice_sipa_fonds_propres_pct,
     hypotheque: analysis.hypotheque,
@@ -1455,6 +1494,19 @@ function getPurchasePrice(analysis) {
   return analysis?.prix_achat !== null && analysis?.prix_achat !== undefined && analysis?.prix_achat !== ''
     ? Number(analysis.prix_achat || 0)
     : Number(analysis?.prix_bien || 0);
+}
+
+function getPurchaseSubtotal(analysis) {
+  return (
+    getPurchasePrice(analysis) +
+    Number(analysis?.honoraires_sipa || 0) +
+    Number(analysis?.construction || 0)
+  );
+}
+
+function getPurchaseEquity(analysis) {
+  if (hasFinancialValue(analysis?.fonds_propres_achat)) return Number(analysis.fonds_propres_achat || 0);
+  return getPurchaseSubtotal(analysis) - Number(analysis?.hypotheque || 0);
 }
 
 function normalizeRole(role) {
