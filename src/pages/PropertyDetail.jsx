@@ -464,6 +464,53 @@ function AnalysisSection({ title, children, defaultOpen = true, collapsible = tr
   );
 }
 
+function InlineCollapsibleSection({
+  title,
+  description,
+  rows,
+  filename,
+  actions,
+  children,
+  collapsible = false,
+}) {
+  const [open, setOpen] = useState(true);
+  const collapseAction = collapsible ? (
+    <CollapsibleTrigger asChild>
+      <Button type="button" variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-[11px]">
+        {open ? 'Réduire' : 'Déplier'}
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </Button>
+    </CollapsibleTrigger>
+  ) : null;
+
+  const content = (
+    <section className="bg-card rounded-xl border border-border p-4">
+      <SectionHeading
+        title={title}
+        description={description}
+        rows={rows}
+        filename={filename}
+        className="mb-5"
+        actions={actions}
+        collapseAction={collapseAction}
+      />
+      {collapsible ? (
+        <CollapsibleContent>
+          {children}
+        </CollapsibleContent>
+      ) : children}
+    </section>
+  );
+
+  if (!collapsible) return content;
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      {content}
+    </Collapsible>
+  );
+}
+
 function TechnicalAnalysisSnapshot({
   property,
   analysis,
@@ -494,11 +541,7 @@ function TechnicalAnalysisSnapshot({
   const exportBaseName = `${propertySafeName(property?.titre || property?.adresse || property?.ville || 'bien')}-${analysis.created_date ? moment(analysis.created_date).format('YYYY-MM-DD') : 'analyse'}`;
   const financialExportRows = buildFinancialExportRows(analysis, customFields, prixTotal);
   const bankExportRows = buildBankExportRows(analysis);
-  const renderSection = (title, content, defaultOpen = true) => (
-    <AnalysisSection title={title} defaultOpen={defaultOpen} collapsible={canCollapseSections}>
-      {content}
-    </AnalysisSection>
-  );
+  const renderSection = (_title, content) => content;
   const updateDraftField = (key, value) => {
     if (!canEdit) return;
     setDraft((current) => ({ ...(current || analysis), [key]: value }));
@@ -598,16 +641,14 @@ function TechnicalAnalysisSnapshot({
 
   return (
     <div className="space-y-6">
-      {!publicOnly && renderSection('Tableau financier technique', (
-      <section className="bg-card rounded-xl border border-border p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
-          <SectionHeading
-            title="Vue technique"
-            description="Classeur technique de l'analyse selectionnee."
-            rows={financialExportRows}
-            filename={`${exportBaseName}-vue-technique`}
-          />
-          {canEditAnalysis && (
+      {!publicOnly && (
+      <InlineCollapsibleSection
+        title="Vue technique"
+        description="Classeur technique de l'analyse selectionnee."
+        rows={financialExportRows}
+        filename={`${exportBaseName}-vue-technique`}
+        collapsible={canCollapseSections}
+        actions={canEditAnalysis && (
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant="outline" className="gap-2" onClick={onSave} disabled={isSaving}>
                 <Pencil className="h-3.5 w-3.5" />
@@ -620,7 +661,7 @@ function TechnicalAnalysisSnapshot({
               </Link>
             </div>
           )}
-        </div>
+      >
 
         <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
           <table className="w-full min-w-[1040px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
@@ -680,17 +721,16 @@ function TechnicalAnalysisSnapshot({
             </tbody>
           </table>
         </div>
-      </section>
-      ))}
+      </InlineCollapsibleSection>
+      )}
 
       {!publicOnly && renderSection('Hypothèses bancaires techniques', (
-      <section className="bg-card rounded-xl border border-border p-4">
-        <SectionHeading
-          title="Hypotheses bancaires techniques"
-          rows={bankExportRows}
-          filename={`${exportBaseName}-hypotheses-bancaires`}
-          className="mb-5"
-        />
+      <InlineCollapsibleSection
+        title="Hypotheses bancaires techniques"
+        rows={bankExportRows}
+        filename={`${exportBaseName}-hypotheses-bancaires`}
+        collapsible={canCollapseSections}
+      >
         <div className="overflow-x-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
           <table className="w-full min-w-[860px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
             <thead>
@@ -716,7 +756,7 @@ function TechnicalAnalysisSnapshot({
             </tbody>
           </table>
         </div>
-      </section>
+      </InlineCollapsibleSection>
       ))}
 
       {analysis.sipa_data && analysis.sipa_data.filter((entry) => !entry._custom).length > 0 && renderSection('Investissement SIPA', (
@@ -725,6 +765,7 @@ function TechnicalAnalysisSnapshot({
           editable={canEdit}
           onCellChange={updateSipaImportedCell}
           exportBaseName={exportBaseName}
+          collapsible={canCollapseSections}
         />
       ))}
 
@@ -736,6 +777,7 @@ function TechnicalAnalysisSnapshot({
         onCellChange={(rowIndex, colIndex, value) => updateProjectionCell('operating_projection', rowIndex, colIndex, value)}
         exportBaseName={exportBaseName}
         exportSlug="projection-exploitation"
+        collapsible={canCollapseSections}
       />
       ))}
 
@@ -748,6 +790,7 @@ function TechnicalAnalysisSnapshot({
         onAssumptionChange={(key, value) => updateProjectionAssumption('capital_projection', key, value)}
         exportBaseName={exportBaseName}
         exportSlug="dette-valeur-rendement"
+        collapsible={canCollapseSections}
       />
       ))}
     </div>
@@ -789,14 +832,18 @@ function SipaImportedDataTable({ analysis }) {
   );
 }
 
-function SectionHeading({ title, description, rows, filename, className = '' }) {
+function SectionHeading({ title, description, rows, filename, className = '', actions, collapseAction }) {
   return (
     <div className={`flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between ${className}`}>
       <div>
         <h3 className="font-heading font-semibold">{title}</h3>
         {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
       </div>
-      <TableExportButtons rows={rows} filename={filename} />
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+        {actions}
+        <TableExportButtons rows={rows} filename={filename} />
+        {collapseAction}
+      </div>
     </div>
   );
 }
@@ -830,20 +877,19 @@ function TableExportButtons({ rows, filename }) {
   );
 }
 
-function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBaseName }) {
+function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBaseName, collapsible = false }) {
   const rows = analysis.sipa_data.filter((entry) => !entry._custom);
   const maxValues = Math.max(1, ...rows.map((entry) => entry.values?.length || 0));
   const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, maxValues + 1);
   const exportRows = buildSipaExportRows(rows, maxValues);
 
   return (
-    <section className="bg-card rounded-xl border border-border p-4">
-      <SectionHeading
-        title="Investissement SIPA"
-        rows={exportRows}
-        filename={`${exportBaseName}-investissement-sipa`}
-        className="mb-5"
-      />
+    <InlineCollapsibleSection
+      title="Investissement SIPA"
+      rows={exportRows}
+      filename={`${exportBaseName}-investissement-sipa`}
+      collapsible={collapsible}
+    >
       <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
         <table className="w-full min-w-[760px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
           <thead>
@@ -902,24 +948,23 @@ function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBase
           </tbody>
         </table>
       </div>
-    </section>
+    </InlineCollapsibleSection>
   );
 }
 
-function ExcelProjectionSheet({ title, projection, editable, onCellChange, onAssumptionChange, exportBaseName, exportSlug }) {
+function ExcelProjectionSheet({ title, projection, editable, onCellChange, onAssumptionChange, exportBaseName, exportSlug, collapsible = false }) {
   if (!projection?.rows?.length) return null;
   const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'].slice(0, projection.columns.length + 1);
   const hasAssumptions = projection.assumptions && Object.keys(projection.assumptions).length > 0;
   const exportRows = buildProjectionExportRows(projection);
 
   return (
-    <section className="bg-card rounded-xl border border-border p-4">
-      <SectionHeading
-        title={title}
-        rows={exportRows}
-        filename={`${exportBaseName}-${exportSlug || propertySafeName(title)}`}
-        className="mb-5"
-      />
+    <InlineCollapsibleSection
+      title={title}
+      rows={exportRows}
+      filename={`${exportBaseName}-${exportSlug || propertySafeName(title)}`}
+      collapsible={collapsible}
+    >
       <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
         <table className="w-full min-w-[860px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
           <thead>
@@ -980,7 +1025,7 @@ function ExcelProjectionSheet({ title, projection, editable, onCellChange, onAss
           </tbody>
         </table>
       </div>
-    </section>
+    </InlineCollapsibleSection>
   );
 }
 
