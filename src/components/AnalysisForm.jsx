@@ -829,7 +829,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
             <h3 className="font-heading font-semibold mb-5">TABLEAU FINANCIER</h3>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
@@ -1001,7 +1001,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                     />
                   </td>
                   <td className="py-2 pl-4">
-                    <div className="flex items-center gap-2 justify-end">
+                    <div className="flex flex-wrap items-center gap-2 justify-end">
                       <div className="relative w-28">
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">CHF</span>
                         <input
@@ -1038,7 +1038,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           )
                         }
                       >
-                        <SelectTrigger className="h-8 w-44 bg-background text-xs">
+                        <SelectTrigger className="h-8 w-36 bg-background text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1055,7 +1055,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           )
                         }
                       >
-                        <SelectTrigger className="h-8 w-40 bg-background text-xs">
+                        <SelectTrigger className="h-8 w-36 bg-background text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1072,7 +1072,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           )
                         }
                       >
-                        <SelectTrigger className="h-8 w-36 bg-background text-xs">
+                        <SelectTrigger className="h-8 w-32 bg-background text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1106,7 +1106,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                   />
                 </td>
                 <td className="py-2 pl-4">
-                  <div className="flex items-center gap-2 justify-end">
+                  <div className="flex flex-wrap items-center gap-2 justify-end">
                     <div className="relative w-32">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">CHF</span>
                       <input
@@ -1140,7 +1140,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         setNewCustomFieldBaseField((prev) => (prev === newCustomFieldInsertAfter ? value : prev));
                       }}
                     >
-                      <SelectTrigger className="h-10 w-48 bg-background text-xs">
+                      <SelectTrigger className="h-10 w-40 bg-background text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1150,7 +1150,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                       </SelectContent>
                     </Select>
                     <Select value={newCustomFieldEffect} onValueChange={setNewCustomFieldEffect}>
-                      <SelectTrigger className="h-10 w-44 bg-background text-xs">
+                      <SelectTrigger className="h-10 w-40 bg-background text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1160,7 +1160,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                       </SelectContent>
                     </Select>
                     <Select value={newCustomFieldBaseField} onValueChange={setNewCustomFieldBaseField}>
-                      <SelectTrigger className="h-10 w-40 bg-background text-xs">
+                      <SelectTrigger className="h-10 w-36 bg-background text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
