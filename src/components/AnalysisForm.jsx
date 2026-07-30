@@ -72,7 +72,7 @@ function getAcquisitionTotal(data, customFields = []) {
 }
 
 function applyCustomFinancialTotals(data, customFields, financingDriver = 'hypotheque') {
-  const next = { ...data, financial_custom_fields: toPersistedFinancialCustomFields(customFields) };
+  const next = { ...data, financial_custom_fields: toPersistedFinancialCustomFields(customFields, data) };
   const prixTotal = getAcquisitionTotal(next, customFields);
   if (financingDriver === 'fonds_propres' && hasFinancialValue(next.fonds_propres_pct)) {
     next.fonds_propres = amountFromPct(prixTotal, next.fonds_propres_pct);
@@ -490,7 +490,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     const baseSipaData = Array.isArray(form.sipa_data)
       ? form.sipa_data.filter((entry) => !entry._custom)
       : [];
-    const financialCustomFields = toPersistedFinancialCustomFields(customFinancialFields);
+    const financialCustomFields = toPersistedFinancialCustomFields(customFinancialFields, calculatedForm);
 
     const calculatedCalc = calculateAnalysis({
       ...calculatedForm,
@@ -617,15 +617,17 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const addCustomFinancialField = () => {
     const hasAmount = newCustomFieldAmount !== '' && newCustomFieldAmount !== null && newCustomFieldAmount !== undefined;
     const hasPct = newCustomFieldPct !== '' && newCustomFieldPct !== null && newCustomFieldPct !== undefined;
-    if (!newCustomFieldName.trim() || (!hasAmount && !hasPct)) return;
+    const amount = hasAmount ? Number(newCustomFieldAmount) : null;
+    const pct = hasPct ? parseFloat(newCustomFieldPct) : null;
+    if (!newCustomFieldName.trim() || (!Number.isFinite(amount) && !Number.isFinite(pct))) return;
 
     setCustomFinancialFields((prev) => [
       ...prev,
       {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
         name: newCustomFieldName.trim(),
-        amount: hasAmount ? Number(newCustomFieldAmount) : null,
-        pct: hasPct ? parseFloat(newCustomFieldPct) : null,
+        amount: Number.isFinite(amount) ? amount : null,
+        pct: Number.isFinite(pct) ? pct : null,
         insertAfter: newCustomFieldInsertAfter,
         position: prev.length,
       },
@@ -928,7 +930,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">CHF</span>
                         <input
                           type="number"
-                          value={cf.amount}
+                          value={cf.amount ?? ''}
                           onChange={(e) =>
                             setCustomFinancialFields((prev) =>
                               prev.map((f, j) => (j === i ? { ...f, amount: e.target.value === '' ? null : Number(e.target.value) || 0 } : f))
@@ -1463,7 +1465,7 @@ function TechnicalAnalysisView({
                   <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                     <input
                       type="text"
-                      value={cf.name}
+                      value={cf.name || ''}
                       onChange={(event) =>
                         setCustomFinancialFields((prev) =>
                           prev.map((item, itemIndex) => (itemIndex === index ? { ...item, name: event.target.value } : item))
@@ -1474,7 +1476,7 @@ function TechnicalAnalysisView({
                   </ExcelCell>
                   <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
                     <ExcelNumberInput
-                      value={cf.amount}
+                      value={cf.amount ?? ''}
                       onChange={(value) =>
                         setCustomFinancialFields((prev) =>
                           prev.map((item, itemIndex) => (itemIndex === index ? { ...item, amount: value } : item))

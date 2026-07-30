@@ -577,7 +577,7 @@ function TechnicalAnalysisSnapshot({
           ? { ...field, [valueType === 'pct' ? 'pct' : 'amount']: value }
           : field
       ));
-      return { ...base, financial_custom_fields: toPersistedFinancialCustomFields(nextFields) };
+      return { ...base, financial_custom_fields: toPersistedFinancialCustomFields(nextFields, base) };
     });
   };
   const updateSipaImportedCell = (entryIndex, valueIndex, field, value) => {
@@ -1417,7 +1417,10 @@ function buildTechnicalAnalysisPayload(analysis) {
   return {
     statut: analysis.statut,
     sipa_data: analysis.sipa_data || null,
-    financial_custom_fields: toPersistedFinancialCustomFields(normalizeFinancialCustomFields(analysis.financial_custom_fields, analysis.sipa_data)),
+    financial_custom_fields: toPersistedFinancialCustomFields(
+      normalizeFinancialCustomFields(analysis.financial_custom_fields, analysis.sipa_data),
+      analysis
+    ),
     prix_bien: analysis.prix_bien,
     prix_achat: analysis.prix_achat,
     versement_initial: analysis.versement_initial,
