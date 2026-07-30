@@ -1060,14 +1060,14 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <details className="group rounded-md border border-border/60 bg-muted/20">
-                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs text-muted-foreground">
+                      <div className="rounded-md border border-border/60 bg-muted/20 p-2">
+                        <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
                           <span>Regles de calcul</span>
                           <span className="truncate text-right">
                             {getCustomEffectLabel(cf.calculationEffect)} - {getCustomFormulaLabel(cf.calculationFormula)}
                           </span>
-                        </summary>
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 border-t border-border/60 p-2">
+                        </div>
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                           <Select
                             value={cf.calculationEffect || DEFAULT_CUSTOM_EFFECT}
                             onValueChange={(value) =>
@@ -1158,7 +1158,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
                           </div>
                         </div>
-                      </details>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -1215,14 +1215,14 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    <details className="rounded-md border border-border/60 bg-muted/20">
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs text-muted-foreground">
+                    <div className="rounded-md border border-border/60 bg-muted/20 p-2">
+                      <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
                         <span>Regles de calcul</span>
                         <span className="truncate text-right">
                           {getCustomEffectLabel(newCustomFieldEffect)} - {getCustomFormulaLabel(newCustomFieldFormula)}
                         </span>
-                      </summary>
-                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 border-t border-border/60 p-2">
+                      </div>
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                         <Select value={newCustomFieldEffect} onValueChange={setNewCustomFieldEffect}>
                           <SelectTrigger className="h-9 bg-background text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -1280,7 +1280,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                         </div>
                       </div>
-                    </details>
+                    </div>
                   </div>
                 </td>
               </tr>
