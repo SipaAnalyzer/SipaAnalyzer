@@ -718,8 +718,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     const hasPct = newCustomFieldPct !== '' && newCustomFieldPct !== null && newCustomFieldPct !== undefined;
     const amount = hasAmount ? Number(newCustomFieldAmount) : null;
     const pct = hasPct ? parseFloat(newCustomFieldPct) : null;
-    const hasFormula = newCustomFieldFormula && newCustomFieldFormula !== DEFAULT_CUSTOM_FORMULA;
-    if (!newCustomFieldName.trim() || (!hasFormula && !Number.isFinite(amount) && !Number.isFinite(pct))) return;
+    if (!newCustomFieldName.trim()) return;
 
     setCustomFinancialFields((prev) => [
       ...prev,
@@ -1318,13 +1317,15 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           const isTransactionFee = isSipaTransactionFeeEntry(entry, entries, index);
                           const valueItems = (entry.values || [])
                             .map((value, valueIndex) => ({ value, valueIndex }))
-                            .filter(({ value }) => value?.type !== 'pct');
+                            .filter(({ value }) => value?.type !== 'pct' && (value?.type === 'text' || value?.type === 'amount'));
                           const pctItems = (entry.values || [])
                             .map((value, valueIndex) => ({ value, valueIndex }))
                             .filter(({ value }) => value?.type === 'pct');
-                          const editableValueItems = valueItems.length > 0
+                          const amountItems = valueItems.filter(({ value }) => value?.type === 'amount');
+                          const textItems = valueItems.filter(({ value }) => value?.type === 'text');
+                          const editableValueItems = amountItems.length > 0
                             ? valueItems
-                            : [{ value: { type: 'amount', value: null }, valueIndex: SIPA_NEW_AMOUNT_VALUE_INDEX }];
+                            : [{ value: { type: 'amount', value: null }, valueIndex: SIPA_NEW_AMOUNT_VALUE_INDEX }, ...textItems];
                           const editablePctItems = pctItems.length > 0
                             ? pctItems
                             : [{ value: { type: 'pct', value: null }, valueIndex: SIPA_NEW_PCT_VALUE_INDEX }];

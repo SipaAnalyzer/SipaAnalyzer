@@ -402,11 +402,7 @@ export function toPersistedFinancialCustomFields(fields = [], data = {}) {
         position: Number.isFinite(Number(field.position)) ? Number(field.position) : index,
       };
     })
-    .filter((field) => field.label && (
-      toNumberOrNull(field.amount) !== null ||
-      toNumberOrNull(field.pct) !== null ||
-      normalizeFormula(field.calculationFormula) !== DEFAULT_CUSTOM_FORMULA
-    ));
+    .filter((field) => field.label);
 }
 
 export function getCustomFieldsAfter(fields = [], anchorKey) {
