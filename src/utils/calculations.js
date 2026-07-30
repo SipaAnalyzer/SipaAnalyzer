@@ -3,6 +3,7 @@ import {
   FINANCIAL_CUSTOM_REVENUE_ANCHORS,
   FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS,
   getFinancialCustomFieldsTotal,
+  getFinancialCustomFieldsTotalByGroup,
 } from './financialCustomFields';
 
 const LOCATION_SCORES = {
@@ -120,8 +121,12 @@ export function calculateAnalysis(data) {
   const fondsPropres = Number(data.fonds_propres || 0);
   const impot = Number(data.impot || 0);
   const customRevenue = getFinancialCustomFieldsTotal(data.financial_custom_fields, data, FINANCIAL_CUSTOM_REVENUE_ANCHORS);
-  const customOperatingExpenses = getFinancialCustomFieldsTotal(data.financial_custom_fields, data, FINANCIAL_CUSTOM_OPERATING_EXPENSE_ANCHORS);
-  const customTaxExpenses = getFinancialCustomFieldsTotal(data.financial_custom_fields, data, FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS);
+  const customOperatingExpenses =
+    getFinancialCustomFieldsTotal(data.financial_custom_fields, data, FINANCIAL_CUSTOM_OPERATING_EXPENSE_ANCHORS) +
+    getFinancialCustomFieldsTotalByGroup(data.financial_custom_fields, data, 'operating_charge');
+  const customTaxExpenses =
+    getFinancialCustomFieldsTotal(data.financial_custom_fields, data, FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS) +
+    getFinancialCustomFieldsTotalByGroup(data.financial_custom_fields, data, 'tax_line');
   const adjustedRevenusLocatifs = revenusLocatifs + customRevenue;
 
   const revenuNet = adjustedRevenusLocatifs - chargesOperationnelles - interetsHypothecaires - gestion - customOperatingExpenses;

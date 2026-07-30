@@ -23,6 +23,7 @@ import { formatSipaLabel, formatSipaValue, getDisplayableSipaRows, getSipaDispla
 import {
   getFinancialCustomFieldAmount,
   getFinancialCustomFieldsTotal,
+  getFinancialCustomFieldsTotalByGroup,
   normalizeFinancialCustomFields,
   toPersistedFinancialCustomFields,
 } from '../utils/financialCustomFields';
@@ -1373,6 +1374,8 @@ function normalizeAnalysisDraft(draft, property) {
     fonds_propres_achat: Math.round(fondsPropresAchat),
   };
   const customFields = normalizeFinancialCustomFields(draft.financial_custom_fields, draft.sipa_data);
+  const customEquity = getFinancialCustomFieldsTotalByGroup(customFields, draftForCustomFields, 'equity');
+  const customMortgage = getFinancialCustomFieldsTotalByGroup(customFields, draftForCustomFields, 'mortgage');
   const prixTotal = Math.round(
     prixBien +
     Number(draft.versement_initial || 0) +
@@ -1381,13 +1384,15 @@ function normalizeAnalysisDraft(draft, property) {
     Number(draft.frais_dossier_bancaire || 0) +
     getFinancialCustomFieldsTotal(customFields, draftForCustomFields)
   );
+  const adjustedHypotheque = Math.max(0, Math.round(hypotheque + customMortgage - customEquity));
   const normalizedDraft = {
     ...draft,
     prix_bien: prixBien,
     fonds_propres_achat: Math.round(fondsPropresAchat),
     target_benefice_sipa_fonds_propres: targetBenefice,
     honoraires_transaction_sipa_group: honorairesTransactionGroup,
-    fonds_propres: Math.round(prixTotal - hypotheque),
+    hypotheque: adjustedHypotheque,
+    fonds_propres: Math.round(prixTotal - adjustedHypotheque),
   };
   const calc = calculateAnalysis({
     ...normalizedDraft,

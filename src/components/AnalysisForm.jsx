@@ -8,6 +8,7 @@ import {
   FINANCIAL_CUSTOM_EFFECTS,
   FINANCIAL_CUSTOM_FIELD_ANCHORS,
   getFinancialCustomFieldsTotal,
+  getFinancialCustomFieldsTotalByGroup,
   normalizeFinancialCustomFields,
   toPersistedFinancialCustomFields,
 } from '../utils/financialCustomFields';
@@ -76,13 +77,17 @@ function getAcquisitionTotal(data, customFields = []) {
 function applyCustomFinancialTotals(data, customFields, financingDriver = 'hypotheque') {
   const next = { ...data, financial_custom_fields: toPersistedFinancialCustomFields(customFields, data) };
   const prixTotal = getAcquisitionTotal(next, customFields);
+  const customEquity = getFinancialCustomFieldsTotalByGroup(customFields, next, 'equity');
+  const customMortgage = getFinancialCustomFieldsTotalByGroup(customFields, next, 'mortgage');
   if (financingDriver === 'fonds_propres' && hasFinancialValue(next.fonds_propres_pct)) {
-    next.fonds_propres = amountFromPct(prixTotal, next.fonds_propres_pct);
-    next.hypotheque = round2(prixTotal - toNumber(next.fonds_propres));
+    next.fonds_propres = round2(toNumber(amountFromPct(prixTotal, next.fonds_propres_pct)) + customEquity - customMortgage);
+    next.hypotheque = Math.max(0, round2(prixTotal - toNumber(next.fonds_propres)));
   } else {
+    next.hypotheque = Math.max(0, round2(toNumber(next.hypotheque) + customMortgage - customEquity));
     next.fonds_propres = round2(prixTotal - toNumber(next.hypotheque));
     next.fonds_propres_pct = pctFromAmount(prixTotal, next.fonds_propres);
   }
+  next.hypotheque_pct = pctFromAmount(prixTotal, next.hypotheque);
   next.prix_total = prixTotal;
   return next;
 }

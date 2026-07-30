@@ -64,6 +64,42 @@ export const FINANCIAL_CUSTOM_EFFECTS = [
     description: 'Diminue les charges et augmente le revenu net, le revenu distribue et les rendements.',
   },
   {
+    key: 'equity_increase',
+    label: 'Fonds propres en plus',
+    shortLabel: 'Augmente les FP',
+    description: 'Augmente les fonds propres et diminue la part financee par hypotheque.',
+  },
+  {
+    key: 'equity_decrease',
+    label: 'Fonds propres en moins',
+    shortLabel: 'Diminue les FP',
+    description: 'Diminue les fonds propres et augmente la part financee par hypotheque.',
+  },
+  {
+    key: 'mortgage_increase',
+    label: 'Hypotheque en plus',
+    shortLabel: "Augmente l'hypotheque",
+    description: "Augmente l'hypotheque et diminue les fonds propres.",
+  },
+  {
+    key: 'mortgage_decrease',
+    label: 'Hypotheque en moins',
+    shortLabel: "Diminue l'hypotheque",
+    description: "Diminue l'hypotheque et augmente les fonds propres.",
+  },
+  {
+    key: 'operating_charge_increase',
+    label: 'Charge operationnelle en plus',
+    shortLabel: 'Augmente les charges',
+    description: 'Augmente les charges operationnelles et diminue le revenu net.',
+  },
+  {
+    key: 'operating_charge_decrease',
+    label: 'Charge operationnelle en moins',
+    shortLabel: 'Diminue les charges',
+    description: 'Diminue les charges operationnelles et augmente le revenu net.',
+  },
+  {
     key: 'tax_expense',
     label: 'Impot / distribution',
     shortLabel: 'Deduit du distribue',
@@ -74,6 +110,18 @@ export const FINANCIAL_CUSTOM_EFFECTS = [
     label: "Reduction d'impot",
     shortLabel: 'Ajoute au distribue',
     description: 'Diminue les impots et augmente uniquement le revenu distribue.',
+  },
+  {
+    key: 'tax_increase',
+    label: 'Impot en plus',
+    shortLabel: "Augmente l'impot",
+    description: "Augmente l'impot et diminue le revenu distribue.",
+  },
+  {
+    key: 'tax_decrease',
+    label: 'Impot en moins',
+    shortLabel: "Diminue l'impot",
+    description: "Diminue l'impot et augmente le revenu distribue.",
   },
   {
     key: 'display_only',
@@ -121,8 +169,16 @@ const EFFECT_ANCHORS = {
   revenue_deduction: FINANCIAL_CUSTOM_REVENUE_ANCHORS,
   operating_expense: FINANCIAL_CUSTOM_OPERATING_EXPENSE_ANCHORS,
   operating_expense_credit: FINANCIAL_CUSTOM_OPERATING_EXPENSE_ANCHORS,
+  operating_charge_increase: FINANCIAL_CUSTOM_OPERATING_EXPENSE_ANCHORS,
+  operating_charge_decrease: FINANCIAL_CUSTOM_OPERATING_EXPENSE_ANCHORS,
   tax_expense: FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS,
   tax_credit: FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS,
+  tax_increase: FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS,
+  tax_decrease: FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS,
+  equity_increase: ['fonds_propres'],
+  equity_decrease: ['fonds_propres'],
+  mortgage_increase: ['hypotheque'],
+  mortgage_decrease: ['hypotheque'],
 };
 
 const EFFECT_GROUPS = {
@@ -132,8 +188,16 @@ const EFFECT_GROUPS = {
   revenue_deduction: 'revenue',
   operating_expense: 'operating_expense',
   operating_expense_credit: 'operating_expense',
+  operating_charge_increase: 'operating_charge',
+  operating_charge_decrease: 'operating_charge',
   tax_expense: 'tax_expense',
   tax_credit: 'tax_expense',
+  tax_increase: 'tax_line',
+  tax_decrease: 'tax_line',
+  equity_increase: 'equity',
+  equity_decrease: 'equity',
+  mortgage_increase: 'mortgage',
+  mortgage_decrease: 'mortgage',
 };
 
 const EFFECT_SIGNS = {
@@ -143,8 +207,16 @@ const EFFECT_SIGNS = {
   revenue_deduction: -1,
   operating_expense: 1,
   operating_expense_credit: -1,
+  operating_charge_increase: 1,
+  operating_charge_decrease: -1,
   tax_expense: 1,
   tax_credit: -1,
+  tax_increase: 1,
+  tax_decrease: -1,
+  equity_increase: 1,
+  equity_decrease: -1,
+  mortgage_increase: 1,
+  mortgage_decrease: -1,
   display_only: 0,
 };
 
@@ -289,6 +361,15 @@ export function getFinancialCustomFieldsTotal(fields = [], data = {}, anchors = 
       if (field.calculationEffect === 'display_only') return false;
       if (field.calculationEffect) return EFFECT_GROUPS[field.calculationEffect] === expectedEffectGroup;
       return acceptedAnchors.has(field.insertAfter || DEFAULT_INSERT_AFTER);
+    })
+    .reduce((total, field) => total + getSignedCustomFieldAmount(field, data), 0);
+}
+
+export function getFinancialCustomFieldsTotalByGroup(fields = [], data = {}, effectGroup) {
+  return normalizeFinancialCustomFields(fields)
+    .filter((field) => {
+      if (field.calculationEffect === 'display_only') return false;
+      return EFFECT_GROUPS[field.calculationEffect] === effectGroup;
     })
     .reduce((total, field) => total + getSignedCustomFieldAmount(field, data), 0);
 }
