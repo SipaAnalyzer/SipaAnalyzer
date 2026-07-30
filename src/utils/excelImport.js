@@ -93,22 +93,30 @@ export function syncSipaDataWithAnalysisFields(entries = [], analysis = {}) {
     const section = getSipaSection(entry, entries, index);
     const normalizedLabel = normalizeText(entry.label);
 
-    if (section === 'achat' && normalizedLabel === 'frais de transaction') {
+    if (isSipaTransactionFeeEntry(entry, entries, index)) {
       const purchasePrice = analysis.prix_achat ?? analysis.prix_bien;
       const fallbackPct = hasValue(analysis.honoraires_sipa) && hasValue(purchasePrice) && Number(purchasePrice) !== 0
         ? Math.round((Number(analysis.honoraires_sipa) / Number(purchasePrice)) * 10000) / 100
         : null;
+      const pct = hasValue(analysis.honoraires_sipa_pct) ? Number(analysis.honoraires_sipa_pct) : fallbackPct;
+      const amount = hasValue(pct) && hasValue(purchasePrice)
+        ? Math.round((Number(purchasePrice) * Number(pct)) / 100)
+        : analysis.honoraires_sipa;
       return {
         ...entry,
         values: buildSipaFinancialValues(entry, {
-          amount: analysis.honoraires_sipa,
-          pct: hasValue(analysis.honoraires_sipa_pct) ? analysis.honoraires_sipa_pct : fallbackPct,
+          amount,
+          pct,
         }),
       };
     }
 
     return entry;
   });
+}
+
+export function isSipaTransactionFeeEntry(entry, entries = [], index = 0) {
+  return getSipaSection(entry, entries, index) === 'achat' && normalizeText(entry?.label) === 'frais de transaction';
 }
 
 function buildSipaFinancialValues(entry, { amount, pct }) {

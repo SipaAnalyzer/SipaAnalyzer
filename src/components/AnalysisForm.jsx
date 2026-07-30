@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent, WORKFLOW_STATUSES } from '../utils/calculations';
-import { extractAnalysisFieldsFromExcel, formatSipaLabel, formatSipaValue, getSipaDisplayGroups, getSipaDisplayValues, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
+import { extractAnalysisFieldsFromExcel, formatSipaLabel, formatSipaValue, getSipaDisplayGroups, getSipaDisplayValues, isSipaTransactionFeeEntry, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
 import {
   FINANCIAL_CUSTOM_FIELD_ANCHORS,
   getFinancialCustomFieldsTotal,
@@ -1085,22 +1085,39 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                       <tbody className="divide-y divide-border/50">
                         {group.rows.map(({ entry, index, entries }) => {
                           const display = getSipaDisplayValues(entry, entries, index);
+                          const isTransactionFee = isSipaTransactionFeeEntry(entry, entries, index);
                           return (
                             <tr key={index}>
                               <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">{formatSipaLabel(entry, entries, index)}</td>
                               <td className="py-2 pl-4 text-sm">
-                                <div className="flex flex-wrap gap-2">
-                                  {display.values.map((v, j) => (
-                                    <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
-                                  ))}
-                                </div>
+                                {isTransactionFee ? (
+                                  <InputField value={form.honoraires_sipa} onChange={handlers.honoraires.amount} prefix="CHF" />
+                                ) : (
+                                  <div className="flex flex-wrap gap-2">
+                                    {display.values.map((v, j) => (
+                                      <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
+                                    ))}
+                                  </div>
+                                )}
                               </td>
                               <td className="py-2 pl-4 text-sm text-right">
-                                <div className="flex flex-wrap justify-end gap-2">
-                                  {display.percentages.map((v, j) => (
-                                    <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
-                                  ))}
-                                </div>
+                                {isTransactionFee ? (
+                                  <div className="relative ml-auto w-24">
+                                    <Input
+                                      type="number"
+                                      value={form.honoraires_sipa_pct ?? ''}
+                                      onChange={(event) => handlers.honoraires.pct(event.target.value === '' ? null : parseFloat(event.target.value) || 0)}
+                                      className="bg-background border-border pr-8 text-right"
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-wrap justify-end gap-2">
+                                    {display.percentages.map((v, j) => (
+                                      <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
+                                    ))}
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           );
@@ -1618,6 +1635,10 @@ function TechnicalAnalysisView({
         <ExcelSipaInvestmentSheet
           sipaData={syncedSipaData}
           onChange={(sipaData) => setForm((prev) => ({ ...prev, sipa_data: sipaData }))}
+          transactionFeeAmount={form.honoraires_sipa}
+          transactionFeePct={form.honoraires_sipa_pct}
+          onTransactionFeeAmount={handlers.honoraires.amount}
+          onTransactionFeePct={handlers.honoraires.pct}
         />
       )}
 
@@ -1757,7 +1778,7 @@ function ExcelBankRow({ row, title, form, set, prefix, saronRate }) {
   );
 }
 
-function ExcelSipaInvestmentSheet({ sipaData, onChange }) {
+function ExcelSipaInvestmentSheet({ sipaData, onChange, transactionFeeAmount, transactionFeePct, onTransactionFeeAmount, onTransactionFeePct }) {
   const rows = sipaData.filter((entry) => !entry._custom);
   const maxValues = Math.max(1, ...rows.map((entry) => entry.values?.length || 0));
   const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, maxValues + 1);
@@ -1812,6 +1833,17 @@ function ExcelSipaInvestmentSheet({ sipaData, onChange }) {
                 {Array.from({ length: maxValues }, (_, valueIndex) => {
                   const value = entry.values?.[valueIndex];
                   const isNumeric = value?.type === 'amount' || value?.type === 'pct' || typeof value?.value === 'number';
+                  const isTransactionFee = isSipaTransactionFeeEntry(entry, rows, rowIndex);
+                  const transactionValue = value?.type === 'amount'
+                    ? transactionFeeAmount
+                    : value?.type === 'pct'
+                      ? transactionFeePct
+                      : value?.value;
+                  const onTransactionChange = value?.type === 'amount'
+                    ? onTransactionFeeAmount
+                    : value?.type === 'pct'
+                      ? onTransactionFeePct
+                      : null;
                   return (
                     <ExcelCell
                       key={valueIndex}
@@ -1820,7 +1852,16 @@ function ExcelSipaInvestmentSheet({ sipaData, onChange }) {
                     >
                       {value ? (
                         isNumeric ? (
-                          <ExcelNumberInput value={value.value} onChange={(next) => updateCell(rowIndex, valueIndex, 'value', next)} />
+                          <ExcelNumberInput
+                            value={isTransactionFee ? transactionValue : value.value}
+                            onChange={(next) => {
+                              if (isTransactionFee && onTransactionChange) {
+                                onTransactionChange(next);
+                              } else {
+                                updateCell(rowIndex, valueIndex, 'value', next);
+                              }
+                            }}
+                          />
                         ) : (
                           <input
                             type="text"
