@@ -23,6 +23,11 @@ export const FINANCIAL_CUSTOM_FIELD_ANCHORS = [
   { key: 'revenu_distribue_fonds_propres', label: 'Revenu distribue sur fonds propres' },
 ];
 
+export const FINANCIAL_CUSTOM_OPTIONAL_FIELD_ANCHORS = [
+  { key: 'none', label: 'Sans' },
+  ...FINANCIAL_CUSTOM_FIELD_ANCHORS,
+];
+
 const DEFAULT_INSERT_AFTER = 'prix_total';
 const VALID_INSERT_AFTER_KEYS = new Set(FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => anchor.key));
 
@@ -125,8 +130,8 @@ export const FINANCIAL_CUSTOM_EFFECTS = [
   },
   {
     key: 'display_only',
-    label: 'Information seule',
-    shortLabel: 'Aucun calcul',
+    label: 'Sans',
+    shortLabel: 'Sans',
     description: 'Affiche la ligne sans modifier les resultats financiers.',
   },
 ];
@@ -135,6 +140,12 @@ export const DEFAULT_CUSTOM_EFFECT = 'acquisition_cost';
 const VALID_EFFECT_KEYS = new Set(FINANCIAL_CUSTOM_EFFECTS.map((effect) => effect.key));
 
 export const FINANCIAL_CUSTOM_FORMULAS = [
+  {
+    key: 'none',
+    label: 'Sans',
+    shortLabel: 'Sans',
+    description: 'Aucune formule automatique. Seul le montant saisi est utilise.',
+  },
   {
     key: 'manual_or_pct',
     label: 'Montant ou % simple',
@@ -299,7 +310,10 @@ const inferEffectFromAnchor = (anchorKey) => {
   return match?.[0] || DEFAULT_CUSTOM_EFFECT;
 };
 
-const normalizeBaseField = (value, fallback) => normalizeInsertAfter(value || fallback);
+const normalizeBaseField = (value, fallback) => {
+  if (value === 'none') return 'none';
+  return normalizeInsertAfter(value || fallback);
+};
 
 const getEffectForAnchors = (anchors = FINANCIAL_CUSTOM_ACQUISITION_ANCHORS) => {
   const anchorSet = new Set(anchors);
@@ -403,6 +417,7 @@ export function getCustomFieldsAfter(fields = [], anchorKey) {
 
 export function getFinancialCustomFieldBase(field, data = {}) {
   const key = normalizeBaseField(field?.baseField, field?.insertAfter);
+  if (key === 'none') return 0;
   if (key === 'prix_achat') return toNumberOrNull(data.prix_achat) ?? toNumberOrNull(data.prix_bien) ?? 0;
   if (key === 'prix_total') return toNumberOrNull(data.prix_total) ?? 0;
   if (key === 'fonds_propres_achat') return toNumberOrNull(data.fonds_propres_achat) ?? 0;
@@ -417,6 +432,7 @@ export function getFinancialCustomFieldBase(field, data = {}) {
 export function getFinancialCustomFieldAmount(field, data = {}) {
   const amount = toNumberOrNull(field?.amount);
   const formula = normalizeFormula(field?.calculationFormula);
+  if (formula === 'none') return amount;
   if (amount !== null && formula === DEFAULT_CUSTOM_FORMULA) return amount;
 
   const pct = toNumberOrNull(field?.pct);
