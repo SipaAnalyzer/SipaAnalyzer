@@ -124,7 +124,7 @@ function recalculateFinancialState(data, { financingDriver = 'hypotheque', sourc
   const purchaseSubtotal = getPurchaseSubtotal(next);
 
   if (preferAmounts && hasFinancialValue(next.hypotheque)) {
-    next.hypotheque_pct = pctFromAmount(purchaseSubtotal, next.hypotheque);
+    // Keep imported Excel amount and percentage as entered in the workbook.
   } else if (financingDriver === 'fonds_propres' && hasFinancialValue(next.fonds_propres_pct) && shouldRecalculateFromPct('fonds_propres', sourceKey, sourceType, preferAmounts)) {
     next.fonds_propres = amountFromPct(purchaseSubtotal, next.fonds_propres_pct);
     next.hypotheque = round2(purchaseSubtotal - toNumber(next.fonds_propres));
@@ -160,7 +160,7 @@ function recalculateFinancialState(data, { financingDriver = 'hypotheque', sourc
       getPurchaseEquity(next),
       next.target_benefice_sipa_fonds_propres_pct
     );
-  } else if (hasFinancialValue(next.target_benefice_sipa_fonds_propres)) {
+  } else if (!preferAmounts && hasFinancialValue(next.target_benefice_sipa_fonds_propres)) {
     next.target_benefice_sipa_fonds_propres_pct = pctFromAmount(
       getPurchaseEquity(next),
       next.target_benefice_sipa_fonds_propres
@@ -269,6 +269,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     notes: '',
     sipa_data: null,
     financial_custom_fields: [],
+    _preferImportedAmounts: false,
     banque_a_taux_hypothecaire: null,
     banque_a_type_taux: 'fixe',
     banque_a_marge_saron: 0.5,
@@ -289,6 +290,11 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     if (!initialData) return;
     setForm((prev) => {
       const data = { ...prev, ...initialData };
+      const isImportedAnalysis = Array.isArray(initialData.sipa_data) && initialData.sipa_data.length > 0;
+      if (isImportedAnalysis) {
+        data._preferImportedAmounts = true;
+        return data;
+      }
       const purchasePrice = getPurchasePrice(data);
       const purchaseSubtotal = getPurchaseSubtotal(data);
       const revenuNet = Number(data.revenus_locatifs || 0) - Number(data.charges_operationnelles || 0) - Number(data.interets_hypothecaires || 0) - Number(data.gestion || 0);
@@ -317,7 +323,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     if (driver) setFinancingDriver(driver);
     setForm((prev) => {
       const base = getBase(prev);
-      const next = { ...prev, [key]: value };
+      const next = { ...prev, [key]: value, _preferImportedAmounts: false };
       if (base && value !== null) {
         const pct = Math.round((value / base) * 10000) / 100;
         next[pctKey] = pct;
@@ -332,7 +338,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     if (driver) setFinancingDriver(driver);
     setForm((prev) => {
       const base = getBase(prev);
-      const next = { ...prev, [pctKey]: value };
+      const next = { ...prev, [pctKey]: value, _preferImportedAmounts: false };
       if (base && value !== null) {
         const amount = round2(base * value / 100);
         next[key] = amount;
@@ -401,7 +407,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
 
   const set = (key) => (value) => {
     setForm((prev) => {
-      const next = { ...prev, [key]: value };
+      const next = { ...prev, [key]: value, _preferImportedAmounts: false };
       if ([
         'prix_bien',
         'prix_achat',
@@ -476,7 +482,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     }
 
     const calculatedForm = applyCustomFinancialTotals(
-      recalculateFinancialState(form, { financingDriver }),
+      recalculateFinancialState(form, { financingDriver, preferAmounts: form._preferImportedAmounts }),
       customFinancialFields,
       financingDriver
     );
@@ -572,7 +578,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         return;
       }
 
-      setForm((prev) => recalculateFinancialState({ ...prev, ...result.fields }, { financingDriver, preferAmounts: true }));
+      setForm((prev) => recalculateFinancialState({ ...prev, ...result.fields, _preferImportedAmounts: true }, { financingDriver, preferAmounts: true }));
       if (result.customFinancialFields?.length > 0) {
         setCustomFinancialFields((prev) => {
           const existing = new Set(prev.map((f) => f.name));
