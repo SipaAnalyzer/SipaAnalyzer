@@ -134,7 +134,7 @@ function buildSipaFinancialValues(entry, { amount, pct }) {
   return values;
 }
 
-function getSipaSection(entry, entries = [], index = 0) {
+export function getSipaSection(entry, entries = [], index = 0) {
   if (entry?._section) return entry._section;
 
   const priceOccurrences = entries

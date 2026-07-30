@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent, WORKFLOW_STATUSES } from '../utils/calculations';
-import { extractAnalysisFieldsFromExcel, formatSipaLabel, formatSipaValue, getSipaDisplayGroups, getSipaDisplayValues, isSipaTransactionFeeEntry, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
+import { extractAnalysisFieldsFromExcel, formatSipaLabel, getSipaSection, isSipaTransactionFeeEntry, SIPA_SECTION_LABELS, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
 import {
   FINANCIAL_CUSTOM_FIELD_ANCHORS,
   getFinancialCustomFieldsTotal,
@@ -228,6 +228,51 @@ function PctRow({ label, amount, onAmount, pct, onPct }) {
       </td>
     </tr>
   );
+}
+
+function SipaEditableValue({ value, inputValue, onChange }) {
+  if (!value) return null;
+
+  if (value.type === 'text') {
+    return (
+      <input
+        type="text"
+        value={inputValue ?? ''}
+        onChange={(event) => onChange?.(event.target.value)}
+        className="min-w-44 rounded-md border border-border bg-background px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
+      />
+    );
+  }
+
+  const isAmount = value.type === 'amount';
+  const isPct = value.type === 'pct';
+
+  return (
+    <div className={`relative ${isAmount ? 'w-32' : 'w-24'}`}>
+      {isAmount && <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">CHF</span>}
+      <Input
+        type="number"
+        value={inputValue ?? ''}
+        onChange={(event) => onChange?.(event.target.value === '' ? null : parseFloat(event.target.value) || 0)}
+        className={`h-8 bg-background border-border text-right text-xs ${isAmount ? 'pl-8 pr-2' : isPct ? 'pr-7' : 'px-2'}`}
+      />
+      {isPct && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>}
+    </div>
+  );
+}
+
+function getSipaEditableGroups(entries = []) {
+  const source = Array.isArray(entries) ? entries.filter((entry) => !entry?._custom) : [];
+
+  return Object.entries(SIPA_SECTION_LABELS)
+    .map(([section, title]) => ({
+      section,
+      title,
+      rows: source
+        .map((entry, index) => ({ entry, index, entries: source }))
+        .filter(({ entry, entries, index }) => getSipaSection(entry, entries, index) === section),
+    }))
+    .filter((group) => group.rows.length > 0);
 }
 
 export default function AnalysisForm({ initialData, initialPropertyId, onSubmit, isSubmitting, initialTab = 'financial' }) {
@@ -476,6 +521,26 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     () => syncSipaDataWithAnalysisFields(form.sipa_data, calculatedDisplayForm),
     [form.sipa_data, calculatedDisplayForm]
   );
+  const editableSipaGroups = useMemo(() => getSipaEditableGroups(syncedSipaData), [syncedSipaData]);
+  const updateSipaCell = useCallback((entryIndex, valueIndex, field, value) => {
+    setForm((prev) => {
+      const importedCursor = { current: -1 };
+      const sipaData = (prev.sipa_data || []).map((entry) => {
+        if (entry._custom) return entry;
+        importedCursor.current += 1;
+        if (importedCursor.current !== entryIndex) return entry;
+        if (field === 'label') return { ...entry, label: value, _manual_override: true };
+        return {
+          ...entry,
+          _manual_override: true,
+          values: (entry.values || []).map((item, index) =>
+            index === valueIndex ? { ...item, value } : item
+          ),
+        };
+      });
+      return { ...prev, sipa_data: sipaData, _preferImportedAmounts: false };
+    });
+  }, []);
 
   const handleSubmit = async () => {
     setSubmitError('');
@@ -1071,7 +1136,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                 <h3 className="font-heading font-semibold">Investissement SIPA</h3>
               </div>
               <div className="space-y-5">
-                {getSipaDisplayGroups(syncedSipaData).map((group) => (
+                {editableSipaGroups.map((group) => (
                   <div key={group.section} className="overflow-x-auto">
                     <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group.title}</h4>
                     <table className="w-full min-w-[720px] text-sm">
@@ -1084,40 +1149,50 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                       </thead>
                       <tbody className="divide-y divide-border/50">
                         {group.rows.map(({ entry, index, entries }) => {
-                          const display = getSipaDisplayValues(entry, entries, index);
                           const isTransactionFee = isSipaTransactionFeeEntry(entry, entries, index);
+                          const valueItems = (entry.values || [])
+                            .map((value, valueIndex) => ({ value, valueIndex }))
+                            .filter(({ value }) => value?.type !== 'pct');
+                          const pctItems = (entry.values || [])
+                            .map((value, valueIndex) => ({ value, valueIndex }))
+                            .filter(({ value }) => value?.type === 'pct');
                           return (
                             <tr key={index}>
-                              <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">{formatSipaLabel(entry, entries, index)}</td>
+                              <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">
+                                <input
+                                  type="text"
+                                  value={formatSipaLabel(entry, entries, index)}
+                                  onChange={(event) => updateSipaCell(index, null, 'label', event.target.value)}
+                                  className="w-full min-w-40 rounded-md border border-border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                />
+                              </td>
                               <td className="py-2 pl-4 text-sm">
-                                {isTransactionFee ? (
-                                  <InputField value={form.honoraires_sipa} onChange={handlers.honoraires.amount} prefix="CHF" />
-                                ) : (
-                                  <div className="flex flex-wrap gap-2">
-                                    {display.values.map((v, j) => (
-                                      <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
-                                    ))}
-                                  </div>
-                                )}
+                                <div className="flex flex-wrap gap-2">
+                                  {valueItems.map(({ value, valueIndex }) => (
+                                    <SipaEditableValue
+                                      key={valueIndex}
+                                      value={value}
+                                      inputValue={isTransactionFee && value.type === 'amount' ? form.honoraires_sipa : value.value}
+                                      onChange={isTransactionFee && value.type === 'amount'
+                                        ? handlers.honoraires.amount
+                                        : (next) => updateSipaCell(index, valueIndex, 'value', next)}
+                                    />
+                                  ))}
+                                </div>
                               </td>
                               <td className="py-2 pl-4 text-sm text-right">
-                                {isTransactionFee ? (
-                                  <div className="relative ml-auto w-24">
-                                    <Input
-                                      type="number"
-                                      value={form.honoraires_sipa_pct ?? ''}
-                                      onChange={(event) => handlers.honoraires.pct(event.target.value === '' ? null : parseFloat(event.target.value) || 0)}
-                                      className="bg-background border-border pr-8 text-right"
+                                <div className="flex flex-wrap justify-end gap-2">
+                                  {pctItems.map(({ value, valueIndex }) => (
+                                    <SipaEditableValue
+                                      key={valueIndex}
+                                      value={value}
+                                      inputValue={isTransactionFee ? form.honoraires_sipa_pct : value.value}
+                                      onChange={isTransactionFee
+                                        ? handlers.honoraires.pct
+                                        : (next) => updateSipaCell(index, valueIndex, 'value', next)}
                                     />
-                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex flex-wrap justify-end gap-2">
-                                    {display.percentages.map((v, j) => (
-                                      <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
-                                    ))}
-                                  </div>
-                                )}
+                                  ))}
+                                </div>
                               </td>
                             </tr>
                           );
