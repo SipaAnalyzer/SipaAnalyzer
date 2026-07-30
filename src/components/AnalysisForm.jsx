@@ -1057,7 +1057,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 rounded-md border border-border/60 bg-muted/20 p-4">
+                      <div className="grid grid-cols-1 gap-3 rounded-md border border-border/60 bg-muted/20 p-4">
                         <Select
                           value={cf.calculationEffect || DEFAULT_CUSTOM_EFFECT}
                           onValueChange={(value) =>
@@ -1204,7 +1204,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 rounded-md border border-border/60 bg-muted/20 p-4">
+                    <div className="grid grid-cols-1 gap-3 rounded-md border border-border/60 bg-muted/20 p-4">
                       <Select value={newCustomFieldEffect} onValueChange={setNewCustomFieldEffect}>
                         <SelectTrigger className="h-11 bg-background text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
