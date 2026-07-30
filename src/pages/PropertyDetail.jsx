@@ -674,7 +674,6 @@ function TechnicalAnalysisSnapshot({
             <tbody>
               <ExcelOptionalReadRow row={2} section="Acquisition" label="Prix du bien" amount={analysis.prix_bien} editable={canEdit} onAmountChange={(value) => updateDraftField('prix_bien', value)} />
               <ExcelOptionalReadRow row={3} section="Acquisition" label="Prix d'achat" amount={analysis.prix_achat} editable={canEdit} onAmountChange={(value) => updateDraftField('prix_achat', value)} />
-              <ExcelReadRow row={4} section="Acquisition" label="Frais de transaction" amount={analysis.honoraires_sipa} pct={percentOf(analysis.honoraires_sipa, purchasePrice)} editable={canEdit} onAmountChange={(value) => updateDraftField('honoraires_sipa', value)} onPctChange={updatePctField('honoraires_sipa', 'honoraires_sipa_pct', purchasePrice)} />
               <ExcelReadRow row={5} section="Acquisition" label="Construction" amount={analysis.construction} pct={percentOf(analysis.construction, purchasePrice)} editable={canEdit} onAmountChange={(value) => updateDraftField('construction', value)} onPctChange={updatePctField('construction', 'construction_pct', purchasePrice)} />
               <ExcelComputedRow row={6} section="Financement" label="Fonds propres achat" value={formatCHF(getPurchaseEquity(analysis))} />
               <ExcelOptionalReadRow row={7} section="Acquisition" label="Versement initial copropriete" amount={analysis.versement_initial} editable={canEdit} onAmountChange={(value) => updateDraftField('versement_initial', value)} />
@@ -1211,7 +1210,6 @@ function buildFinancialExportRows(analysis, customFields, prixTotal) {
   const rows = [
     ['Acquisition', 'Prix du bien', analysis.prix_bien ?? '', '', ''],
     ['Acquisition', "Prix d'achat", analysis.prix_achat ?? '', '', ''],
-    ['Acquisition', 'Frais de transaction', analysis.honoraires_sipa ?? '', percentOf(analysis.honoraires_sipa, purchasePrice) ?? '', ''],
     ['Acquisition', 'Construction', analysis.construction ?? '', percentOf(analysis.construction, purchasePrice) ?? '', ''],
     ['Financement', 'Fonds propres achat', getPurchaseEquity(analysis) ?? '', '', ''],
     ['Acquisition', 'Versement initial copropriete', analysis.versement_initial ?? '', '', ''],

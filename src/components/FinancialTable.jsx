@@ -142,8 +142,6 @@ function FinancialTableBody({ analysis, calc, purchasePrice, purchaseSubtotal, p
               {renderCustomRows('prix_bien')}
               <Row label="Prix d'achat" value={formatCHF(purchasePrice)} />
               {renderCustomRows('prix_achat')}
-              <Row label="Frais de transaction" amount={analysis.honoraires_sipa} base={purchasePrice} />
-              {renderCustomRows('honoraires_sipa')}
               <Row label="Construction" amount={analysis.construction} base={purchasePrice} />
               {renderCustomRows('construction')}
               <Row label="Fonds propres achat" value={formatCHF(getPurchaseEquity(analysis))} />

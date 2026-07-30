@@ -1,7 +1,6 @@
 export const FINANCIAL_CUSTOM_FIELD_ANCHORS = [
   { key: 'prix_bien', label: 'Prix du bien' },
   { key: 'prix_achat', label: "Prix d'achat" },
-  { key: 'honoraires_sipa', label: 'Frais de transaction' },
   { key: 'construction', label: 'Construction' },
   { key: 'fonds_propres_achat', label: 'Fonds propres achat' },
   { key: 'versement_initial', label: 'Versement initial sur le compte de la copropriete' },
@@ -29,7 +28,6 @@ const DEFAULT_INSERT_AFTER = 'prix_total';
 export const FINANCIAL_CUSTOM_ACQUISITION_ANCHORS = [
   'prix_bien',
   'prix_achat',
-  'honoraires_sipa',
   'construction',
   'fonds_propres_achat',
   'versement_initial',

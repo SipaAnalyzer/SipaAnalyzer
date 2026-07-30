@@ -337,7 +337,6 @@ function analysisRows(analysis) {
   return [
     { label: 'Prix du bien', value: formatCHF(analysis?.prix_bien) },
     { label: "Prix d'achat", value: formatCHF(purchasePrice) },
-    { label: 'Frais de transaction', value: formatCHF(analysis?.honoraires_sipa) },
     { label: 'Construction', value: formatCHF(analysis?.construction) },
     { label: 'Fonds propres achat', value: formatCHF(analysis?.fonds_propres_achat) },
     { label: 'Versement initial copropriete', value: formatCHF(analysis?.versement_initial) },

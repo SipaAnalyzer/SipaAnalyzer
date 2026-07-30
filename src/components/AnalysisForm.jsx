@@ -772,13 +772,6 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                 </td>
               </tr>
               <PctRow
-                label="Frais de transaction"
-                amount={form.honoraires_sipa}
-                onAmount={handlers.honoraires.amount}
-                pct={form.honoraires_sipa_pct}
-                onPct={handlers.honoraires.pct}
-              />
-              <PctRow
                 label="Construction"
                 amount={form.construction}
                 onAmount={handlers.construction.amount}
@@ -1368,15 +1361,6 @@ function TechnicalAnalysisView({
             <tbody>
               <ExcelAmountRow row={2} section="Acquisition" label="Prix du bien" value={form.prix_bien} onChange={set('prix_bien')} />
               <ExcelAmountRow row={3} section="Acquisition" label="Prix d'achat" value={form.prix_achat} onChange={set('prix_achat')} />
-              <ExcelPctRow
-                row={4}
-                section="Acquisition"
-                label="Frais de transaction"
-                amount={form.honoraires_sipa}
-                onAmount={handlers.honoraires.amount}
-                pct={form.honoraires_sipa_pct}
-                onPct={handlers.honoraires.pct}
-              />
               <ExcelPctRow
                 row={5}
                 section="Acquisition"
