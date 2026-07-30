@@ -209,17 +209,15 @@ export async function extractAnalysisFieldsFromExcel(file, customLabels = [], pr
   const sipaData = extractSipaData(allRows);
   if (sipaData) fields.sipa_data = sipaData;
 
-  // Merge custom fields into sipa_data for persistence
   if (customFinancialFields.length > 0) {
-    const customSipaEntries = customFinancialFields.map((cf) => ({
+    fields.financial_custom_fields = customFinancialFields.map((cf, index) => ({
+      id: `import-${Date.now().toString(36)}-${index}`,
       label: cf.name,
-      values: [
-        { type: 'amount', value: cf.amount },
-        ...(cf.pct != null ? [{ type: 'pct', value: cf.pct }] : []),
-      ],
-      _custom: true,
+      amount: cf.amount ?? null,
+      pct: cf.pct ?? null,
+      insertAfter: cf.insertAfter || 'prix_total',
+      position: index,
     }));
-    fields.sipa_data = [...(fields.sipa_data || []), ...customSipaEntries];
   }
 
   return {

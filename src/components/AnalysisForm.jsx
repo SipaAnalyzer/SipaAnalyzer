@@ -104,25 +104,28 @@ function pctFromAmount(base, amount) {
   return round2((Number(amount) / base) * 100);
 }
 
-function shouldRecalculateFromPct(fieldKey, sourceKey, sourceType) {
+function shouldRecalculateFromPct(fieldKey, sourceKey, sourceType, preferAmounts = false) {
+  if (preferAmounts) return false;
   return sourceKey !== fieldKey || sourceType === 'pct';
 }
 
-function recalculateFinancialState(data, { financingDriver = 'hypotheque', sourceKey = null, sourceType = null } = {}) {
+function recalculateFinancialState(data, { financingDriver = 'hypotheque', sourceKey = null, sourceType = null, preferAmounts = false } = {}) {
   const next = { ...data };
   const purchasePrice = getPurchasePrice(next);
 
-  if (hasFinancialValue(next.honoraires_sipa_pct) && shouldRecalculateFromPct('honoraires_sipa', sourceKey, sourceType)) {
+  if (hasFinancialValue(next.honoraires_sipa_pct) && shouldRecalculateFromPct('honoraires_sipa', sourceKey, sourceType, preferAmounts)) {
     next.honoraires_sipa = amountFromPct(purchasePrice, next.honoraires_sipa_pct);
   }
 
-  if (hasFinancialValue(next.construction_pct) && shouldRecalculateFromPct('construction', sourceKey, sourceType)) {
+  if (hasFinancialValue(next.construction_pct) && shouldRecalculateFromPct('construction', sourceKey, sourceType, preferAmounts)) {
     next.construction = amountFromPct(purchasePrice, next.construction_pct);
   }
 
   const purchaseSubtotal = getPurchaseSubtotal(next);
 
-  if (financingDriver === 'fonds_propres' && hasFinancialValue(next.fonds_propres_pct) && shouldRecalculateFromPct('fonds_propres', sourceKey, sourceType)) {
+  if (preferAmounts && hasFinancialValue(next.hypotheque)) {
+    next.hypotheque_pct = pctFromAmount(purchaseSubtotal, next.hypotheque);
+  } else if (financingDriver === 'fonds_propres' && hasFinancialValue(next.fonds_propres_pct) && shouldRecalculateFromPct('fonds_propres', sourceKey, sourceType, preferAmounts)) {
     next.fonds_propres = amountFromPct(purchaseSubtotal, next.fonds_propres_pct);
     next.hypotheque = round2(purchaseSubtotal - toNumber(next.fonds_propres));
     next.hypotheque_pct = pctFromAmount(purchaseSubtotal, next.hypotheque);
@@ -130,7 +133,7 @@ function recalculateFinancialState(data, { financingDriver = 'hypotheque', sourc
     next.fonds_propres_pct = pctFromAmount(purchaseSubtotal, next.fonds_propres);
     next.hypotheque = round2(purchaseSubtotal - toNumber(next.fonds_propres));
     next.hypotheque_pct = pctFromAmount(purchaseSubtotal, next.hypotheque);
-  } else if (hasFinancialValue(next.hypotheque_pct) && shouldRecalculateFromPct('hypotheque', sourceKey, sourceType)) {
+  } else if (hasFinancialValue(next.hypotheque_pct) && shouldRecalculateFromPct('hypotheque', sourceKey, sourceType, preferAmounts)) {
     next.hypotheque = amountFromPct(purchaseSubtotal, next.hypotheque_pct);
     next.fonds_propres = round2(purchaseSubtotal - toNumber(next.hypotheque));
     next.fonds_propres_pct = pctFromAmount(purchaseSubtotal, next.fonds_propres);
@@ -151,7 +154,7 @@ function recalculateFinancialState(data, { financingDriver = 'hypotheque', sourc
 
   if (
     hasFinancialValue(next.target_benefice_sipa_fonds_propres_pct) &&
-    shouldRecalculateFromPct('target_benefice_sipa_fonds_propres', sourceKey, sourceType)
+    shouldRecalculateFromPct('target_benefice_sipa_fonds_propres', sourceKey, sourceType, preferAmounts)
   ) {
     next.target_benefice_sipa_fonds_propres = amountFromPct(
       getPurchaseEquity(next),
@@ -168,11 +171,11 @@ function recalculateFinancialState(data, { financingDriver = 'hypotheque', sourc
     next.prix_bien = getInvestorPrice(next);
   }
 
-  if (hasFinancialValue(next.versement_initial_pct) && shouldRecalculateFromPct('versement_initial', sourceKey, sourceType)) {
+  if (hasFinancialValue(next.versement_initial_pct) && shouldRecalculateFromPct('versement_initial', sourceKey, sourceType, preferAmounts)) {
     next.versement_initial = amountFromPct(getInvestorPrice(next), next.versement_initial_pct);
   }
 
-  if (hasFinancialValue(next.honoraires_transaction_sipa_group_pct) && shouldRecalculateFromPct('honoraires_transaction_sipa_group', sourceKey, sourceType)) {
+  if (hasFinancialValue(next.honoraires_transaction_sipa_group_pct) && shouldRecalculateFromPct('honoraires_transaction_sipa_group', sourceKey, sourceType, preferAmounts)) {
     next.honoraires_transaction_sipa_group = amountFromPct(getInvestorPrice(next), next.honoraires_transaction_sipa_group_pct);
   }
 
@@ -182,15 +185,15 @@ function recalculateFinancialState(data, { financingDriver = 'hypotheque', sourc
     next.fonds_propres_pct = pctFromAmount(prixTotal, next.fonds_propres);
   }
 
-  if (hasFinancialValue(next.interets_hypothecaires_pct) && shouldRecalculateFromPct('interets_hypothecaires', sourceKey, sourceType)) {
+  if (hasFinancialValue(next.interets_hypothecaires_pct) && shouldRecalculateFromPct('interets_hypothecaires', sourceKey, sourceType, preferAmounts)) {
     next.interets_hypothecaires = amountFromPct(toNumber(next.hypotheque), next.interets_hypothecaires_pct);
   }
 
-  if (hasFinancialValue(next.gestion_pct) && shouldRecalculateFromPct('gestion', sourceKey, sourceType)) {
+  if (hasFinancialValue(next.gestion_pct) && shouldRecalculateFromPct('gestion', sourceKey, sourceType, preferAmounts)) {
     next.gestion = amountFromPct(toNumber(next.revenus_locatifs), next.gestion_pct);
   }
 
-  if (hasFinancialValue(next.impot_pct) && shouldRecalculateFromPct('impot', sourceKey, sourceType)) {
+  if (hasFinancialValue(next.impot_pct) && shouldRecalculateFromPct('impot', sourceKey, sourceType, preferAmounts)) {
     next.impot = amountFromPct(getRevenuNet(next), next.impot_pct);
   }
 
@@ -569,7 +572,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         return;
       }
 
-      setForm((prev) => recalculateFinancialState({ ...prev, ...result.fields }, { financingDriver }));
+      setForm((prev) => recalculateFinancialState({ ...prev, ...result.fields }, { financingDriver, preferAmounts: true }));
       if (result.customFinancialFields?.length > 0) {
         setCustomFinancialFields((prev) => {
           const existing = new Set(prev.map((f) => f.name));
