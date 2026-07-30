@@ -84,6 +84,44 @@ export function getSipaDisplayGroups(entries = []) {
     .filter((group) => group.rows.length > 0);
 }
 
+export function syncSipaDataWithAnalysisFields(entries = [], analysis = {}) {
+  if (!Array.isArray(entries)) return entries;
+
+  return entries.map((entry, index) => {
+    if (!entry || entry._custom) return entry;
+
+    const section = getSipaSection(entry, entries, index);
+    const normalizedLabel = normalizeText(entry.label);
+
+    if (section === 'achat' && normalizedLabel === 'frais de transaction') {
+      return {
+        ...entry,
+        values: buildSipaFinancialValues(entry, {
+          amount: analysis.honoraires_sipa,
+          pct: analysis.honoraires_sipa_pct,
+        }),
+      };
+    }
+
+    return entry;
+  });
+}
+
+function buildSipaFinancialValues(entry, { amount, pct }) {
+  const values = [];
+  const numericPct = hasValue(pct) ? Number(pct) : NaN;
+  const numericAmount = hasValue(amount) ? Number(amount) : NaN;
+
+  if (Number.isFinite(numericPct)) values.push({ type: 'pct', value: Math.round(numericPct * 100) / 100 });
+  if (Number.isFinite(numericAmount)) values.push({ type: 'amount', value: Math.round(numericAmount) });
+
+  (entry.values || [])
+    .filter((value) => value?.type === 'text')
+    .forEach((value) => values.push(value));
+
+  return values;
+}
+
 function getSipaSection(entry, entries = [], index = 0) {
   if (entry?._section) return entry._section;
 

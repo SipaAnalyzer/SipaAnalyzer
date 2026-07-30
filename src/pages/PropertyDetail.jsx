@@ -19,7 +19,7 @@ import CommentSection from '../components/CommentSection';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
 import { calculateAnalysis, formatCHF, formatPercent, normalizeAnalyses, WORKFLOW_STATUSES } from '../utils/calculations';
-import { formatSipaLabel, formatSipaValue, getDisplayableSipaRows, getSipaDisplayGroups, getSipaDisplayValues } from '../utils/excelImport';
+import { formatSipaLabel, formatSipaValue, getDisplayableSipaRows, getSipaDisplayGroups, getSipaDisplayValues, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
 import {
   getFinancialCustomFieldAmount,
   getFinancialCustomFieldsTotal,
@@ -790,9 +790,10 @@ function TechnicalAnalysisSnapshot({
 
 function SipaImportedDataTable({ analysis, collapsible = false }) {
   const [open, setOpen] = useState(true);
+  const syncedSipaData = syncSipaDataWithAnalysisFields(analysis.sipa_data, analysis);
   const content = (
       <div className="space-y-5">
-        {getSipaDisplayGroups(analysis.sipa_data).map((group) => (
+        {getSipaDisplayGroups(syncedSipaData).map((group) => (
           <div key={group.section} className="overflow-x-auto">
             <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group.title}</h4>
             <table className="w-full min-w-[560px] text-sm">
@@ -902,7 +903,8 @@ function TableExportButtons({ rows, filename }) {
 }
 
 function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBaseName, collapsible = false }) {
-  const rows = getDisplayableSipaRows(analysis.sipa_data).map((item) => item.entry);
+  const syncedSipaData = syncSipaDataWithAnalysisFields(analysis.sipa_data, analysis);
+  const rows = getDisplayableSipaRows(syncedSipaData).map((item) => item.entry);
   const maxValues = Math.max(1, ...rows.map((entry) => entry.values?.length || 0));
   const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, maxValues + 1);
   const exportRows = buildSipaExportRows(rows, maxValues);
@@ -1416,7 +1418,7 @@ function normalizeAnalysisDraft(draft, property) {
 function buildTechnicalAnalysisPayload(analysis) {
   return {
     statut: analysis.statut,
-    sipa_data: analysis.sipa_data || null,
+    sipa_data: syncSipaDataWithAnalysisFields(analysis.sipa_data, analysis) || null,
     financial_custom_fields: toPersistedFinancialCustomFields(
       normalizeFinancialCustomFields(analysis.financial_custom_fields, analysis.sipa_data),
       analysis

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent, WORKFLOW_STATUSES } from '../utils/calculations';
-import { extractAnalysisFieldsFromExcel, formatSipaLabel, formatSipaValue, getSipaDisplayGroups, getSipaDisplayValues } from '../utils/excelImport';
+import { extractAnalysisFieldsFromExcel, formatSipaLabel, formatSipaValue, getSipaDisplayGroups, getSipaDisplayValues, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
 import {
   FINANCIAL_CUSTOM_FIELD_ANCHORS,
   getFinancialCustomFieldsTotal,
@@ -472,6 +472,10 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   }), [calculatedDisplayForm, selectedProperty]);
 
   const prixTotal = calculatedDisplayForm.prix_total;
+  const syncedSipaData = useMemo(
+    () => syncSipaDataWithAnalysisFields(form.sipa_data, calculatedDisplayForm),
+    [form.sipa_data, calculatedDisplayForm]
+  );
 
   const handleSubmit = async () => {
     setSubmitError('');
@@ -488,7 +492,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     );
 
     const baseSipaData = Array.isArray(form.sipa_data)
-      ? form.sipa_data.filter((entry) => !entry._custom)
+      ? syncSipaDataWithAnalysisFields(form.sipa_data, calculatedForm).filter((entry) => !entry._custom)
       : [];
     const financialCustomFields = toPersistedFinancialCustomFields(customFinancialFields, calculatedForm);
 
@@ -1060,14 +1064,14 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
             </div>
           </section>
 
-          {form.sipa_data && form.sipa_data.filter((e) => !e._custom).length > 0 && (
+          {syncedSipaData && syncedSipaData.filter((e) => !e._custom).length > 0 && (
             <section className="bg-card rounded-xl border border-border p-6 mt-6">
               <div className="flex items-center gap-2 mb-4">
                 <Landmark className="h-4 w-4 text-primary" />
                 <h3 className="font-heading font-semibold">Investissement SIPA</h3>
               </div>
               <div className="space-y-5">
-                {getSipaDisplayGroups(form.sipa_data).map((group) => (
+                {getSipaDisplayGroups(syncedSipaData).map((group) => (
                   <div key={group.section} className="overflow-x-auto">
                     <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group.title}</h4>
                     <table className="w-full min-w-[720px] text-sm">
@@ -1610,9 +1614,9 @@ function TechnicalAnalysisView({
         </div>
       </section>
 
-      {form.sipa_data && form.sipa_data.filter((entry) => !entry._custom).length > 0 && (
+      {syncedSipaData && syncedSipaData.filter((entry) => !entry._custom).length > 0 && (
         <ExcelSipaInvestmentSheet
-          sipaData={form.sipa_data}
+          sipaData={syncedSipaData}
           onChange={(sipaData) => setForm((prev) => ({ ...prev, sipa_data: sipaData }))}
         />
       )}

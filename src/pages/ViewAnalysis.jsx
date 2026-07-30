@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
-import { formatSipaLabel, formatSipaValue, getSipaDisplayGroups, getSipaDisplayValues } from '../utils/excelImport';
+import { formatSipaLabel, formatSipaValue, getSipaDisplayGroups, getSipaDisplayValues, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
 import { exportAnalysisPdf } from '../utils/pdfExports';
 import { usePermissions } from '@/hooks/usePermissions';
 import PdfExportDialog from '../components/PdfExportDialog';
@@ -32,6 +32,7 @@ export default function ViewAnalysis() {
   });
 
   const analysis = normalizeAnalysis(analysisRaw, property);
+  const syncedSipaData = syncSipaDataWithAnalysisFields(analysis?.sipa_data, analysis);
 
   if (isLoading) {
     return (
@@ -112,14 +113,14 @@ export default function ViewAnalysis() {
 
       <FinancialTable analysis={analysis} />
 
-      {analysis.sipa_data && analysis.sipa_data.filter((e) => !e._custom).length > 0 && (
+      {syncedSipaData && syncedSipaData.filter((e) => !e._custom).length > 0 && (
         <section className="bg-card rounded-xl border border-border p-6">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="h-4 w-4 text-primary" />
             <h3 className="font-heading font-semibold">Investissement SIPA</h3>
           </div>
           <div className="space-y-5">
-            {getSipaDisplayGroups(analysis.sipa_data).map((group) => (
+            {getSipaDisplayGroups(syncedSipaData).map((group) => (
               <div key={group.section} className="overflow-x-auto">
                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group.title}</h4>
                 <table className="w-full text-sm">
