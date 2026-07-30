@@ -94,11 +94,15 @@ export function syncSipaDataWithAnalysisFields(entries = [], analysis = {}) {
     const normalizedLabel = normalizeText(entry.label);
 
     if (section === 'achat' && normalizedLabel === 'frais de transaction') {
+      const purchasePrice = analysis.prix_achat ?? analysis.prix_bien;
+      const fallbackPct = hasValue(analysis.honoraires_sipa) && hasValue(purchasePrice) && Number(purchasePrice) !== 0
+        ? Math.round((Number(analysis.honoraires_sipa) / Number(purchasePrice)) * 10000) / 100
+        : null;
       return {
         ...entry,
         values: buildSipaFinancialValues(entry, {
           amount: analysis.honoraires_sipa,
-          pct: analysis.honoraires_sipa_pct,
+          pct: hasValue(analysis.honoraires_sipa_pct) ? analysis.honoraires_sipa_pct : fallbackPct,
         }),
       };
     }
