@@ -43,6 +43,8 @@ function InputField({ value, onChange, prefix, className }) {
 const hasFinancialValue = (value) => value !== null && value !== undefined && value !== '';
 const toNumber = (value) => Number(value || 0);
 const round2 = (value) => Math.round(Number(value || 0) * 100) / 100;
+const SIPA_NEW_AMOUNT_VALUE_INDEX = '__new_amount';
+const SIPA_NEW_PCT_VALUE_INDEX = '__new_pct';
 
 function getPurchasePrice(data) {
   return hasFinancialValue(data.prix_achat) ? toNumber(data.prix_achat) : toNumber(data.prix_bien);
@@ -545,6 +547,19 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         importedCursor.current += 1;
         if (importedCursor.current !== entryIndex) return entry;
         if (field === 'label') return { ...entry, label: value, _manual_override: true };
+        if (valueIndex === SIPA_NEW_AMOUNT_VALUE_INDEX || valueIndex === SIPA_NEW_PCT_VALUE_INDEX) {
+          return {
+            ...entry,
+            _manual_override: true,
+            values: [
+              ...(entry.values || []),
+              {
+                type: valueIndex === SIPA_NEW_PCT_VALUE_INDEX ? 'pct' : 'amount',
+                value,
+              },
+            ],
+          };
+        }
         return {
           ...entry,
           _manual_override: true,
@@ -1307,6 +1322,12 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           const pctItems = (entry.values || [])
                             .map((value, valueIndex) => ({ value, valueIndex }))
                             .filter(({ value }) => value?.type === 'pct');
+                          const editableValueItems = valueItems.length > 0
+                            ? valueItems
+                            : [{ value: { type: 'amount', value: null }, valueIndex: SIPA_NEW_AMOUNT_VALUE_INDEX }];
+                          const editablePctItems = pctItems.length > 0
+                            ? pctItems
+                            : [{ value: { type: 'pct', value: null }, valueIndex: SIPA_NEW_PCT_VALUE_INDEX }];
                           return (
                             <tr key={index}>
                               <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">
@@ -1319,7 +1340,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                               </td>
                               <td className="py-2 pl-4 text-sm">
                                 <div className="flex flex-wrap gap-2">
-                                  {valueItems.map(({ value, valueIndex }) => (
+                                  {editableValueItems.map(({ value, valueIndex }) => (
                                     <SipaEditableValue
                                       key={valueIndex}
                                       value={value}
@@ -1333,7 +1354,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                               </td>
                               <td className="py-2 pl-4 text-sm text-right">
                                 <div className="flex flex-wrap justify-end gap-2">
-                                  {pctItems.map(({ value, valueIndex }) => (
+                                  {editablePctItems.map(({ value, valueIndex }) => (
                                     <SipaEditableValue
                                       key={valueIndex}
                                       value={value}
