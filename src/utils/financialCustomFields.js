@@ -365,7 +365,7 @@ export function normalizeFinancialCustomFields(fields = [], legacySipaData = [])
       const insertAfter = normalizeInsertAfter(field.insertAfter || field.after || field.anchor);
       const explicitEffect = field.calculationEffect || field.effect || field.impact;
       const calculationEffect = explicitEffect ? normalizeEffect(explicitEffect) : inferEffectFromAnchor(insertAfter);
-      const baseField = normalizeBaseField(field.baseField || field.calculationBase, insertAfter);
+      const baseField = normalizeBaseField(field.baseField === 'none' ? insertAfter : field.baseField || field.calculationBase, insertAfter);
       return {
         id: field.id || `custom-${index}`,
         name: field.name || field.label || '',
