@@ -139,6 +139,61 @@ export const FINANCIAL_CUSTOM_EFFECTS = [
 export const DEFAULT_CUSTOM_EFFECT = 'acquisition_cost';
 const VALID_EFFECT_KEYS = new Set(FINANCIAL_CUSTOM_EFFECTS.map((effect) => effect.key));
 
+export const FINANCIAL_CUSTOM_FIELD_PRESETS = [
+  {
+    key: 'free',
+    label: 'Champ libre',
+  },
+  {
+    key: 'impot_capital_dissimule_vs',
+    label: 'Impot sur le capital dissimule (VS)',
+    insertAfter: 'impot',
+    calculationEffect: 'tax_increase',
+    baseField: 'fonds_propres',
+    pct: 0.1,
+  },
+  {
+    key: 'impot_foncier',
+    label: 'Impot foncier',
+    insertAfter: 'impot',
+    calculationEffect: 'tax_increase',
+    baseField: 'prix_bien',
+    pct: 0.1,
+  },
+  {
+    key: 'taxe_communale',
+    label: 'Taxe communale',
+    insertAfter: 'impot',
+    calculationEffect: 'tax_increase',
+    baseField: 'revenu_net',
+    pct: 1,
+  },
+  {
+    key: 'provision_travaux',
+    label: 'Provision travaux',
+    insertAfter: 'charges_operationnelles',
+    calculationEffect: 'operating_expense',
+    baseField: 'revenus_locatifs',
+    pct: 5,
+  },
+  {
+    key: 'autre_charge_exploitation',
+    label: "Autre charge d'exploitation",
+    insertAfter: 'charges_operationnelles',
+    calculationEffect: 'operating_expense',
+    baseField: 'revenus_locatifs',
+    pct: null,
+  },
+  {
+    key: 'autre_revenu',
+    label: 'Autre revenu',
+    insertAfter: 'revenus_locatifs',
+    calculationEffect: 'revenue',
+    baseField: 'revenus_locatifs',
+    pct: null,
+  },
+];
+
 export const FINANCIAL_CUSTOM_FORMULAS = [
   {
     key: 'none',
@@ -369,6 +424,7 @@ export function normalizeFinancialCustomFields(fields = [], legacySipaData = [])
       return {
         id: field.id || `custom-${index}`,
         name: field.name || field.label || '',
+        presetKey: field.presetKey || field.templateKey || 'free',
         amount: toNumberOrNull(field.amount),
         pct: toNumberOrNull(field.pct),
         insertAfter,
@@ -391,6 +447,7 @@ export function toPersistedFinancialCustomFields(fields = [], data = {}) {
       return {
         id: field.id || `custom-${index}`,
         label: field.name.trim(),
+        presetKey: field.presetKey || 'free',
         amount: explicitAmount,
         pct,
         insertAfter: normalizeInsertAfter(field.insertAfter),

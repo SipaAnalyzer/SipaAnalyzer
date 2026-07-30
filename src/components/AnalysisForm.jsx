@@ -7,6 +7,10 @@ import {
   DEFAULT_CUSTOM_EFFECT,
   FINANCIAL_CUSTOM_EFFECTS,
   FINANCIAL_CUSTOM_FIELD_ANCHORS,
+  FINANCIAL_CUSTOM_FIELD_PRESETS,
+  FINANCIAL_CUSTOM_FORMULAS,
+  FINANCIAL_CUSTOM_OPTIONAL_FIELD_ANCHORS,
+  DEFAULT_CUSTOM_FORMULA,
   getFinancialCustomFieldsTotal,
   getFinancialCustomFieldsTotalByGroup,
   normalizeFinancialCustomFields,
@@ -501,8 +505,13 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const [newCustomFieldName, setNewCustomFieldName] = useState('');
   const [newCustomFieldAmount, setNewCustomFieldAmount] = useState('');
   const [newCustomFieldPct, setNewCustomFieldPct] = useState('');
+  const [newCustomFieldPreset, setNewCustomFieldPreset] = useState('free');
   const [newCustomFieldInsertAfter, setNewCustomFieldInsertAfter] = useState('frais_dossier_bancaire');
   const [newCustomFieldEffect, setNewCustomFieldEffect] = useState(DEFAULT_CUSTOM_EFFECT);
+  const [newCustomFieldBaseField, setNewCustomFieldBaseField] = useState('frais_dossier_bancaire');
+  const [newCustomFieldFormula, setNewCustomFieldFormula] = useState(DEFAULT_CUSTOM_FORMULA);
+  const [newCustomFieldSecondaryField, setNewCustomFieldSecondaryField] = useState('none');
+  const [newCustomFieldMultiplierPct, setNewCustomFieldMultiplierPct] = useState('75');
   const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
@@ -711,6 +720,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     const hasPct = newCustomFieldPct !== '' && newCustomFieldPct !== null && newCustomFieldPct !== undefined;
     const amount = hasAmount ? Number(newCustomFieldAmount) : null;
     const pct = hasPct ? parseFloat(newCustomFieldPct) : null;
+    const preset = FINANCIAL_CUSTOM_FIELD_PRESETS.find((item) => item.key === newCustomFieldPreset);
     if (!newCustomFieldName.trim()) return;
 
     setCustomFinancialFields((prev) => [
@@ -720,15 +730,39 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         name: newCustomFieldName.trim(),
         amount: Number.isFinite(amount) ? amount : null,
         pct: Number.isFinite(pct) ? pct : null,
+        presetKey: newCustomFieldPreset,
         insertAfter: newCustomFieldInsertAfter,
         calculationEffect: newCustomFieldEffect,
-        baseField: newCustomFieldInsertAfter,
+        calculationFormula: newCustomFieldFormula,
+        baseField: preset?.baseField || newCustomFieldInsertAfter,
+        secondaryField: newCustomFieldSecondaryField,
+        multiplierPct: newCustomFieldMultiplierPct === '' ? null : Number(newCustomFieldMultiplierPct) || 0,
         position: prev.length,
       },
     ]);
     setNewCustomFieldName('');
     setNewCustomFieldAmount('');
     setNewCustomFieldPct('');
+    setNewCustomFieldPreset('free');
+    setNewCustomFieldBaseField(newCustomFieldInsertAfter);
+    setNewCustomFieldFormula(DEFAULT_CUSTOM_FORMULA);
+    setNewCustomFieldSecondaryField('none');
+    setNewCustomFieldMultiplierPct('75');
+  };
+
+  const applyCustomFieldPreset = (presetKey) => {
+    setNewCustomFieldPreset(presetKey);
+    const preset = FINANCIAL_CUSTOM_FIELD_PRESETS.find((item) => item.key === presetKey);
+    if (!preset || preset.key === 'free') return;
+    setNewCustomFieldName(preset.label);
+    setNewCustomFieldAmount('');
+    setNewCustomFieldPct(preset.pct == null ? '' : String(preset.pct));
+    setNewCustomFieldInsertAfter(preset.insertAfter || 'prix_total');
+    setNewCustomFieldEffect(preset.calculationEffect || DEFAULT_CUSTOM_EFFECT);
+    setNewCustomFieldBaseField(preset.baseField || preset.insertAfter || 'prix_total');
+    setNewCustomFieldFormula(DEFAULT_CUSTOM_FORMULA);
+    setNewCustomFieldSecondaryField('none');
+    setNewCustomFieldMultiplierPct('75');
   };
 
   return (
@@ -1095,6 +1129,17 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
               ))}
               <tr className="border-t border-dashed border-border/30">
                 <td className="py-3 pr-4 align-top">
+                  <div className="space-y-2">
+                    <Select value={newCustomFieldPreset} onValueChange={applyCustomFieldPreset}>
+                      <SelectTrigger className="h-10 bg-background text-xs">
+                        <SelectValue placeholder="Type de champ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FINANCIAL_CUSTOM_FIELD_PRESETS.map((preset) => (
+                          <SelectItem key={preset.key} value={preset.key}>{preset.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   <input
                     type="text"
                     value={newCustomFieldName}
@@ -1105,6 +1150,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                     placeholder="Nouvelle ligne personnalisée..."
                     className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
+                  </div>
                 </td>
                 <td className="py-3 pl-4">
                   <div className="space-y-2">
