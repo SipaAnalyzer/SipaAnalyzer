@@ -1056,7 +1056,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 rounded-md border border-border/60 bg-muted/20 p-2">
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 rounded-md border border-border/60 bg-muted/20 p-3">
                         <Select
                           value={cf.calculationEffect || DEFAULT_CUSTOM_EFFECT}
                           onValueChange={(value) =>
@@ -1065,7 +1065,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                             )
                           }
                         >
-                          <SelectTrigger className="h-8 bg-background text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="h-10 bg-background text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {FINANCIAL_CUSTOM_EFFECTS.map((effect) => (
                               <SelectItem key={effect.key} value={effect.key}>Impact: {effect.shortLabel}</SelectItem>
@@ -1080,7 +1080,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                             )
                           }
                         >
-                          <SelectTrigger className="h-8 bg-background text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="h-10 bg-background text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {FINANCIAL_CUSTOM_FORMULAS.map((formula) => (
                               <SelectItem key={formula.key} value={formula.key}>Formule: {formula.shortLabel}</SelectItem>
@@ -1095,7 +1095,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                             )
                           }
                         >
-                          <SelectTrigger className="h-8 bg-background text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="h-10 bg-background text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
                               <SelectItem key={anchor.key} value={anchor.key}>Apres: {anchor.label}</SelectItem>
@@ -1110,7 +1110,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                             )
                           }
                         >
-                          <SelectTrigger className="h-8 bg-background text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="h-10 bg-background text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
                               <SelectItem key={anchor.key} value={anchor.key}>Champ A: {anchor.label}</SelectItem>
@@ -1125,7 +1125,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                             )
                           }
                         >
-                          <SelectTrigger className="h-8 bg-background text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="h-10 bg-background text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
                               <SelectItem key={anchor.key} value={anchor.key}>Champ B: {anchor.label}</SelectItem>
@@ -1142,7 +1142,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                               )
                             }
                             placeholder="Quotite"
-                            className="h-8 w-full rounded-md border border-border bg-background pl-2 pr-7 text-right text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            className="h-10 w-full rounded-md border border-border bg-background pl-2 pr-7 text-right text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/20"
                           />
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
                         </div>
@@ -1203,9 +1203,9 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 rounded-md border border-border/60 bg-muted/20 p-2">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 rounded-md border border-border/60 bg-muted/20 p-3">
                       <Select value={newCustomFieldEffect} onValueChange={setNewCustomFieldEffect}>
-                        <SelectTrigger className="h-9 bg-background text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-10 bg-background text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {FINANCIAL_CUSTOM_EFFECTS.map((effect) => (
                             <SelectItem key={effect.key} value={effect.key}>Impact: {effect.shortLabel}</SelectItem>
@@ -1213,7 +1213,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         </SelectContent>
                       </Select>
                       <Select value={newCustomFieldFormula} onValueChange={setNewCustomFieldFormula}>
-                        <SelectTrigger className="h-9 bg-background text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-10 bg-background text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {FINANCIAL_CUSTOM_FORMULAS.map((formula) => (
                             <SelectItem key={formula.key} value={formula.key}>Formule: {formula.shortLabel}</SelectItem>
@@ -1227,7 +1227,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           setNewCustomFieldBaseField((prev) => (prev === newCustomFieldInsertAfter ? value : prev));
                         }}
                       >
-                        <SelectTrigger className="h-9 bg-background text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-10 bg-background text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
                             <SelectItem key={anchor.key} value={anchor.key}>Apres: {anchor.label}</SelectItem>
@@ -1235,7 +1235,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         </SelectContent>
                       </Select>
                       <Select value={newCustomFieldBaseField} onValueChange={setNewCustomFieldBaseField}>
-                        <SelectTrigger className="h-9 bg-background text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-10 bg-background text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
                             <SelectItem key={anchor.key} value={anchor.key}>Champ A: {anchor.label}</SelectItem>
@@ -1243,7 +1243,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         </SelectContent>
                       </Select>
                       <Select value={newCustomFieldSecondaryField} onValueChange={setNewCustomFieldSecondaryField}>
-                        <SelectTrigger className="h-9 bg-background text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-10 bg-background text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
                             <SelectItem key={anchor.key} value={anchor.key}>Champ B: {anchor.label}</SelectItem>
@@ -1256,7 +1256,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           value={newCustomFieldMultiplierPct}
                           onChange={(e) => setNewCustomFieldMultiplierPct(e.target.value)}
                           placeholder="Quotite"
-                          className="h-9 w-full rounded-md border border-border bg-background pl-2 pr-8 text-right text-xs font-mono text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                          className="h-10 w-full rounded-md border border-border bg-background pl-2 pr-8 text-right text-xs font-mono text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                       </div>
