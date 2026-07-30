@@ -34,10 +34,22 @@ export const FINANCIAL_CUSTOM_EFFECTS = [
     description: "Augmente le prix total d'acquisition, puis les fonds propres et ratios lies.",
   },
   {
+    key: 'acquisition_discount',
+    label: "Reduction d'acquisition",
+    shortLabel: 'Retire du prix total',
+    description: "Diminue le prix total d'acquisition, puis les fonds propres et ratios lies.",
+  },
+  {
     key: 'revenue',
     label: 'Revenu supplementaire',
     shortLabel: 'Ajoute aux revenus',
     description: 'Augmente les revenus locatifs, le revenu net et les rendements.',
+  },
+  {
+    key: 'revenue_deduction',
+    label: 'Baisse de revenu',
+    shortLabel: 'Retire des revenus',
+    description: 'Diminue les revenus locatifs, le revenu net et les rendements.',
   },
   {
     key: 'operating_expense',
@@ -46,10 +58,22 @@ export const FINANCIAL_CUSTOM_EFFECTS = [
     description: 'Diminue le revenu net, le revenu distribue et les rendements.',
   },
   {
+    key: 'operating_expense_credit',
+    label: "Reduction de charge",
+    shortLabel: 'Ajoute au revenu net',
+    description: 'Diminue les charges et augmente le revenu net, le revenu distribue et les rendements.',
+  },
+  {
     key: 'tax_expense',
     label: 'Impot / distribution',
     shortLabel: 'Deduit du distribue',
     description: 'Diminue uniquement le revenu distribue et le rendement distribue.',
+  },
+  {
+    key: 'tax_credit',
+    label: "Reduction d'impot",
+    shortLabel: 'Ajoute au distribue',
+    description: 'Diminue les impots et augmente uniquement le revenu distribue.',
   },
   {
     key: 'display_only',
@@ -92,9 +116,36 @@ export const FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS = [
 
 const EFFECT_ANCHORS = {
   acquisition_cost: FINANCIAL_CUSTOM_ACQUISITION_ANCHORS,
+  acquisition_discount: FINANCIAL_CUSTOM_ACQUISITION_ANCHORS,
   revenue: FINANCIAL_CUSTOM_REVENUE_ANCHORS,
+  revenue_deduction: FINANCIAL_CUSTOM_REVENUE_ANCHORS,
   operating_expense: FINANCIAL_CUSTOM_OPERATING_EXPENSE_ANCHORS,
+  operating_expense_credit: FINANCIAL_CUSTOM_OPERATING_EXPENSE_ANCHORS,
   tax_expense: FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS,
+  tax_credit: FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS,
+};
+
+const EFFECT_GROUPS = {
+  acquisition_cost: 'acquisition',
+  acquisition_discount: 'acquisition',
+  revenue: 'revenue',
+  revenue_deduction: 'revenue',
+  operating_expense: 'operating_expense',
+  operating_expense_credit: 'operating_expense',
+  tax_expense: 'tax_expense',
+  tax_credit: 'tax_expense',
+};
+
+const EFFECT_SIGNS = {
+  acquisition_cost: 1,
+  acquisition_discount: -1,
+  revenue: 1,
+  revenue_deduction: -1,
+  operating_expense: 1,
+  operating_expense_credit: -1,
+  tax_expense: 1,
+  tax_credit: -1,
+  display_only: 0,
 };
 
 const toNumberOrNull = (value) => {
@@ -125,6 +176,15 @@ const getEffectForAnchors = (anchors = FINANCIAL_CUSTOM_ACQUISITION_ANCHORS) => 
   return Object.entries(EFFECT_ANCHORS).find(([, effectAnchors]) =>
     effectAnchors.length === anchors.length && effectAnchors.every((anchor) => anchorSet.has(anchor))
   )?.[0] || DEFAULT_CUSTOM_EFFECT;
+};
+
+const getEffectGroupForAnchors = (anchors = FINANCIAL_CUSTOM_ACQUISITION_ANCHORS) => (
+  EFFECT_GROUPS[getEffectForAnchors(anchors)] || EFFECT_GROUPS[DEFAULT_CUSTOM_EFFECT]
+);
+
+const getSignedCustomFieldAmount = (field, data = {}) => {
+  const sign = EFFECT_SIGNS[field.calculationEffect] ?? 1;
+  return sign * Number(getFinancialCustomFieldAmount(field, data) || 0);
 };
 
 const legacySipaCustomFields = (sipaData = []) => {
@@ -222,13 +282,13 @@ export function getFinancialCustomFieldAmount(field, data = {}) {
 }
 
 export function getFinancialCustomFieldsTotal(fields = [], data = {}, anchors = FINANCIAL_CUSTOM_ACQUISITION_ANCHORS) {
-  const expectedEffect = getEffectForAnchors(anchors);
+  const expectedEffectGroup = getEffectGroupForAnchors(anchors);
   const acceptedAnchors = new Set(anchors);
   return normalizeFinancialCustomFields(fields)
     .filter((field) => {
       if (field.calculationEffect === 'display_only') return false;
-      if (field.calculationEffect) return field.calculationEffect === expectedEffect;
+      if (field.calculationEffect) return EFFECT_GROUPS[field.calculationEffect] === expectedEffectGroup;
       return acceptedAnchors.has(field.insertAfter || DEFAULT_INSERT_AFTER);
     })
-    .reduce((total, field) => total + Number(getFinancialCustomFieldAmount(field, data) || 0), 0);
+    .reduce((total, field) => total + getSignedCustomFieldAmount(field, data), 0);
 }
