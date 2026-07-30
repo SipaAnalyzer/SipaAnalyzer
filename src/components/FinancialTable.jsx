@@ -234,11 +234,12 @@ function Row({ label, value, amount, base, muted, footnote }) {
 
 function CustomFieldRow({ field, analysis }) {
   const amount = getFinancialCustomFieldAmount(field, analysis);
+  const value = field.calculationFormula === 'ratio' ? formatPercent(amount) : formatCHF(amount);
   return (
     <tr className="border-dashed border-border/40">
       <Td>{field.name}</Td>
       <Td className="text-right font-mono">
-        {formatCHF(amount)}
+        {value}
         {field.pct != null && <span className="ml-2 text-xs text-muted-foreground">({field.pct.toFixed(2)}%)</span>}
       </Td>
     </tr>

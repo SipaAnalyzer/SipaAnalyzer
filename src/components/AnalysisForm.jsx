@@ -5,8 +5,10 @@ import { calculateAnalysis, formatCHF, formatPercent, WORKFLOW_STATUSES } from '
 import { extractAnalysisFieldsFromExcel, formatSipaLabel, getSipaSection, isSipaTransactionFeeEntry, SIPA_SECTION_LABELS, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
 import {
   DEFAULT_CUSTOM_EFFECT,
+  DEFAULT_CUSTOM_FORMULA,
   FINANCIAL_CUSTOM_EFFECTS,
   FINANCIAL_CUSTOM_FIELD_ANCHORS,
+  FINANCIAL_CUSTOM_FORMULAS,
   getFinancialCustomFieldsTotal,
   getFinancialCustomFieldsTotalByGroup,
   normalizeFinancialCustomFields,
@@ -502,6 +504,9 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const [newCustomFieldInsertAfter, setNewCustomFieldInsertAfter] = useState('frais_dossier_bancaire');
   const [newCustomFieldEffect, setNewCustomFieldEffect] = useState(DEFAULT_CUSTOM_EFFECT);
   const [newCustomFieldBaseField, setNewCustomFieldBaseField] = useState('frais_dossier_bancaire');
+  const [newCustomFieldFormula, setNewCustomFieldFormula] = useState(DEFAULT_CUSTOM_FORMULA);
+  const [newCustomFieldSecondaryField, setNewCustomFieldSecondaryField] = useState('hypotheque');
+  const [newCustomFieldMultiplierPct, setNewCustomFieldMultiplierPct] = useState('75');
   const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
@@ -697,7 +702,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     const hasPct = newCustomFieldPct !== '' && newCustomFieldPct !== null && newCustomFieldPct !== undefined;
     const amount = hasAmount ? Number(newCustomFieldAmount) : null;
     const pct = hasPct ? parseFloat(newCustomFieldPct) : null;
-    if (!newCustomFieldName.trim() || (!Number.isFinite(amount) && !Number.isFinite(pct))) return;
+    const hasFormula = newCustomFieldFormula && newCustomFieldFormula !== DEFAULT_CUSTOM_FORMULA;
+    if (!newCustomFieldName.trim() || (!hasFormula && !Number.isFinite(amount) && !Number.isFinite(pct))) return;
 
     setCustomFinancialFields((prev) => [
       ...prev,
@@ -708,7 +714,10 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         pct: Number.isFinite(pct) ? pct : null,
         insertAfter: newCustomFieldInsertAfter,
         calculationEffect: newCustomFieldEffect,
+        calculationFormula: newCustomFieldFormula,
         baseField: newCustomFieldBaseField || newCustomFieldInsertAfter,
+        secondaryField: newCustomFieldSecondaryField || newCustomFieldBaseField || newCustomFieldInsertAfter,
+        multiplierPct: newCustomFieldMultiplierPct === '' ? null : Number(newCustomFieldMultiplierPct) || 0,
         position: prev.length,
       },
     ]);
@@ -716,6 +725,9 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     setNewCustomFieldAmount('');
     setNewCustomFieldPct('');
     setNewCustomFieldBaseField(newCustomFieldInsertAfter);
+    setNewCustomFieldFormula(DEFAULT_CUSTOM_FORMULA);
+    setNewCustomFieldSecondaryField('hypotheque');
+    setNewCustomFieldMultiplierPct('75');
   };
 
   return (
@@ -1070,6 +1082,23 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         </SelectContent>
                       </Select>
                       <Select
+                        value={cf.calculationFormula || DEFAULT_CUSTOM_FORMULA}
+                        onValueChange={(value) =>
+                          setCustomFinancialFields((prev) =>
+                            prev.map((f, j) => (j === i ? { ...f, calculationFormula: value } : f))
+                          )
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-32 bg-background text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FINANCIAL_CUSTOM_FORMULAS.map((formula) => (
+                            <SelectItem key={formula.key} value={formula.key}>{formula.shortLabel}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
                         value={cf.baseField || cf.insertAfter || 'prix_total'}
                         onValueChange={(value) =>
                           setCustomFinancialFields((prev) =>
@@ -1086,6 +1115,37 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           ))}
                         </SelectContent>
                       </Select>
+                      <Select
+                        value={cf.secondaryField || cf.baseField || cf.insertAfter || 'hypotheque'}
+                        onValueChange={(value) =>
+                          setCustomFinancialFields((prev) =>
+                            prev.map((f, j) => (j === i ? { ...f, secondaryField: value } : f))
+                          )
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-32 bg-background text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
+                            <SelectItem key={anchor.key} value={anchor.key}>B {anchor.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="relative w-20">
+                        <input
+                          type="number"
+                          value={cf.multiplierPct ?? ''}
+                          onChange={(e) =>
+                            setCustomFinancialFields((prev) =>
+                              prev.map((f, j) => (j === i ? { ...f, multiplierPct: e.target.value === '' ? null : parseFloat(e.target.value) || 0 } : f))
+                            )
+                          }
+                          placeholder="75"
+                          className="w-full bg-transparent border-0 border-b border-dashed border-border/40 pr-5 py-1 text-sm text-right font-mono focus:outline-none focus:border-primary"
+                        />
+                        <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setCustomFinancialFields((prev) => prev.filter((_, j) => j !== i))}
@@ -1164,6 +1224,16 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         ))}
                       </SelectContent>
                     </Select>
+                    <Select value={newCustomFieldFormula} onValueChange={setNewCustomFieldFormula}>
+                      <SelectTrigger className="h-10 w-36 bg-background text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FINANCIAL_CUSTOM_FORMULAS.map((formula) => (
+                          <SelectItem key={formula.key} value={formula.key}>{formula.shortLabel}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Select value={newCustomFieldBaseField} onValueChange={setNewCustomFieldBaseField}>
                       <SelectTrigger className="h-10 w-36 bg-background text-xs">
                         <SelectValue />
@@ -1174,6 +1244,26 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         ))}
                       </SelectContent>
                     </Select>
+                    <Select value={newCustomFieldSecondaryField} onValueChange={setNewCustomFieldSecondaryField}>
+                      <SelectTrigger className="h-10 w-36 bg-background text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
+                          <SelectItem key={anchor.key} value={anchor.key}>B {anchor.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="relative w-24">
+                      <input
+                        type="number"
+                        value={newCustomFieldMultiplierPct}
+                        onChange={(e) => setNewCustomFieldMultiplierPct(e.target.value)}
+                        placeholder="75"
+                        className="w-full rounded-md border border-border bg-background py-2 pl-3 pr-8 text-right text-sm font-mono text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
@@ -1417,6 +1507,12 @@ Courtier : UBS, Valérie Zuber"
           setNewCustomFieldEffect={setNewCustomFieldEffect}
           newCustomFieldBaseField={newCustomFieldBaseField}
           setNewCustomFieldBaseField={setNewCustomFieldBaseField}
+          newCustomFieldFormula={newCustomFieldFormula}
+          setNewCustomFieldFormula={setNewCustomFieldFormula}
+          newCustomFieldSecondaryField={newCustomFieldSecondaryField}
+          setNewCustomFieldSecondaryField={setNewCustomFieldSecondaryField}
+          newCustomFieldMultiplierPct={newCustomFieldMultiplierPct}
+          setNewCustomFieldMultiplierPct={setNewCustomFieldMultiplierPct}
           addCustomFinancialField={addCustomFinancialField}
         />
       )}
@@ -1495,6 +1591,12 @@ function TechnicalAnalysisView({
   setNewCustomFieldEffect,
   newCustomFieldBaseField,
   setNewCustomFieldBaseField,
+  newCustomFieldFormula,
+  setNewCustomFieldFormula,
+  newCustomFieldSecondaryField,
+  setNewCustomFieldSecondaryField,
+  newCustomFieldMultiplierPct,
+  setNewCustomFieldMultiplierPct,
   addCustomFinancialField,
 }) {
   const addOnEnter = (event) => {
@@ -1698,6 +1800,19 @@ function TechnicalAnalysisView({
                       ))}
                     </select>
                     <select
+                      value={cf.calculationFormula || DEFAULT_CUSTOM_FORMULA}
+                      onChange={(event) =>
+                        setCustomFinancialFields((prev) =>
+                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, calculationFormula: event.target.value } : item))
+                        )
+                      }
+                      className="mb-1 h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
+                    >
+                      {FINANCIAL_CUSTOM_FORMULAS.map((formula) => (
+                        <option key={formula.key} value={formula.key}>{formula.shortLabel}</option>
+                      ))}
+                    </select>
+                    <select
                       value={cf.baseField || cf.insertAfter || 'prix_total'}
                       onChange={(event) =>
                         setCustomFinancialFields((prev) =>
@@ -1710,6 +1825,27 @@ function TechnicalAnalysisView({
                         <option key={anchor.key} value={anchor.key}>Base {anchor.label}</option>
                       ))}
                     </select>
+                    <select
+                      value={cf.secondaryField || cf.baseField || cf.insertAfter || 'hypotheque'}
+                      onChange={(event) =>
+                        setCustomFinancialFields((prev) =>
+                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, secondaryField: event.target.value } : item))
+                        )
+                      }
+                      className="mb-1 h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
+                    >
+                      {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
+                        <option key={anchor.key} value={anchor.key}>B {anchor.label}</option>
+                      ))}
+                    </select>
+                    <ExcelNumberInput
+                      value={cf.multiplierPct ?? ''}
+                      onChange={(value) =>
+                        setCustomFinancialFields((prev) =>
+                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, multiplierPct: value } : item))
+                        )
+                      }
+                    />
                     <button
                       type="button"
                       onClick={() => setCustomFinancialFields((prev) => prev.filter((_, itemIndex) => itemIndex !== index))}
@@ -1764,6 +1900,15 @@ function TechnicalAnalysisView({
                     ))}
                   </select>
                   <select
+                    value={newCustomFieldFormula}
+                    onChange={(event) => setNewCustomFieldFormula(event.target.value)}
+                    className="mb-1 h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
+                  >
+                    {FINANCIAL_CUSTOM_FORMULAS.map((formula) => (
+                      <option key={formula.key} value={formula.key}>{formula.shortLabel}</option>
+                    ))}
+                  </select>
+                  <select
                     value={newCustomFieldBaseField}
                     onChange={(event) => setNewCustomFieldBaseField(event.target.value)}
                     className="mb-1 h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
@@ -1772,6 +1917,16 @@ function TechnicalAnalysisView({
                       <option key={anchor.key} value={anchor.key}>Base {anchor.label}</option>
                     ))}
                   </select>
+                  <select
+                    value={newCustomFieldSecondaryField}
+                    onChange={(event) => setNewCustomFieldSecondaryField(event.target.value)}
+                    className="mb-1 h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
+                  >
+                    {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
+                      <option key={anchor.key} value={anchor.key}>B {anchor.label}</option>
+                    ))}
+                  </select>
+                  <ExcelNumberInput value={newCustomFieldMultiplierPct} onChange={setNewCustomFieldMultiplierPct} onKeyDown={addOnEnter} />
                   <button
                     type="button"
                     onClick={addCustomFinancialField}

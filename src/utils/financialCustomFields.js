@@ -134,6 +134,60 @@ export const FINANCIAL_CUSTOM_EFFECTS = [
 export const DEFAULT_CUSTOM_EFFECT = 'acquisition_cost';
 const VALID_EFFECT_KEYS = new Set(FINANCIAL_CUSTOM_EFFECTS.map((effect) => effect.key));
 
+export const FINANCIAL_CUSTOM_FORMULAS = [
+  {
+    key: 'manual_or_pct',
+    label: 'Montant ou % simple',
+    shortLabel: 'Montant / %',
+    description: 'Montant saisi, ou Champ A x % si seul un pourcentage est renseigne.',
+  },
+  {
+    key: 'multiply_pct',
+    label: 'Multiplier un champ par un %',
+    shortLabel: 'A x %',
+    description: 'Comme Honoraires = Prix du bien x 5%.',
+  },
+  {
+    key: 'ratio',
+    label: 'Calculer un ratio',
+    shortLabel: 'A / B',
+    description: 'Comme Rendement = Revenu net / Fonds propres.',
+  },
+  {
+    key: 'sum',
+    label: 'Additionner deux champs',
+    shortLabel: 'A + B',
+    description: 'Comme SIPA total = Target benefice + Honoraires.',
+  },
+  {
+    key: 'subtract',
+    label: 'Soustraire deux champs',
+    shortLabel: 'A - B',
+    description: 'Comme Fonds propres = Prix total - Hypotheque.',
+  },
+  {
+    key: 'difference',
+    label: 'Calculer un reste',
+    shortLabel: 'Reste A - B',
+    description: 'Comme SIPA Immo = SIPA total - SIPA Trading.',
+  },
+  {
+    key: 'mortgage_capacity',
+    label: 'Capacite hypothecaire',
+    shortLabel: '(A / %) x %',
+    description: 'Comme Alt Max mortgage = (revenus / taux) x quotite.',
+  },
+  {
+    key: 'replace',
+    label: 'Remplacer par un champ',
+    shortLabel: 'Remplace',
+    description: 'Utilise la valeur du Champ A au lieu du montant saisi.',
+  },
+];
+
+export const DEFAULT_CUSTOM_FORMULA = 'manual_or_pct';
+const VALID_FORMULA_KEYS = new Set(FINANCIAL_CUSTOM_FORMULAS.map((formula) => formula.key));
+
 export const FINANCIAL_CUSTOM_ACQUISITION_ANCHORS = [
   'prix_bien',
   'prix_achat',
@@ -235,6 +289,10 @@ const normalizeEffect = (value) => (
   VALID_EFFECT_KEYS.has(value) ? value : DEFAULT_CUSTOM_EFFECT
 );
 
+const normalizeFormula = (value) => (
+  VALID_FORMULA_KEYS.has(value) ? value : DEFAULT_CUSTOM_FORMULA
+);
+
 const inferEffectFromAnchor = (anchorKey) => {
   const normalizedAnchor = normalizeInsertAfter(anchorKey);
   const match = Object.entries(EFFECT_ANCHORS).find(([, anchors]) => anchors.includes(normalizedAnchor));
@@ -274,7 +332,10 @@ const legacySipaCustomFields = (sipaData = []) => {
         pct: toNumberOrNull(pct?.value),
         insertAfter: normalizeInsertAfter(entry.insertAfter),
         calculationEffect: inferEffectFromAnchor(entry.insertAfter),
+        calculationFormula: DEFAULT_CUSTOM_FORMULA,
         baseField: normalizeBaseField(entry.baseField, entry.insertAfter),
+        secondaryField: normalizeBaseField(entry.secondaryField, entry.insertAfter),
+        multiplierPct: null,
         position: index,
       };
     });
@@ -290,6 +351,7 @@ export function normalizeFinancialCustomFields(fields = [], legacySipaData = [])
       const insertAfter = normalizeInsertAfter(field.insertAfter || field.after || field.anchor);
       const explicitEffect = field.calculationEffect || field.effect || field.impact;
       const calculationEffect = explicitEffect ? normalizeEffect(explicitEffect) : inferEffectFromAnchor(insertAfter);
+      const baseField = normalizeBaseField(field.baseField || field.calculationBase, insertAfter);
       return {
         id: field.id || `custom-${index}`,
         name: field.name || field.label || '',
@@ -297,7 +359,10 @@ export function normalizeFinancialCustomFields(fields = [], legacySipaData = [])
         pct: toNumberOrNull(field.pct),
         insertAfter,
         calculationEffect,
-        baseField: normalizeBaseField(field.baseField || field.calculationBase, insertAfter),
+        calculationFormula: normalizeFormula(field.calculationFormula || field.formulaType || field.formula),
+        baseField,
+        secondaryField: normalizeBaseField(field.secondaryField || field.secondField || field.fieldB, baseField),
+        multiplierPct: toNumberOrNull(field.multiplierPct),
         position: Number.isFinite(Number(field.position)) ? Number(field.position) : index,
       };
     })
@@ -316,11 +381,18 @@ export function toPersistedFinancialCustomFields(fields = [], data = {}) {
         pct,
         insertAfter: normalizeInsertAfter(field.insertAfter),
         calculationEffect: normalizeEffect(field.calculationEffect),
+        calculationFormula: normalizeFormula(field.calculationFormula),
         baseField: normalizeBaseField(field.baseField, field.insertAfter),
+        secondaryField: normalizeBaseField(field.secondaryField, field.baseField || field.insertAfter),
+        multiplierPct: toNumberOrNull(field.multiplierPct),
         position: Number.isFinite(Number(field.position)) ? Number(field.position) : index,
       };
     })
-    .filter((field) => field.label && (toNumberOrNull(field.amount) !== null || toNumberOrNull(field.pct) !== null));
+    .filter((field) => field.label && (
+      toNumberOrNull(field.amount) !== null ||
+      toNumberOrNull(field.pct) !== null ||
+      normalizeFormula(field.calculationFormula) !== DEFAULT_CUSTOM_FORMULA
+    ));
 }
 
 export function getCustomFieldsAfter(fields = [], anchorKey) {
@@ -344,12 +416,28 @@ export function getFinancialCustomFieldBase(field, data = {}) {
 
 export function getFinancialCustomFieldAmount(field, data = {}) {
   const amount = toNumberOrNull(field?.amount);
-  if (amount !== null) return amount;
+  const formula = normalizeFormula(field?.calculationFormula);
+  if (amount !== null && formula === DEFAULT_CUSTOM_FORMULA) return amount;
 
   const pct = toNumberOrNull(field?.pct);
-  if (pct === null) return null;
-
   const base = getFinancialCustomFieldBase(field, data);
+  const secondary = getFinancialCustomFieldBase(
+    { baseField: field?.secondaryField, insertAfter: field?.baseField || field?.insertAfter },
+    data
+  );
+  const multiplierPct = toNumberOrNull(field?.multiplierPct);
+
+  if (formula === 'replace') return base;
+  if (formula === 'sum') return Math.round(base + secondary);
+  if (formula === 'subtract' || formula === 'difference') return Math.round(base - secondary);
+  if (formula === 'ratio') return secondary ? Math.round((base / secondary) * 10000) / 100 : null;
+  if (formula === 'mortgage_capacity') {
+    const rate = pct ?? 0;
+    const loanToValue = multiplierPct ?? 75;
+    return rate ? Math.round((base / (rate / 100)) * (loanToValue / 100)) : null;
+  }
+  if (pct === null) return amount;
+
   return Math.round(base * pct) / 100;
 }
 
