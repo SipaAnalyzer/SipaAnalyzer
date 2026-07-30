@@ -4,6 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent, WORKFLOW_STATUSES } from '../utils/calculations';
 import { extractAnalysisFieldsFromExcel, formatSipaLabel, getSipaSection, isSipaTransactionFeeEntry, SIPA_SECTION_LABELS, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
 import {
+  DEFAULT_CUSTOM_EFFECT,
+  FINANCIAL_CUSTOM_EFFECTS,
   FINANCIAL_CUSTOM_FIELD_ANCHORS,
   getFinancialCustomFieldsTotal,
   normalizeFinancialCustomFields,
@@ -493,6 +495,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const [newCustomFieldAmount, setNewCustomFieldAmount] = useState('');
   const [newCustomFieldPct, setNewCustomFieldPct] = useState('');
   const [newCustomFieldInsertAfter, setNewCustomFieldInsertAfter] = useState('frais_dossier_bancaire');
+  const [newCustomFieldEffect, setNewCustomFieldEffect] = useState(DEFAULT_CUSTOM_EFFECT);
+  const [newCustomFieldBaseField, setNewCustomFieldBaseField] = useState('frais_dossier_bancaire');
   const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
@@ -663,7 +667,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
               existing.add(cf.name);
             }
           }
-          return merged;
+          return normalizeFinancialCustomFields(merged);
         });
       }
       setExcelImportState({
@@ -698,12 +702,15 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         amount: Number.isFinite(amount) ? amount : null,
         pct: Number.isFinite(pct) ? pct : null,
         insertAfter: newCustomFieldInsertAfter,
+        calculationEffect: newCustomFieldEffect,
+        baseField: newCustomFieldBaseField || newCustomFieldInsertAfter,
         position: prev.length,
       },
     ]);
     setNewCustomFieldName('');
     setNewCustomFieldAmount('');
     setNewCustomFieldPct('');
+    setNewCustomFieldBaseField(newCustomFieldInsertAfter);
   };
 
   return (
@@ -1027,7 +1034,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         value={cf.insertAfter || 'prix_total'}
                         onValueChange={(value) =>
                           setCustomFinancialFields((prev) =>
-                            prev.map((f, j) => (j === i ? { ...f, insertAfter: value } : f))
+                            prev.map((f, j) => (j === i ? { ...f, insertAfter: value, baseField: f.baseField || value } : f))
                           )
                         }
                       >
@@ -1037,6 +1044,40 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                         <SelectContent>
                           {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
                             <SelectItem key={anchor.key} value={anchor.key}>Apres {anchor.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={cf.calculationEffect || DEFAULT_CUSTOM_EFFECT}
+                        onValueChange={(value) =>
+                          setCustomFinancialFields((prev) =>
+                            prev.map((f, j) => (j === i ? { ...f, calculationEffect: value } : f))
+                          )
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-40 bg-background text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FINANCIAL_CUSTOM_EFFECTS.map((effect) => (
+                            <SelectItem key={effect.key} value={effect.key}>{effect.shortLabel}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={cf.baseField || cf.insertAfter || 'prix_total'}
+                        onValueChange={(value) =>
+                          setCustomFinancialFields((prev) =>
+                            prev.map((f, j) => (j === i ? { ...f, baseField: value } : f))
+                          )
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-36 bg-background text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
+                            <SelectItem key={anchor.key} value={anchor.key}>Base {anchor.label}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -1092,13 +1133,39 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                     </div>
-                    <Select value={newCustomFieldInsertAfter} onValueChange={setNewCustomFieldInsertAfter}>
+                    <Select
+                      value={newCustomFieldInsertAfter}
+                      onValueChange={(value) => {
+                        setNewCustomFieldInsertAfter(value);
+                        setNewCustomFieldBaseField((prev) => (prev === newCustomFieldInsertAfter ? value : prev));
+                      }}
+                    >
                       <SelectTrigger className="h-10 w-48 bg-background text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
                           <SelectItem key={anchor.key} value={anchor.key}>Apres {anchor.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={newCustomFieldEffect} onValueChange={setNewCustomFieldEffect}>
+                      <SelectTrigger className="h-10 w-44 bg-background text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FINANCIAL_CUSTOM_EFFECTS.map((effect) => (
+                          <SelectItem key={effect.key} value={effect.key}>{effect.shortLabel}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={newCustomFieldBaseField} onValueChange={setNewCustomFieldBaseField}>
+                      <SelectTrigger className="h-10 w-40 bg-background text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
+                          <SelectItem key={anchor.key} value={anchor.key}>Base {anchor.label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -1341,6 +1408,10 @@ Courtier : UBS, Valérie Zuber"
           setNewCustomFieldPct={setNewCustomFieldPct}
           newCustomFieldInsertAfter={newCustomFieldInsertAfter}
           setNewCustomFieldInsertAfter={setNewCustomFieldInsertAfter}
+          newCustomFieldEffect={newCustomFieldEffect}
+          setNewCustomFieldEffect={setNewCustomFieldEffect}
+          newCustomFieldBaseField={newCustomFieldBaseField}
+          setNewCustomFieldBaseField={setNewCustomFieldBaseField}
           addCustomFinancialField={addCustomFinancialField}
         />
       )}
@@ -1415,6 +1486,10 @@ function TechnicalAnalysisView({
   setNewCustomFieldPct,
   newCustomFieldInsertAfter,
   setNewCustomFieldInsertAfter,
+  newCustomFieldEffect,
+  setNewCustomFieldEffect,
+  newCustomFieldBaseField,
+  setNewCustomFieldBaseField,
   addCustomFinancialField,
 }) {
   const addOnEnter = (event) => {
@@ -1595,13 +1670,39 @@ function TechnicalAnalysisView({
                       value={cf.insertAfter || 'prix_total'}
                       onChange={(event) =>
                         setCustomFinancialFields((prev) =>
-                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, insertAfter: event.target.value } : item))
+                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, insertAfter: event.target.value, baseField: item.baseField || event.target.value } : item))
                         )
                       }
-                      className="h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
+                      className="mb-1 h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
                     >
                       {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
                         <option key={anchor.key} value={anchor.key}>Apres {anchor.label}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={cf.calculationEffect || DEFAULT_CUSTOM_EFFECT}
+                      onChange={(event) =>
+                        setCustomFinancialFields((prev) =>
+                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, calculationEffect: event.target.value } : item))
+                        )
+                      }
+                      className="mb-1 h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
+                    >
+                      {FINANCIAL_CUSTOM_EFFECTS.map((effect) => (
+                        <option key={effect.key} value={effect.key}>{effect.shortLabel}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={cf.baseField || cf.insertAfter || 'prix_total'}
+                      onChange={(event) =>
+                        setCustomFinancialFields((prev) =>
+                          prev.map((item, itemIndex) => (itemIndex === index ? { ...item, baseField: event.target.value } : item))
+                        )
+                      }
+                      className="mb-1 h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
+                    >
+                      {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
+                        <option key={anchor.key} value={anchor.key}>Base {anchor.label}</option>
                       ))}
                     </select>
                     <button
@@ -1637,11 +1738,33 @@ function TechnicalAnalysisView({
                 <ExcelCell align="right" className={EXCEL_EDITABLE_CELL_CLASS}>
                   <select
                     value={newCustomFieldInsertAfter}
-                    onChange={(event) => setNewCustomFieldInsertAfter(event.target.value)}
-                    className="mr-2 h-6 max-w-44 bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setNewCustomFieldInsertAfter(value);
+                      setNewCustomFieldBaseField((prev) => (prev === newCustomFieldInsertAfter ? value : prev));
+                    }}
+                    className="mb-1 h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
                   >
                     {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
                       <option key={anchor.key} value={anchor.key}>Apres {anchor.label}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={newCustomFieldEffect}
+                    onChange={(event) => setNewCustomFieldEffect(event.target.value)}
+                    className="mb-1 h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
+                  >
+                    {FINANCIAL_CUSTOM_EFFECTS.map((effect) => (
+                      <option key={effect.key} value={effect.key}>{effect.shortLabel}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={newCustomFieldBaseField}
+                    onChange={(event) => setNewCustomFieldBaseField(event.target.value)}
+                    className="mb-1 h-6 w-full bg-transparent px-1 text-[11px] text-black outline-none focus:bg-[#fff2cc]"
+                  >
+                    {FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => (
+                      <option key={anchor.key} value={anchor.key}>Base {anchor.label}</option>
                     ))}
                   </select>
                   <button

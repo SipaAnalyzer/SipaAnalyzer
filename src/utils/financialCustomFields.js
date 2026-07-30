@@ -26,6 +26,42 @@ export const FINANCIAL_CUSTOM_FIELD_ANCHORS = [
 const DEFAULT_INSERT_AFTER = 'prix_total';
 const VALID_INSERT_AFTER_KEYS = new Set(FINANCIAL_CUSTOM_FIELD_ANCHORS.map((anchor) => anchor.key));
 
+export const FINANCIAL_CUSTOM_EFFECTS = [
+  {
+    key: 'acquisition_cost',
+    label: "Cout d'acquisition",
+    shortLabel: 'Ajoute au prix total',
+    description: "Augmente le prix total d'acquisition, puis les fonds propres et ratios lies.",
+  },
+  {
+    key: 'revenue',
+    label: 'Revenu supplementaire',
+    shortLabel: 'Ajoute aux revenus',
+    description: 'Augmente les revenus locatifs, le revenu net et les rendements.',
+  },
+  {
+    key: 'operating_expense',
+    label: "Charge d'exploitation",
+    shortLabel: 'Deduit du revenu net',
+    description: 'Diminue le revenu net, le revenu distribue et les rendements.',
+  },
+  {
+    key: 'tax_expense',
+    label: 'Impot / distribution',
+    shortLabel: 'Deduit du distribue',
+    description: 'Diminue uniquement le revenu distribue et le rendement distribue.',
+  },
+  {
+    key: 'display_only',
+    label: 'Information seule',
+    shortLabel: 'Aucun calcul',
+    description: 'Affiche la ligne sans modifier les resultats financiers.',
+  },
+];
+
+export const DEFAULT_CUSTOM_EFFECT = 'acquisition_cost';
+const VALID_EFFECT_KEYS = new Set(FINANCIAL_CUSTOM_EFFECTS.map((effect) => effect.key));
+
 export const FINANCIAL_CUSTOM_ACQUISITION_ANCHORS = [
   'prix_bien',
   'prix_achat',
@@ -54,6 +90,13 @@ export const FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS = [
   'revenu_distribue',
 ];
 
+const EFFECT_ANCHORS = {
+  acquisition_cost: FINANCIAL_CUSTOM_ACQUISITION_ANCHORS,
+  revenue: FINANCIAL_CUSTOM_REVENUE_ANCHORS,
+  operating_expense: FINANCIAL_CUSTOM_OPERATING_EXPENSE_ANCHORS,
+  tax_expense: FINANCIAL_CUSTOM_TAX_EXPENSE_ANCHORS,
+};
+
 const toNumberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null;
   const numeric = Number(value);
@@ -63,6 +106,25 @@ const toNumberOrNull = (value) => {
 const normalizeInsertAfter = (value) => {
   const key = value || DEFAULT_INSERT_AFTER;
   return VALID_INSERT_AFTER_KEYS.has(key) ? key : DEFAULT_INSERT_AFTER;
+};
+
+const normalizeEffect = (value) => (
+  VALID_EFFECT_KEYS.has(value) ? value : DEFAULT_CUSTOM_EFFECT
+);
+
+const inferEffectFromAnchor = (anchorKey) => {
+  const normalizedAnchor = normalizeInsertAfter(anchorKey);
+  const match = Object.entries(EFFECT_ANCHORS).find(([, anchors]) => anchors.includes(normalizedAnchor));
+  return match?.[0] || DEFAULT_CUSTOM_EFFECT;
+};
+
+const normalizeBaseField = (value, fallback) => normalizeInsertAfter(value || fallback);
+
+const getEffectForAnchors = (anchors = FINANCIAL_CUSTOM_ACQUISITION_ANCHORS) => {
+  const anchorSet = new Set(anchors);
+  return Object.entries(EFFECT_ANCHORS).find(([, effectAnchors]) =>
+    effectAnchors.length === anchors.length && effectAnchors.every((anchor) => anchorSet.has(anchor))
+  )?.[0] || DEFAULT_CUSTOM_EFFECT;
 };
 
 const legacySipaCustomFields = (sipaData = []) => {
@@ -79,6 +141,8 @@ const legacySipaCustomFields = (sipaData = []) => {
         amount: toNumberOrNull(amount?.value),
         pct: toNumberOrNull(pct?.value),
         insertAfter: normalizeInsertAfter(entry.insertAfter),
+        calculationEffect: inferEffectFromAnchor(entry.insertAfter),
+        baseField: normalizeBaseField(entry.baseField, entry.insertAfter),
         position: index,
       };
     });
@@ -90,14 +154,21 @@ export function normalizeFinancialCustomFields(fields = [], legacySipaData = [])
     : legacySipaCustomFields(legacySipaData);
 
   return source
-    .map((field, index) => ({
-      id: field.id || `custom-${index}`,
-      name: field.name || field.label || '',
-      amount: toNumberOrNull(field.amount),
-      pct: toNumberOrNull(field.pct),
-      insertAfter: normalizeInsertAfter(field.insertAfter || field.after || field.anchor),
-      position: Number.isFinite(Number(field.position)) ? Number(field.position) : index,
-    }))
+    .map((field, index) => {
+      const insertAfter = normalizeInsertAfter(field.insertAfter || field.after || field.anchor);
+      const explicitEffect = field.calculationEffect || field.effect || field.impact;
+      const calculationEffect = explicitEffect ? normalizeEffect(explicitEffect) : inferEffectFromAnchor(insertAfter);
+      return {
+        id: field.id || `custom-${index}`,
+        name: field.name || field.label || '',
+        amount: toNumberOrNull(field.amount),
+        pct: toNumberOrNull(field.pct),
+        insertAfter,
+        calculationEffect,
+        baseField: normalizeBaseField(field.baseField || field.calculationBase, insertAfter),
+        position: Number.isFinite(Number(field.position)) ? Number(field.position) : index,
+      };
+    })
     .filter((field) => field.name.trim());
 }
 
@@ -106,13 +177,14 @@ export function toPersistedFinancialCustomFields(fields = [], data = {}) {
     .map((field, index) => {
       const pct = toNumberOrNull(field.pct);
       const explicitAmount = toNumberOrNull(field.amount);
-      const computedAmount = explicitAmount ?? getFinancialCustomFieldAmount(field, data);
       return {
         id: field.id || `custom-${index}`,
         label: field.name.trim(),
-        amount: computedAmount,
+        amount: explicitAmount,
         pct,
         insertAfter: normalizeInsertAfter(field.insertAfter),
+        calculationEffect: normalizeEffect(field.calculationEffect),
+        baseField: normalizeBaseField(field.baseField, field.insertAfter),
         position: Number.isFinite(Number(field.position)) ? Number(field.position) : index,
       };
     })
@@ -126,7 +198,7 @@ export function getCustomFieldsAfter(fields = [], anchorKey) {
 }
 
 export function getFinancialCustomFieldBase(field, data = {}) {
-  const key = field?.insertAfter || DEFAULT_INSERT_AFTER;
+  const key = normalizeBaseField(field?.baseField, field?.insertAfter);
   if (key === 'prix_achat') return toNumberOrNull(data.prix_achat) ?? toNumberOrNull(data.prix_bien) ?? 0;
   if (key === 'prix_total') return toNumberOrNull(data.prix_total) ?? 0;
   if (key === 'fonds_propres_achat') return toNumberOrNull(data.fonds_propres_achat) ?? 0;
@@ -150,8 +222,13 @@ export function getFinancialCustomFieldAmount(field, data = {}) {
 }
 
 export function getFinancialCustomFieldsTotal(fields = [], data = {}, anchors = FINANCIAL_CUSTOM_ACQUISITION_ANCHORS) {
+  const expectedEffect = getEffectForAnchors(anchors);
   const acceptedAnchors = new Set(anchors);
   return normalizeFinancialCustomFields(fields)
-    .filter((field) => acceptedAnchors.has(field.insertAfter || DEFAULT_INSERT_AFTER))
+    .filter((field) => {
+      if (field.calculationEffect === 'display_only') return false;
+      if (field.calculationEffect) return field.calculationEffect === expectedEffect;
+      return acceptedAnchors.has(field.insertAfter || DEFAULT_INSERT_AFTER);
+    })
     .reduce((total, field) => total + Number(getFinancialCustomFieldAmount(field, data) || 0), 0);
 }
