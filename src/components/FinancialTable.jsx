@@ -103,7 +103,6 @@ function FinancialTableBody({ analysis, calc, purchasePrice, purchaseSubtotal, p
   ));
   const anchoredKeys = [
     'prix_bien',
-    'prix_achat',
     'honoraires_sipa',
     'construction',
     'fonds_propres_achat',
@@ -140,8 +139,6 @@ function FinancialTableBody({ analysis, calc, purchasePrice, purchaseSubtotal, p
             <tbody className="divide-y divide-border/50">
               <Row label="Prix du bien" value={formatCHF(analysis.prix_bien)} />
               {renderCustomRows('prix_bien')}
-              <Row label="Prix d'achat" value={formatCHF(purchasePrice)} />
-              {renderCustomRows('prix_achat')}
               <Row label="Construction" amount={analysis.construction} base={purchasePrice} />
               {renderCustomRows('construction')}
               <Row label="Fonds propres achat" value={formatCHF(getPurchaseEquity(analysis))} />

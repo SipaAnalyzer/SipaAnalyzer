@@ -2,6 +2,14 @@ import * as XLSX from 'xlsx';
 
 const EXCLUDED_IMPORT_COLUMNS = [5, 6, 7]; // Colonnes F, G, H (0-indexé) : exclues de l'import sans modifier le fichier
 
+// Ligne spéciale : ne lire que la valeur de la colonne 5 (1-based) = colonne E (0-based 4)
+const SPECIAL_SIPA_ROWS = {
+  'sum must be smaller than rent': { valueColumn: 4 },
+};
+
+// Cellules à ignorer : case 74, colonne 2 (1-based) = (73, 1) en 0-based
+const IGNORED_SIPA_CELLS = [{ row: 73, col: 1 }];
+
 export function formatSipaValue(v) {
   if (!v) return '—';
   if (v.type === 'pct') return `${v.value}%`;
@@ -505,8 +513,12 @@ function extractStructuredSipaData(rows, fields = {}) {
       const label = labelCell.trim();
       if (!label) continue;
 
+      const specialRow = SPECIAL_SIPA_ROWS[normalizeText(label)];
+
       const values = [];
       for (let col = 1; col <= 6 && col < row.length; col += 1) {
+        if (IGNORED_SIPA_CELLS.some((cell) => cell.row === rowIndex && cell.col === col)) continue;
+        if (specialRow && col !== specialRow.valueColumn) continue;
         const value = toSipaCellValue(row[col], col, label);
         if (value) values.push(value);
       }
