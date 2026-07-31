@@ -1264,6 +1264,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                       <thead>
                         <tr className="border-b border-border">
                           <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
+                          <th className="text-left py-2 px-4 font-medium text-muted-foreground">Détails</th>
                           <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-56">Montant</th>
                           <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-32">%</th>
                         </tr>
@@ -1282,8 +1283,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           const amountItems = valueItems.filter(({ value }) => value?.type === 'amount');
                           const textItems = valueItems.filter(({ value }) => value?.type === 'text');
                           const editableValueItems = amountItems.length > 0
-                            ? valueItems
-                            : [{ value: { type: 'amount', value: null }, valueIndex: SIPA_NEW_AMOUNT_VALUE_INDEX }, ...textItems];
+                            ? amountItems
+                            : [{ value: { type: 'amount', value: null }, valueIndex: SIPA_NEW_AMOUNT_VALUE_INDEX }];
                           const editablePctItems = pctItems.length > 0
                             ? pctItems
                             : [{ value: { type: 'pct', value: null }, valueIndex: SIPA_NEW_PCT_VALUE_INDEX }];
@@ -1296,6 +1297,18 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                                   onChange={(event) => updateSipaCell(index, null, 'label', event.target.value)}
                                   className={`w-full min-w-40 rounded-md border border-border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 ${isSummaryRow ? 'font-semibold text-primary' : ''}`}
                                 />
+                              </td>
+                              <td className="py-2 px-4 text-sm">
+                                <div className="flex flex-col gap-1">
+                                  {textItems.map(({ value, valueIndex }) => (
+                                    <SipaEditableValue
+                                      key={valueIndex}
+                                      value={value}
+                                      inputValue={value.value}
+                                      onChange={(next) => updateSipaCell(index, valueIndex, 'value', next)}
+                                    />
+                                  ))}
+                                </div>
                               </td>
                               <td className="py-2 pl-4 text-sm">
                                 <div className="flex flex-col items-end gap-1">
@@ -2136,6 +2149,7 @@ function ExcelSipaInvestmentSheet({ sipaData, onChange, transactionFeeAmount, tr
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
+                  <th className="text-left py-2 px-4 font-medium text-muted-foreground">Détails</th>
                   <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-56">Montant</th>
                   <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-32">%</th>
                 </tr>
@@ -2148,6 +2162,8 @@ function ExcelSipaInvestmentSheet({ sipaData, onChange, transactionFeeAmount, tr
                   const valueItems = (entry.values || [])
                     .map((value, valueIndex) => ({ value, valueIndex }))
                     .filter(({ value }) => value?.type !== 'pct' && (value?.type === 'text' || value?.type === 'amount'));
+                  const amountItems = valueItems.filter(({ value }) => value?.type === 'amount');
+                  const textItems = valueItems.filter(({ value }) => value?.type === 'text');
                   const pctItems = (entry.values || [])
                     .map((value, valueIndex) => ({ value, valueIndex }))
                     .filter(({ value }) => value?.type === 'pct');
@@ -2161,9 +2177,21 @@ function ExcelSipaInvestmentSheet({ sipaData, onChange, transactionFeeAmount, tr
                           className={`w-full min-w-40 rounded-md border border-border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 ${isSummaryRow ? 'font-semibold text-primary' : ''}`}
                         />
                       </td>
+                      <td className="py-2 px-4 text-sm">
+                        <div className="flex flex-col gap-1">
+                          {textItems.map(({ value, valueIndex }) => (
+                            <SipaEditableValue
+                              key={valueIndex}
+                              value={value}
+                              inputValue={value.value}
+                              onChange={(next) => updateCell(index, valueIndex, 'value', next)}
+                            />
+                          ))}
+                        </div>
+                      </td>
                       <td className="py-2 pl-4 text-sm">
                         <div className="flex flex-col items-end gap-1">
-                          {valueItems.map(({ value, valueIndex }) => {
+                          {amountItems.map(({ value, valueIndex }) => {
                             const transactionValue = value.type === 'amount' ? transactionFeeAmount : value.value;
                             const onTransactionChange = value.type === 'amount' ? onTransactionFeeAmount : null;
                             return (

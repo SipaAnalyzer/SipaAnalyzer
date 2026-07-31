@@ -802,6 +802,7 @@ function SipaImportedDataTable({ analysis, collapsible = false }) {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
+                  <th className="text-left py-2 px-4 font-medium text-muted-foreground">Détails</th>
                   <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-56">Montant</th>
                   <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-32">%</th>
                 </tr>
@@ -811,12 +812,21 @@ function SipaImportedDataTable({ analysis, collapsible = false }) {
                   const rowLabel = formatSipaLabel(entry, entries, index);
                   const isSummaryRow = isSipaSummaryLabel(rowLabel);
                   const display = getSipaDisplayValues(entry, entries, index);
+                  const detailValues = display.values.filter((value) => value?.type === 'text');
+                  const amountValues = display.values.filter((value) => value?.type !== 'text');
                   return (
                     <tr key={index} className={isSummaryRow ? 'bg-primary/5 border-primary/20' : ''}>
                       <td className={`py-2.5 pr-4 text-sm font-medium whitespace-nowrap ${isSummaryRow ? 'font-semibold text-primary' : ''}`}>{rowLabel}</td>
+                      <td className="py-2.5 px-4 text-sm text-muted-foreground">
+                        <div className="flex flex-col gap-0.5">
+                          {detailValues.map((v, j) => (
+                            <span key={`detail-${j}`}>{formatSipaValue(v)}</span>
+                          ))}
+                        </div>
+                      </td>
                       <td className="py-2.5 pl-4 text-sm">
                         <div className={`flex flex-col items-end gap-0.5 font-mono ${isSummaryRow ? 'font-bold text-primary' : ''}`}>
-                          {display.values.map((v, j) => (
+                          {amountValues.map((v, j) => (
                             <span key={`value-${j}`}>{formatSipaValue(v)}</span>
                           ))}
                         </div>
@@ -976,6 +986,7 @@ function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBase
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
+                  <th className="text-left py-2 px-4 font-medium text-muted-foreground">Détails</th>
                   <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-56">Montant</th>
                   <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-32">%</th>
                 </tr>
@@ -985,6 +996,8 @@ function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBase
                   const rowLabel = formatSipaLabel(entry, entries, index);
                   const isSummaryRow = isSipaSummaryLabel(rowLabel);
                   const display = getSipaDisplayValues(entry, entries, index);
+                  const detailValues = display.values.filter((value) => value?.type === 'text');
+                  const amountValues = display.values.filter((value) => value?.type !== 'text');
                   return (
                     <tr key={`${entry.label}-${index}`} className={isSummaryRow ? 'bg-primary/5 border-primary/20' : ''}>
                       <td className={`py-2.5 pr-4 text-sm font-medium whitespace-nowrap ${isSummaryRow ? 'text-primary' : ''}`}>
@@ -999,9 +1012,25 @@ function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBase
                           rowLabel
                         )}
                       </td>
+                      <td className="py-2.5 px-4 text-sm">
+                        <div className="flex flex-col gap-1">
+                          {detailValues.map((value, detailIndex) => {
+                            const sourceIndex = (entry.values || []).findIndex((candidate) => candidate === value);
+                            return editable ? (
+                              <SipaReadEditValue
+                                key={`detail-${detailIndex}`}
+                                value={value}
+                                onChange={(next) => onCellChange(index, sourceIndex, 'value', next)}
+                              />
+                            ) : (
+                              <span key={`detail-${detailIndex}`} className="text-muted-foreground">{formatSipaValue(value)}</span>
+                            );
+                          })}
+                        </div>
+                      </td>
                       <td className="py-2.5 pl-4 text-sm">
                         <div className={`flex flex-col items-end gap-1 font-mono ${isSummaryRow && !editable ? 'font-bold text-primary' : ''}`}>
-                          {display.values.map((value, valueIndex) => {
+                          {amountValues.map((value, valueIndex) => {
                             const sourceIndex = (entry.values || []).findIndex((candidate) => candidate === value);
                             return editable ? (
                               <SipaReadEditValue
