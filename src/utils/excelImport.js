@@ -1,5 +1,7 @@
 import * as XLSX from 'xlsx';
 
+const EXCLUDED_IMPORT_COLUMNS = [5, 6, 7]; // Colonnes F, G, H (0-indexé) : exclues de l'import sans modifier le fichier
+
 export function formatSipaValue(v) {
   if (!v) return '—';
   if (v.type === 'pct') return `${v.value}%`;
@@ -252,7 +254,14 @@ export async function extractAnalysisFieldsFromExcel(file, customLabels = [], pr
   const candidates = workbook.SheetNames.map((sheetName, index) => {
     const worksheet = workbook.Sheets[sheetName];
     const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null });
-    const rows = rawRows.map((row) => (row && row.some((c) => c != null)) ? row : null);
+    const rows = rawRows.map((row) => {
+      if (!row) return null;
+      const filtered = [...row];
+      for (const col of EXCLUDED_IMPORT_COLUMNS) {
+        filtered[col] = null;
+      }
+      return filtered.some((c) => c != null) ? filtered : null;
+    });
     const fields = {};
     const seenLabels = [];
 
