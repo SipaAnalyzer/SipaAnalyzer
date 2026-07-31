@@ -150,12 +150,15 @@ function sectionTitle(doc, state, title) {
 }
 
 function keyValueTable(doc, state, rows, options = {}) {
-  const colWidth = (PAGE.width - PAGE.margin * 2) / (options.columns || 2);
+  const columns = options.columns || 2;
+  const colWidth = (PAGE.width - PAGE.margin * 2) / columns;
   const labelWidth = 48;
-  const rowHeight = 8;
 
   rows.forEach((row, index) => {
-    const column = index % (options.columns || 2);
+    const column = index % columns;
+    const pairRows = rows.slice(index - column, index - column + columns);
+    const rowHeight = pairRows.some((r) => r.sub) ? 13 : 8;
+
     if (column === 0) ensureSpace(doc, state, rowHeight + 2);
 
     const x = PAGE.margin + column * colWidth;
@@ -171,10 +174,20 @@ function keyValueTable(doc, state, rows, options = {}) {
     doc.setTextColor(row.highlight ? 12 : 30, row.highlight ? 126 : 30, row.highlight ? 97 : 30);
     doc.text(cleanText(row.value || 'N/A'), x + labelWidth, y);
 
-    if (column === (options.columns || 2) - 1) state.y += rowHeight;
+    if (row.sub) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(150, 150, 150);
+      doc.text(cleanText(row.sub), x + labelWidth, y + 4.2);
+    }
+
+    if (column === columns - 1) state.y += rowHeight;
   });
 
-  if (rows.length % (options.columns || 2) !== 0) state.y += rowHeight;
+  if (rows.length % columns !== 0) {
+    const lastRow = rows[rows.length - 1];
+    state.y += lastRow?.sub ? 13 : 8;
+  }
   state.y += 4;
 }
 
@@ -334,6 +347,24 @@ function analysisRows(analysis) {
     ? analysis.prix_achat
     : analysis?.prix_bien;
 
+  const purchaseSubtotal = Number(purchasePrice || 0)
+    + Number(analysis?.honoraires_sipa || 0)
+    + Number(analysis?.construction || 0);
+  const hypotheque = Number(analysis?.hypotheque || 0);
+  const interetsHypothecaires = Number(analysis?.interets_hypothecaires || 0);
+  const revenuNet = Number(analysis?.revenu_net || 0);
+  const impot = Number(analysis?.impot || 0);
+
+  const hypothequePct = purchaseSubtotal > 0 && hypotheque > 0
+    ? (hypotheque / purchaseSubtotal) * 100
+    : null;
+  const tauxHypothecaire = hypotheque > 0 && interetsHypothecaires > 0
+    ? (interetsHypothecaires / hypotheque) * 100
+    : null;
+  const impotPct = revenuNet > 0 && impot > 0
+    ? (impot / revenuNet) * 100
+    : null;
+
   return [
     { label: 'Prix du bien', value: formatCHF(analysis?.prix_bien) },
     { label: "Prix d'achat", value: formatCHF(purchasePrice) },
@@ -345,13 +376,25 @@ function analysisRows(analysis) {
     { label: 'Frais de dossier bancaire', value: formatCHF(analysis?.frais_dossier_bancaire) },
     { label: 'Prix total', value: formatCHF(analysis?.prix_total), highlight: true },
     { label: 'Fonds propres', value: formatCHF(analysis?.fonds_propres) },
-    { label: 'Hypotheque', value: formatCHF(analysis?.hypotheque) },
+    {
+      label: 'Hypotheque',
+      value: formatCHF(analysis?.hypotheque),
+      sub: hypothequePct != null ? `${formatPercent(hypothequePct)} du cout d'achat` : null,
+    },
     { label: 'Revenus locatifs annuels', value: formatCHF(analysis?.revenus_locatifs) },
     { label: 'Charges operationnelles', value: formatCHF(analysis?.charges_operationnelles) },
-    { label: 'Interet hypothecaire', value: formatCHF(analysis?.interets_hypothecaires) },
+    {
+      label: 'Interet hypothecaire',
+      value: formatCHF(analysis?.interets_hypothecaires),
+      sub: tauxHypothecaire != null ? `Taux moyen ${formatPercent(tauxHypothecaire)}` : null,
+    },
     { label: 'Honoraires de gestion', value: formatCHF(analysis?.gestion) },
     { label: 'Revenu net', value: formatCHF(analysis?.revenu_net), highlight: true },
-    { label: 'Impot', value: formatCHF(analysis?.impot) },
+    {
+      label: 'Impot',
+      value: formatCHF(analysis?.impot),
+      sub: impotPct != null ? `${formatPercent(impotPct)} du revenu net` : null,
+    },
     { label: 'Revenu distribue', value: formatCHF(analysis?.revenu_distribue), highlight: true },
     { label: 'Rdt. brut', value: formatPercent(analysis?.rendement_brut) },
     { label: 'Rdt. net / FP', value: formatPercent(analysis?.rendement_net_fonds_propres), highlight: true },
