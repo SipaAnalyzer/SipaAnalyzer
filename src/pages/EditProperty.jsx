@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Loader2, Upload, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { WORKFLOW_STATUSES } from '../utils/calculations';
+import DocumentUploader from '@/components/DocumentUploader';
+import { parseDocuments } from '@/utils/documents';
 
 const parseOptionalNumber = (value) => {
   if (value === '' || value === null || value === undefined) {
@@ -36,41 +38,7 @@ export default function EditProperty() {
   });
 
   const [form, setForm] = useState({});
-  const [uploading, setUploading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const maxSize = 20 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('Le fichier ne doit pas dépasser 20 Mo');
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const fileName = `${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage
-        .from('property-files')
-        .upload(fileName, file);
-
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('property-files')
-        .getPublicUrl(fileName);
-
-      setForm(prev => ({ ...prev, lien_piece_jointe: publicUrl }));
-      toast.success('Fichier uploadé');
-    } catch (err) {
-      console.error('[Upload]', err);
-      toast.error("Erreur lors de l'upload du fichier");
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -115,6 +83,7 @@ export default function EditProperty() {
       nombre_logements: property.nombre_logements ?? '', nombre_bureaux: property.nombre_bureaux ?? '', nombre_parkings: property.nombre_parkings ?? '', statut: property.statut || 'en_cours',
       courtier_apporteur_affaire: property.courtier_apporteur_affaire || '',
       lien_annonce: property.lien_annonce || '', lien_piece_jointe: property.lien_piece_jointe || '',
+      documents: parseDocuments(property.documents),
       image_url: property.image_url || '', latitude: property.latitude ?? '', longitude: property.longitude ?? '',
     });
   }, [property]);
@@ -125,6 +94,7 @@ export default function EditProperty() {
     mutationFn: () => base44.entities.Property.update(propertyId, {
       ...form,
       ...(!form.lien_piece_jointe ? { lien_piece_jointe: undefined } : {}),
+      documents: form.documents || [],
       date_creation_bien: form.date_creation_bien || null,
       annee_construction: parseOptionalNumber(form.annee_construction),
       surface: parseOptionalNumber(form.surface),
@@ -214,38 +184,10 @@ export default function EditProperty() {
           </div>
           <div className="sm:col-span-2"><Label className="text-xs text-muted-foreground mb-1.5 block">Lien de l'annonce</Label><Input value={form.lien_annonce || ''} onChange={set('lien_annonce')} placeholder="https://..." className="bg-background border-border" /></div>
           <div className="sm:col-span-2">
-            <Label className="text-xs text-muted-foreground mb-1.5 block">Pièce jointe (PDF, Word, PowerPoint)</Label>
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-2"
-                disabled={uploading}
-                onClick={() => document.getElementById('edit-file-upload')?.click()}
-              >
-                {uploading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4" />
-                )}
-                {uploading ? 'Upload...' : 'Choisir un fichier'}
-              </Button>
-              <input
-                id="edit-file-upload"
-                type="file"
-                accept=".pdf,.doc,.docx,.ppt,.pptx"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-              {form.lien_piece_jointe && (
-                <a href={form.lien_piece_jointe} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs text-primary hover:underline">
-                  <FileText className="h-3.5 w-3.5" />
-                  Voir le fichier
-                </a>
-              )}
-            </div>
+            <DocumentUploader
+              documents={form.documents || []}
+              onChange={(docs) => setForm(prev => ({ ...prev, documents: docs }))}
+            />
           </div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Latitude (GPS)</Label><Input type="number" value={form.latitude || ''} onChange={set('latitude')} placeholder="46.5197" className="bg-background border-border" /></div>
           <div><Label className="text-xs text-muted-foreground mb-1.5 block">Longitude (GPS)</Label><Input type="number" value={form.longitude || ''} onChange={set('longitude')} placeholder="6.6323" className="bg-background border-border" /></div>

@@ -30,6 +30,7 @@ import {
 import { exportAnalysisPdf } from '../utils/pdfExports';
 import PdfExportDialog from '../components/PdfExportDialog';
 import { listAuditLogs, recordAuditLog } from '../utils/auditLogs';
+import { parseDocuments } from '../utils/documents';
 import { toast } from 'sonner';
 import moment from 'moment';
 import {
@@ -1671,6 +1672,7 @@ function formatPropertyDate(value) {
 }
 
 function PropertyPresentation({ property, latest, comments, updateCouleur }) {
+  const documents = parseDocuments(property?.documents);
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
       <section className={`bg-card rounded-xl border p-4 sm:p-6 ${property.couleur ? 'border-t-4' : 'border-border'}`}
@@ -1720,12 +1722,15 @@ function PropertyPresentation({ property, latest, comments, updateCouleur }) {
           <InfoItem label="Statut" value={property.statut} />
         </div>
 
-        {(property.lien_annonce || property.lien_piece_jointe) && (
+        {(property.lien_annonce || property.lien_piece_jointe || documents.length > 0) && (
           <div className="mt-6 flex flex-wrap gap-2">
             {property.lien_annonce && (
               <ExternalButton href={property.lien_annonce} label="Annonce" />
             )}
-            {property.lien_piece_jointe && (
+            {documents.map((doc, index) => (
+              <ExternalButton key={`${doc.url}-${index}`} href={doc.url} label={doc.name || 'Document'} />
+            ))}
+            {documents.length === 0 && property.lien_piece_jointe && (
               <ExternalButton href={property.lien_piece_jointe} label="Pièce jointe" />
             )}
           </div>

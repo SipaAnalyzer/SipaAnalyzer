@@ -52,6 +52,23 @@
       "type": "string",
       "title": "Pièce jointe (PDF, Word, PowerPoint)"
     },
+    "documents": {
+      "type": "array",
+      "title": "Documents",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Nom du fichier"
+          },
+          "url": {
+            "type": "string",
+            "title": "URL du fichier"
+          }
+        }
+      }
+    },
     "latitude": {
       "type": "number",
       "title": "Latitude"
