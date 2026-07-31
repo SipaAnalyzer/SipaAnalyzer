@@ -152,6 +152,10 @@ function isSipaTargetBenefitEntry(entry) {
   return normalizeText(entry?.label).includes('target benefice sipa fonds prop');
 }
 
+function isSipaAlternativeMortgageEntry(entry) {
+  return normalizeText(entry?.label).includes('alt max mortgage');
+}
+
 function keepFirstPercentOnly(values = []) {
   let hasPercent = false;
   return values.filter((value) => {
@@ -284,7 +288,7 @@ export async function extractAnalysisFieldsFromExcel(file, customLabels = [], pr
 
   const customFinancialFields = extractCustomFields(allRows, customLabels);
 
-  const sipaData = extractSipaData(allRows);
+  const sipaData = extractSipaData(allRows, fields);
   if (sipaData) fields.sipa_data = sipaData;
 
   if (customFinancialFields.length > 0) {
@@ -432,8 +436,8 @@ const SIPA_LABELS = [
   'alt max mortgage',
 ];
 
-function extractSipaData(rows) {
-  const structuredEntries = extractStructuredSipaData(rows);
+function extractSipaData(rows, fields = {}) {
+  const structuredEntries = extractStructuredSipaData(rows, fields);
   if (structuredEntries.length) return structuredEntries;
 
   const entries = [];
@@ -474,7 +478,7 @@ function extractSipaData(rows) {
   return entries.length ? entries : null;
 }
 
-function extractStructuredSipaData(rows) {
+function extractStructuredSipaData(rows, fields = {}) {
   const ranges = [
     { section: 'commercialisation', start: 0, end: 24 },
     { section: 'achat', start: 30, end: 74 },
@@ -498,9 +502,7 @@ function extractStructuredSipaData(rows) {
         if (value) values.push(value);
       }
 
-      const cleanedValues = isSipaTargetBenefitEntry({ label })
-        ? keepFirstPercentOnly(values)
-        : values;
+      const cleanedValues = normalizeSipaStructuredValues(label, values, fields);
 
       if (cleanedValues.length) {
         entries.push({
@@ -514,6 +516,22 @@ function extractStructuredSipaData(rows) {
   }
 
   return entries;
+}
+
+function normalizeSipaStructuredValues(label, values, fields = {}) {
+  if (isSipaTargetBenefitEntry({ label })) return keepFirstPercentOnly(values);
+
+  if (isSipaAlternativeMortgageEntry({ label }) && hasValue(fields.hypotheque)) {
+    const percentages = values.filter((value) => value?.type === 'pct');
+    const textValues = values.filter((value) => value?.type === 'text');
+    return [
+      ...percentages,
+      ...textValues,
+      { type: 'amount', value: Math.round(Number(fields.hypotheque || 0)) },
+    ];
+  }
+
+  return values;
 }
 
 function toSipaCellValue(cellValue, colIndex, label) {
