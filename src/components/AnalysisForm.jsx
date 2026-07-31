@@ -1247,8 +1247,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                       <thead>
                         <tr className="border-b border-border">
                           <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
-                          <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeurs</th>
-                          <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-32">%</th>
+                          <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-72">Montant</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/50">
@@ -1279,7 +1278,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                                 />
                               </td>
                               <td className="py-2 pl-4 text-sm">
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap items-center justify-end gap-2">
                                   {editableValueItems.map(({ value, valueIndex }) => (
                                     <SipaEditableValue
                                       key={valueIndex}
@@ -1290,10 +1289,6 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                                         : (next) => updateSipaCell(index, valueIndex, 'value', next)}
                                     />
                                   ))}
-                                </div>
-                              </td>
-                              <td className="py-2 pl-4 text-sm text-right">
-                                <div className="flex flex-wrap justify-end gap-2">
                                   {editablePctItems.map(({ value, valueIndex }) => (
                                     <SipaEditableValue
                                       key={valueIndex}
@@ -2087,9 +2082,7 @@ function ExcelBankRow({ row, title, form, set, prefix, saronRate }) {
 }
 
 function ExcelSipaInvestmentSheet({ sipaData, onChange, transactionFeeAmount, transactionFeePct, onTransactionFeeAmount, onTransactionFeePct }) {
-  const rows = sipaData.filter((entry) => !entry._custom);
-  const maxValues = Math.max(1, ...rows.map((entry) => entry.values?.length || 0));
-  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, maxValues + 1);
+  const groups = getSipaEditableGroups(sipaData);
   const updateCell = (entryIndex, valueIndex, field, value) => {
     const importedCursor = { current: -1 };
     onChange(
@@ -2109,83 +2102,73 @@ function ExcelSipaInvestmentSheet({ sipaData, onChange, transactionFeeAmount, tr
   };
 
   return (
-    <section className="bg-card rounded-xl border border-border p-4">
+    <section className="bg-card rounded-xl border border-border p-6">
       <h3 className="font-heading font-semibold mb-5">Investissement SIPA</h3>
-      <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
-        <table className="w-full min-w-[760px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
-          <thead>
-            <tr>
-              <ExcelCorner />
-              {letters.map((letter) => <ExcelColumnHeader key={letter}>{letter}</ExcelColumnHeader>)}
-            </tr>
-            <tr>
-              <ExcelRowNumber>1</ExcelRowNumber>
-              <ExcelHeaderCell>Rubrique</ExcelHeaderCell>
-              {Array.from({ length: maxValues }, (_, index) => (
-                <ExcelHeaderCell key={index} align="right">Valeur {index + 1}</ExcelHeaderCell>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((entry, rowIndex) => (
-              <tr key={`${entry.label}-${rowIndex}`} className="hover:bg-[#fff2cc]">
-                <ExcelRowNumber>{rowIndex + 2}</ExcelRowNumber>
-                <ExcelCell className={EXCEL_EDITABLE_CELL_CLASS}>
-                  <input
-                    type="text"
-                    value={formatSipaLabel(entry, rows, rowIndex)}
-                    onChange={(event) => updateCell(rowIndex, null, 'label', event.target.value)}
-                    className={EXCEL_TEXT_INPUT_CLASS}
-                  />
-                </ExcelCell>
-                {Array.from({ length: maxValues }, (_, valueIndex) => {
-                  const value = entry.values?.[valueIndex];
-                  const isNumeric = value?.type === 'amount' || value?.type === 'pct' || typeof value?.value === 'number';
-                  const isTransactionFee = isSipaTransactionFeeEntry(entry, rows, rowIndex);
-                  const transactionValue = value?.type === 'amount'
-                    ? transactionFeeAmount
-                    : value?.type === 'pct'
-                      ? transactionFeePct
-                      : value?.value;
-                  const onTransactionChange = value?.type === 'amount'
-                    ? onTransactionFeeAmount
-                    : value?.type === 'pct'
-                      ? onTransactionFeePct
-                      : null;
+      <div className="space-y-5">
+        {groups.map((group) => (
+          <div key={group.section} className="overflow-x-auto">
+            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group.title}</h4>
+            <table className="w-full min-w-[720px] text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
+                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-72">Montant</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {group.rows.map(({ entry, index, entries }) => {
+                  const isTransactionFee = isSipaTransactionFeeEntry(entry, entries, index);
+                  const valueItems = (entry.values || [])
+                    .map((value, valueIndex) => ({ value, valueIndex }))
+                    .filter(({ value }) => value?.type !== 'pct' && (value?.type === 'text' || value?.type === 'amount'));
+                  const pctItems = (entry.values || [])
+                    .map((value, valueIndex) => ({ value, valueIndex }))
+                    .filter(({ value }) => value?.type === 'pct');
                   return (
-                    <ExcelCell
-                      key={valueIndex}
-                      align={isNumeric ? 'right' : 'left'}
-                      className={value ? EXCEL_EDITABLE_CELL_CLASS : EXCEL_LOCKED_CELL_CLASS}
-                    >
-                      {value ? (
-                        isNumeric ? (
-                          <ExcelNumberInput
-                            value={isTransactionFee ? transactionValue : value.value}
-                            onChange={(next) => {
-                              if (isTransactionFee && onTransactionChange) {
-                                onTransactionChange(next);
-                              } else {
-                                updateCell(rowIndex, valueIndex, 'value', next);
-                              }
-                            }}
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            value={value.value ?? ''}
-                            onChange={(event) => updateCell(rowIndex, valueIndex, 'value', event.target.value)}
-                            className={EXCEL_TEXT_INPUT_CLASS}
-                          />
-                        )
-                      ) : ''}
-                    </ExcelCell>
+                    <tr key={`${entry.label}-${index}`}>
+                      <td className="py-2 pr-4 text-sm font-medium whitespace-nowrap">
+                        <input
+                          type="text"
+                          value={formatSipaLabel(entry, entries, index)}
+                          onChange={(event) => updateCell(index, null, 'label', event.target.value)}
+                          className="w-full min-w-40 rounded-md border border-border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                      </td>
+                      <td className="py-2 pl-4 text-sm">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          {valueItems.map(({ value, valueIndex }) => {
+                            const transactionValue = value.type === 'amount' ? transactionFeeAmount : value.value;
+                            const onTransactionChange = value.type === 'amount' ? onTransactionFeeAmount : null;
+                            return (
+                              <SipaEditableValue
+                                key={valueIndex}
+                                value={value}
+                                inputValue={isTransactionFee ? transactionValue : value.value}
+                                onChange={isTransactionFee && onTransactionChange
+                                  ? onTransactionChange
+                                  : (next) => updateCell(index, valueIndex, 'value', next)}
+                              />
+                            );
+                          })}
+                          {pctItems.map(({ value, valueIndex }) => (
+                            <SipaEditableValue
+                              key={valueIndex}
+                              value={value}
+                              inputValue={isTransactionFee ? transactionFeePct : value.value}
+                              onChange={isTransactionFee && onTransactionFeePct
+                                ? onTransactionFeePct
+                                : (next) => updateCell(index, valueIndex, 'value', next)}
+                            />
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+        ))}
       </div>
     </section>
   );

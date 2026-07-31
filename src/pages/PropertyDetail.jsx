@@ -802,8 +802,7 @@ function SipaImportedDataTable({ analysis, collapsible = false }) {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
-                  <th className="text-left py-2 pl-4 font-medium text-muted-foreground">Valeurs</th>
-                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-32">%</th>
+                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-72">Montant</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -813,16 +812,12 @@ function SipaImportedDataTable({ analysis, collapsible = false }) {
                     <tr key={index}>
                       <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">{formatSipaLabel(entry, entries, index)}</td>
                       <td className="py-2.5 pl-4 text-sm">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap justify-end gap-x-3 gap-y-1 font-mono">
                           {display.values.map((v, j) => (
-                            <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
+                            <span key={`value-${j}`}>{formatSipaValue(v)}</span>
                           ))}
-                        </div>
-                      </td>
-                      <td className="py-2.5 pl-4 text-sm text-right">
-                        <div className="flex flex-wrap justify-end gap-2">
                           {display.percentages.map((v, j) => (
-                            <span key={j} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-muted/30">{formatSipaValue(v)}</span>
+                            <span key={`pct-${j}`} className="text-muted-foreground">{formatSipaValue(v)}</span>
                           ))}
                         </div>
                       </td>
@@ -904,11 +899,42 @@ function TableExportButtons({ rows, filename }) {
   );
 }
 
+function SipaReadEditValue({ value, onChange }) {
+  if (!value) return null;
+
+  if (value.type === 'text') {
+    return (
+      <input
+        type="text"
+        value={value.value ?? ''}
+        onChange={(event) => onChange?.(event.target.value)}
+        className="min-w-44 rounded-md border border-border bg-background px-2 py-1 text-xs font-sans focus:outline-none focus:ring-2 focus:ring-primary/20"
+      />
+    );
+  }
+
+  const isAmount = value.type === 'amount';
+  const isPct = value.type === 'pct';
+
+  return (
+    <div className={`relative ${isAmount ? 'w-32' : 'w-24'}`}>
+      {isAmount && <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">CHF</span>}
+      <input
+        type="number"
+        value={value.value ?? ''}
+        onChange={(event) => onChange?.(event.target.value === '' ? null : parseFloat(event.target.value) || 0)}
+        className={`h-8 w-full rounded-md border border-border bg-background text-right text-xs font-sans focus:outline-none focus:ring-2 focus:ring-primary/20 ${isAmount ? 'pl-8 pr-2' : isPct ? 'pr-7' : 'px-2'}`}
+      />
+      {isPct && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>}
+    </div>
+  );
+}
+
 function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBaseName, collapsible = false }) {
   const syncedSipaData = syncSipaDataWithAnalysisFields(analysis.sipa_data, analysis);
+  const displayGroups = getSipaDisplayGroups(syncedSipaData);
   const rows = getDisplayableSipaRows(syncedSipaData).map((item) => item.entry);
   const maxValues = Math.max(1, ...rows.map((entry) => entry.values?.length || 0));
-  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].slice(0, maxValues + 1);
   const exportRows = buildSipaExportRows(rows, maxValues);
 
   return (
@@ -918,63 +944,69 @@ function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBase
       filename={`${exportBaseName}-investissement-sipa`}
       collapsible={collapsible}
     >
-      <div className="overflow-auto rounded-md border border-[#d9d9d9] bg-white shadow-inner">
-        <table className="w-full min-w-[760px] border-collapse font-[Calibri,Arial,sans-serif] text-[11px] text-black">
-          <thead>
-            <tr>
-              <ExcelCorner />
-              {letters.map((letter) => <ExcelColumnHeader key={letter}>{letter}</ExcelColumnHeader>)}
-            </tr>
-            <tr>
-              <ExcelRowNumber>1</ExcelRowNumber>
-              <ExcelHeaderCell>Rubrique</ExcelHeaderCell>
-              {Array.from({ length: maxValues }, (_, index) => (
-                <ExcelHeaderCell key={index} align="right">Valeur {index + 1}</ExcelHeaderCell>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((entry, rowIndex) => (
-              <tr key={`${entry.label}-${rowIndex}`} className="hover:bg-[#fff2cc]">
-                <ExcelRowNumber>{rowIndex + 2}</ExcelRowNumber>
-                <ExcelCell className={editable ? 'p-0' : ''}>
-                  {editable ? (
-                    <input
-                      type="text"
-                      value={formatSipaLabel(entry, rows, rowIndex)}
-                      onChange={(event) => onCellChange(rowIndex, null, 'label', event.target.value)}
-                      className="h-6 w-full bg-transparent px-2 text-black outline-none focus:bg-[#fff2cc]"
-                    />
-                  ) : (
-                    formatSipaLabel(entry, rows, rowIndex)
-                  )}
-                </ExcelCell>
-                {Array.from({ length: maxValues }, (_, valueIndex) => {
-                  const value = entry.values?.[valueIndex];
-                  const isNumeric = value?.type === 'amount' || value?.type === 'pct' || typeof value?.value === 'number';
+      <div className="space-y-5">
+        {displayGroups.map((group) => (
+          <div key={group.section} className="overflow-x-auto">
+            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group.title}</h4>
+            <table className="w-full min-w-[560px] text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
+                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-72">Montant</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/50">
+                {group.rows.map(({ entry, index, entries }) => {
+                  const display = getSipaDisplayValues(entry, entries, index);
                   return (
-                    <ExcelCell key={valueIndex} align={isNumeric ? 'right' : 'left'} className={editable && value ? 'p-0' : ''}>
-                      {editable && value ? (
-                        isNumeric ? (
-                          <ExcelNumberInput value={value.value} onChange={(next) => onCellChange(rowIndex, valueIndex, 'value', next)} />
-                        ) : (
+                    <tr key={`${entry.label}-${index}`}>
+                      <td className="py-2.5 pr-4 text-sm font-medium whitespace-nowrap">
+                        {editable ? (
                           <input
                             type="text"
-                            value={value.value ?? ''}
-                            onChange={(event) => onCellChange(rowIndex, valueIndex, 'value', event.target.value)}
-                            className="h-6 w-full bg-transparent px-2 text-black outline-none focus:bg-[#fff2cc]"
+                            value={formatSipaLabel(entry, entries, index)}
+                            onChange={(event) => onCellChange(index, null, 'label', event.target.value)}
+                            className="w-full min-w-40 rounded-md border border-border bg-background px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                           />
-                        )
-                      ) : (
-                        value ? formatSipaValue(value) : ''
-                      )}
-                    </ExcelCell>
+                        ) : (
+                          formatSipaLabel(entry, entries, index)
+                        )}
+                      </td>
+                      <td className="py-2.5 pl-4 text-sm">
+                        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 font-mono">
+                          {display.values.map((value, valueIndex) => {
+                            const sourceIndex = (entry.values || []).findIndex((candidate) => candidate === value);
+                            return editable ? (
+                              <SipaReadEditValue
+                                key={`value-${valueIndex}`}
+                                value={value}
+                                onChange={(next) => onCellChange(index, sourceIndex, 'value', next)}
+                              />
+                            ) : (
+                              <span key={`value-${valueIndex}`}>{formatSipaValue(value)}</span>
+                            );
+                          })}
+                          {display.percentages.map((value, pctIndex) => {
+                            const sourceIndex = (entry.values || []).findIndex((candidate) => candidate === value);
+                            return editable ? (
+                              <SipaReadEditValue
+                                key={`pct-${pctIndex}`}
+                                value={value}
+                                onChange={(next) => onCellChange(index, sourceIndex, 'value', next)}
+                              />
+                            ) : (
+                              <span key={`pct-${pctIndex}`} className="text-muted-foreground">{formatSipaValue(value)}</span>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+        ))}
       </div>
     </InlineCollapsibleSection>
   );
