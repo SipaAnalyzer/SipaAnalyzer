@@ -103,6 +103,10 @@ const withMissingColumnFallback = async (operation, payload) => {
       return result;
     }
 
+    if (missingColumn === "financial_custom_fields") {
+      return result;
+    }
+
     console.warn(`[Supabase] missing column "${missingColumn}" ignored for save.`);
     removedColumns.add(missingColumn);
     nextPayload = { ...nextPayload };
