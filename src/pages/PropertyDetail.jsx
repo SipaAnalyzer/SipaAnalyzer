@@ -683,7 +683,7 @@ function TechnicalAnalysisSnapshot({
               <ExcelOptionalReadRow row={10} section="Acquisition" label="Frais de dossier bancaire" amount={analysis.frais_dossier_bancaire} editable={canEdit} onAmountChange={(value) => updateDraftField('frais_dossier_bancaire', value)} />
               <ExcelComputedRow row={11} section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
               <ExcelOptionalReadRow row={12} section="Financement" label="Fonds propres" amount={analysis.fonds_propres} editable={canEdit} onAmountChange={(value) => updateDraftField('fonds_propres', value)} />
-              <ExcelReadRow row={13} section="Financement" label="Objectif bénéfice SIPA sur fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} pct={percentOf(analysis.target_benefice_sipa_fonds_propres, getPurchaseEquity(analysis))} editable={canEdit} onAmountChange={updateAmountWithPct('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', 'fonds_propres_achat')} onPctChange={updatePctField('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', getPurchaseEquity(analysis))} />
+              <ExcelReadRow row={13} section="Financement" label="Objectif bénéfice SIPA sur fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} pct={analysis.target_benefice_sipa_fonds_propres_pct} editable={canEdit} onAmountChange={updateAmountWithPct('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', 'fonds_propres_achat')} onPctChange={updatePctField('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', getPurchaseEquity(analysis))} />
               <ExcelOptionalReadRow row={14} section="Financement" label="Hypotheque" amount={analysis.hypotheque} pct={percentOf(analysis.hypotheque, purchaseSubtotal)} editable={canEdit} onAmountChange={(value) => updateDraftField('hypotheque', value)} onPctChange={updatePctField('hypotheque', 'hypotheque_pct', purchaseSubtotal)} />
               <ExcelOptionalReadRow row={15} section="Exploitation" label="Revenus locatifs hors charges" amount={analysis.revenus_locatifs} editable={canEdit} onAmountChange={(value) => updateDraftField('revenus_locatifs', value)} />
               <ExcelComputedRow row={16} section="Exploitation" label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} />
@@ -1221,7 +1221,7 @@ function buildFinancialExportRows(analysis, customFields, prixTotal) {
     ['Acquisition', 'Frais de dossier bancaire', analysis.frais_dossier_bancaire ?? '', '', ''],
     ['Acquisition', 'Prix total', '', '', prixTotal ?? ''],
     ['Financement', 'Fonds propres', analysis.fonds_propres ?? '', '', ''],
-    ['Financement', 'Objectif bénéfice SIPA sur fonds propres', analysis.target_benefice_sipa_fonds_propres ?? '', analysis.target_benefice_sipa_fonds_propres_pct ?? percentOf(analysis.target_benefice_sipa_fonds_propres, getPurchaseEquity(analysis)) ?? '', ''],
+    ['Financement', 'Objectif bénéfice SIPA sur fonds propres', analysis.target_benefice_sipa_fonds_propres ?? '', analysis.target_benefice_sipa_fonds_propres_pct ?? '', ''],
     ['Financement', 'Hypotheque', analysis.hypotheque ?? '', percentOf(analysis.hypotheque, purchaseSubtotal) ?? '', ''],
     ['Exploitation', 'Revenus locatifs hors charges', analysis.revenus_locatifs ?? '', '', ''],
     ['Exploitation', 'Taux de rendement brut', '', '', analysis.rendement_brut ?? ''],

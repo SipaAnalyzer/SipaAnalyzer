@@ -1111,7 +1111,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                           value={cf.insertAfter || 'prix_total'}
                           onValueChange={(value) =>
                             setCustomFinancialFields((prev) =>
-                              prev.map((f, j) => (j === i ? { ...f, insertAfter: value, baseField: f.baseField || value } : f))
+                              prev.map((f, j) => (j === i ? { ...f, insertAfter: value, baseField: value } : f))
                             )
                           }
                         >

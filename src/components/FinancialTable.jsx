@@ -158,7 +158,7 @@ function FinancialTableBody({ analysis, calc, purchasePrice, purchaseSubtotal, p
               {renderCustomRows('prix_total')}
               <Row label="Fonds propres" value={formatCHF(analysis.fonds_propres)} />
               {renderCustomRows('fonds_propres')}
-              <Row label="Objectif bénéfice SIPA sur fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} base={getPurchaseEquity(analysis)} />
+              <Row label="Objectif bénéfice SIPA sur fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} />
               {renderCustomRows('target_benefice_sipa_fonds_propres')}
               <Row label="Hypothèque" amount={analysis.hypotheque} base={purchaseSubtotal} />
               {renderCustomRows('hypotheque')}

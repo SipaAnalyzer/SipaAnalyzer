@@ -485,7 +485,7 @@ export function getFinancialCustomFieldBase(field, data = {}) {
 export function getFinancialCustomFieldAmount(field, data = {}) {
   const amount = toNumberOrNull(field?.amount);
   const formula = normalizeFormula(field?.calculationFormula);
-  if (formula === 'none' && amount !== null) return amount;
+  if (formula === 'none') return amount ?? 0;
   if (amount !== null && formula === DEFAULT_CUSTOM_FORMULA) return amount;
 
   const pct = toNumberOrNull(field?.pct);
