@@ -2,71 +2,38 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { supabase } from '@/api/supabaseClient';
 import { recordAuditLog } from '@/utils/auditLogs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Save, Upload, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { WORKFLOW_STATUSES } from '../utils/calculations';
 import DocumentUploader from '@/components/DocumentUploader';
+import PhotoUploader from '@/components/PhotoUploader';
 
 const todayIsoDate = () => new Date().toISOString().slice(0, 10);
 
 export default function AddProperty() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [imageUploading, setImageUploading] = useState(false);
   const [form, setForm] = useState({
     nom_bien: '', adresse: '', ville: '', canton: '', pays: 'Suisse',
     date_creation_bien: todayIsoDate(),
     annee_construction: '', surface: '', nombre_logements: '', nombre_bureaux: '', nombre_parkings: '', statut: 'en_cours',
     courtier_apporteur_affaire: '',
-    lien_annonce: '', documents: [], image_url: '', latitude: '', longitude: '',
+    lien_annonce: '', documents: [], photos: [], latitude: '', longitude: '',
   });
 
   const set = (key) => (e) => setForm(prev => ({ ...prev, [key]: typeof e === 'string' ? e : e.target.value }));
-
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const maxSize = 20 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('L\'image ne doit pas dépasser 20 Mo');
-      return;
-    }
-
-    setImageUploading(true);
-    try {
-      const ext = file.name.split('.').pop();
-      const fileName = `images/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage
-        .from('property-files')
-        .upload(fileName, file);
-
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('property-files')
-        .getPublicUrl(fileName);
-
-      setForm(prev => ({ ...prev, image_url: publicUrl }));
-      toast.success('Image uploadée');
-    } catch (err) {
-      console.error('[ImageUpload]', err);
-      toast.error("Erreur lors de l'upload de l'image");
-    } finally {
-      setImageUploading(false);
-    }
-  };
 
   const create = useMutation({
     mutationFn: () => base44.entities.Property.create({
       ...form,
       documents: form.documents || [],
+      photos: form.photos || [],
+      image_url: form.photos?.[0]?.url || undefined,
       date_creation_bien: form.date_creation_bien || undefined,
       annee_construction: form.annee_construction ? parseInt(form.annee_construction) : undefined,
       surface: form.surface ? parseFloat(form.surface) : undefined,
@@ -145,43 +112,10 @@ export default function AddProperty() {
             <Input value={form.courtier_apporteur_affaire} onChange={set('courtier_apporteur_affaire')} placeholder="Nom, societe ou contact" className="bg-background border-border" />
           </div>
             <div className="sm:col-span-2">
-              <Label className="text-xs text-muted-foreground mb-1.5 block">Photo du bien</Label>
-              <div className="flex items-center gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  disabled={imageUploading}
-                  onClick={() => document.getElementById('image-upload')?.click()}
-                >
-                  {imageUploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4" />
-                  )}
-                  {imageUploading ? 'Upload...' : 'Choisir une image'}
-                </Button>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.webp"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-                {form.image_url && (
-                  <div className="flex items-center gap-2">
-                    <img src={form.image_url} alt="Aperçu" className="h-10 w-10 rounded object-cover border border-border" />
-                    <button
-                      type="button"
-                      onClick={() => setForm(prev => ({ ...prev, image_url: '' }))}
-                      className="text-xs text-muted-foreground hover:text-destructive"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                )}
-              </div>
+              <PhotoUploader
+                photos={form.photos || []}
+                onChange={(photos) => setForm(prev => ({ ...prev, photos }))}
+              />
             </div>
             <div className="sm:col-span-2">
               <Label className="text-xs text-muted-foreground mb-1.5 block">Lien de l'annonce</Label>

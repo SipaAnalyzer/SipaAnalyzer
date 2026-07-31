@@ -44,6 +44,23 @@
       "type": "string",
       "title": "Image"
     },
+    "photos": {
+      "type": "array",
+      "title": "Photos",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Nom du fichier"
+          },
+          "url": {
+            "type": "string",
+            "title": "URL du fichier"
+          }
+        }
+      }
+    },
     "lien_annonce": {
       "type": "string",
       "title": "Lien de l'annonce"

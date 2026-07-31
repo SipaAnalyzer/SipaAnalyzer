@@ -1673,11 +1673,27 @@ function formatPropertyDate(value) {
 
 function PropertyPresentation({ property, latest, comments, updateCouleur }) {
   const documents = parseDocuments(property?.documents);
+  const photos = parseDocuments(property?.photos);
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6">
       <section className={`bg-card rounded-xl border p-4 sm:p-6 ${property.couleur ? 'border-t-4' : 'border-border'}`}
         style={property.couleur ? { borderTopColor: property.couleur === 'rouge' ? '#ef4444' : property.couleur === 'orange' ? '#f97316' : '#22c55e' } : {}}>
-        {property.image_url && (
+        {photos.length > 0 ? (
+          <div className="mb-5">
+            <a href={photos[0].url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-lg">
+              <img src={photos[0].url} alt={photos[0].name || property.nom_bien} className="w-full h-56 object-cover" />
+            </a>
+            {photos.length > 1 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {photos.map((photo, index) => (
+                  <a key={`${photo.url}-${index}`} href={photo.url} target="_blank" rel="noopener noreferrer" title={photo.name || `Photo ${index + 1}`}>
+                    <img src={photo.url} alt={photo.name || `Photo ${index + 1}`} className="h-14 w-20 rounded border border-border object-cover hover:opacity-80 transition-opacity" />
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : property.image_url && (
           <div className="mb-5 overflow-hidden rounded-lg">
             <img src={property.image_url} alt={property.nom_bien} className="w-full h-56 object-cover" />
           </div>
