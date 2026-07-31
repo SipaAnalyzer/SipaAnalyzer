@@ -30,6 +30,7 @@ export function formatSipaLabel(entry, entries = [], index = 0) {
 export function getSipaDisplayValues(entry, entries = [], index = 0) {
   const label = formatSipaLabel(entry, entries, index);
   const hidePercent = label === 'Prix bien';
+  const keepOnlyFirstPercent = isSipaTargetBenefitEntry(entry);
   const seenValues = new Set();
   const values = [];
   const percentages = [];
@@ -38,6 +39,7 @@ export function getSipaDisplayValues(entry, entries = [], index = 0) {
     if (!value) return;
     if (value.type !== 'text' && Number(value.value || 0) === 0) return;
     if (value.type === 'pct') {
+      if (keepOnlyFirstPercent && percentages.length > 0) return;
       if (!hidePercent) percentages.push(value);
       return;
     }
@@ -111,8 +113,20 @@ export function syncSipaDataWithAnalysisFields(entries = [], analysis = {}) {
       };
     }
 
+    if (isSipaTargetBenefitEntry(entry)) {
+      return { ...entry, values: keepFirstPercentOnly(entry.values || []) };
+    }
+
     return entry;
   });
+}
+
+export function getSipaTargetBenefitPct(entries = []) {
+  if (!Array.isArray(entries)) return null;
+  const entry = entries.find((item) => isSipaTargetBenefitEntry(item));
+  const pct = entry?.values?.find((value) => value?.type === 'pct');
+  const numericPct = Number(pct?.value);
+  return Number.isFinite(numericPct) ? Math.round(numericPct * 100) / 100 : null;
 }
 
 export function isSipaTransactionFeeEntry(entry, entries = [], index = 0) {
@@ -132,6 +146,20 @@ function buildSipaFinancialValues(entry, { amount, pct }) {
     .forEach((value) => values.push(value));
 
   return values;
+}
+
+function isSipaTargetBenefitEntry(entry) {
+  return normalizeText(entry?.label).includes('target benefice sipa fonds prop');
+}
+
+function keepFirstPercentOnly(values = []) {
+  let hasPercent = false;
+  return values.filter((value) => {
+    if (value?.type !== 'pct') return true;
+    if (hasPercent) return false;
+    hasPercent = true;
+    return true;
+  });
 }
 
 export function getSipaSection(entry, entries = [], index = 0) {
@@ -470,10 +498,14 @@ function extractStructuredSipaData(rows) {
         if (value) values.push(value);
       }
 
-      if (values.length) {
+      const cleanedValues = isSipaTargetBenefitEntry({ label })
+        ? keepFirstPercentOnly(values)
+        : values;
+
+      if (cleanedValues.length) {
         entries.push({
           label,
-          values,
+          values: cleanedValues,
           _section: range.section,
           _source_row: rowIndex + 1,
         });
@@ -929,17 +961,6 @@ function applyDerivedPercentages(fields) {
 
   if (fields.hypotheque_pct == null && purchaseSubtotal > 0 && fields.hypotheque != null) {
     fields.hypotheque_pct = round2((fields.hypotheque / purchaseSubtotal) * 100);
-  }
-
-  if (
-    fields.target_benefice_sipa_fonds_propres_pct == null &&
-    (fields.fonds_propres_achat || fields.fonds_propres) > 0 &&
-    fields.target_benefice_sipa_fonds_propres != null
-  ) {
-    const targetBase = Number(fields.fonds_propres_achat || fields.fonds_propres || 0);
-    fields.target_benefice_sipa_fonds_propres_pct = round2(
-      (fields.target_benefice_sipa_fonds_propres / targetBase) * 100
-    );
   }
 
   if (fields.interets_hypothecaires_pct == null && fields.hypotheque > 0 && fields.interets_hypothecaires != null) {

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { calculateAnalysis, formatCHF, formatPercent, WORKFLOW_STATUSES } from '../utils/calculations';
-import { extractAnalysisFieldsFromExcel, formatSipaLabel, getSipaSection, isSipaTransactionFeeEntry, SIPA_SECTION_LABELS, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
+import { extractAnalysisFieldsFromExcel, formatSipaLabel, getSipaSection, getSipaTargetBenefitPct, isSipaTransactionFeeEntry, SIPA_SECTION_LABELS, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
 import {
   DEFAULT_CUSTOM_EFFECT,
   FINANCIAL_CUSTOM_EFFECTS,
@@ -350,6 +350,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       const data = { ...prev, ...initialData };
       const isImportedAnalysis = Array.isArray(initialData.sipa_data) && initialData.sipa_data.length > 0;
       if (isImportedAnalysis) {
+        const importedTargetPct = getSipaTargetBenefitPct(data.sipa_data);
+        if (importedTargetPct != null) data.target_benefice_sipa_fonds_propres_pct = importedTargetPct;
         data._preferImportedAmounts = true;
         return data;
       }
@@ -361,7 +363,6 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
       if (purchasePrice > 0 && data.construction != null) data.construction_pct = Math.round((data.construction / purchasePrice) * 10000) / 100;
       if (Number(data.prix_bien) > 0 && data.honoraires_transaction_sipa_group != null) data.honoraires_transaction_sipa_group_pct = Math.round((data.honoraires_transaction_sipa_group / data.prix_bien) * 10000) / 100;
       if (purchaseSubtotal > 0 && data.fonds_propres != null) data.fonds_propres_pct = Math.round((data.fonds_propres / purchaseSubtotal) * 10000) / 100;
-      if (getPurchaseEquity(data) > 0 && data.target_benefice_sipa_fonds_propres != null && data.target_benefice_sipa_fonds_propres_pct == null) data.target_benefice_sipa_fonds_propres_pct = Math.round((data.target_benefice_sipa_fonds_propres / getPurchaseEquity(data)) * 10000) / 100;
       if (purchaseSubtotal > 0 && data.hypotheque != null) data.hypotheque_pct = Math.round((data.hypotheque / purchaseSubtotal) * 10000) / 100;
       if (Number(data.hypotheque) > 0 && data.interets_hypothecaires != null) data.interets_hypothecaires_pct = Math.round((data.interets_hypothecaires / data.hypotheque) * 10000) / 100;
       if (Number(data.revenus_locatifs) > 0 && data.gestion != null) data.gestion_pct = Math.round((data.gestion / data.revenus_locatifs) * 10000) / 100;

@@ -19,7 +19,7 @@ import CommentSection from '../components/CommentSection';
 import FavoriteButton from '../components/FavoriteButton';
 import TraceabilityPanel from '../components/TraceabilityPanel';
 import { calculateAnalysis, formatCHF, formatPercent, normalizeAnalyses, WORKFLOW_STATUSES } from '../utils/calculations';
-import { formatSipaLabel, formatSipaValue, getDisplayableSipaRows, getSipaDisplayGroups, getSipaDisplayValues, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
+import { formatSipaLabel, formatSipaValue, getDisplayableSipaRows, getSipaDisplayGroups, getSipaDisplayValues, getSipaTargetBenefitPct, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
 import {
   getFinancialCustomFieldAmount,
   getFinancialCustomFieldsTotal,
@@ -537,9 +537,10 @@ function TechnicalAnalysisSnapshot({
     .filter(({ field }) => {
       return hasFinancialValue(field.amount) || hasFinancialValue(field.pct);
     });
+  const targetBenefitPct = getSipaTargetBenefitPct(analysis.sipa_data) ?? analysis.target_benefice_sipa_fonds_propres_pct;
   const canEdit = canEditAnalysis && !!draft;
   const exportBaseName = `${propertySafeName(property?.titre || property?.adresse || property?.ville || 'bien')}-${analysis.created_date ? moment(analysis.created_date).format('YYYY-MM-DD') : 'analyse'}`;
-  const financialExportRows = buildFinancialExportRows(analysis, customFields, prixTotal);
+  const financialExportRows = buildFinancialExportRows(analysis, customFields, prixTotal, targetBenefitPct);
   const bankExportRows = buildBankExportRows(analysis);
   const renderSection = (_title, content) => content;
   const updateDraftField = (key, value) => {
@@ -683,7 +684,7 @@ function TechnicalAnalysisSnapshot({
               <ExcelOptionalReadRow row={10} section="Acquisition" label="Frais de dossier bancaire" amount={analysis.frais_dossier_bancaire} editable={canEdit} onAmountChange={(value) => updateDraftField('frais_dossier_bancaire', value)} />
               <ExcelComputedRow row={11} section="Acquisition" label="Prix total" value={formatCHF(prixTotal)} strong />
               <ExcelOptionalReadRow row={12} section="Financement" label="Fonds propres" amount={analysis.fonds_propres} editable={canEdit} onAmountChange={(value) => updateDraftField('fonds_propres', value)} />
-              <ExcelReadRow row={13} section="Financement" label="Objectif bénéfice SIPA sur fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} pct={analysis.target_benefice_sipa_fonds_propres_pct} editable={canEdit} onAmountChange={updateAmountWithPct('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', 'fonds_propres_achat')} onPctChange={updatePctField('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', getPurchaseEquity(analysis))} />
+              <ExcelReadRow row={13} section="Financement" label="Objectif bénéfice SIPA sur fonds propres" amount={analysis.target_benefice_sipa_fonds_propres} pct={targetBenefitPct} editable={canEdit} onAmountChange={updateAmountWithPct('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', 'fonds_propres_achat')} onPctChange={updatePctField('target_benefice_sipa_fonds_propres', 'target_benefice_sipa_fonds_propres_pct', getPurchaseEquity(analysis))} />
               <ExcelOptionalReadRow row={14} section="Financement" label="Hypotheque" amount={analysis.hypotheque} pct={percentOf(analysis.hypotheque, purchaseSubtotal)} editable={canEdit} onAmountChange={(value) => updateDraftField('hypotheque', value)} onPctChange={updatePctField('hypotheque', 'hypotheque_pct', purchaseSubtotal)} />
               <ExcelOptionalReadRow row={15} section="Exploitation" label="Revenus locatifs hors charges" amount={analysis.revenus_locatifs} editable={canEdit} onAmountChange={(value) => updateDraftField('revenus_locatifs', value)} />
               <ExcelComputedRow row={16} section="Exploitation" label="Taux de rendement brut" value={formatPercent(analysis.rendement_brut)} />
@@ -1206,7 +1207,7 @@ function ExcelNumberInput({ value, onChange, suffix = '' }) {
   );
 }
 
-function buildFinancialExportRows(analysis, customFields, prixTotal) {
+function buildFinancialExportRows(analysis, customFields, prixTotal, targetBenefitPct) {
   const purchasePrice = getPurchasePrice(analysis);
   const purchaseSubtotal = getPurchaseSubtotal(analysis);
   const header = ['Bloc', 'Rubrique', 'Montant CHF', '%', 'Calcul'];
@@ -1221,7 +1222,7 @@ function buildFinancialExportRows(analysis, customFields, prixTotal) {
     ['Acquisition', 'Frais de dossier bancaire', analysis.frais_dossier_bancaire ?? '', '', ''],
     ['Acquisition', 'Prix total', '', '', prixTotal ?? ''],
     ['Financement', 'Fonds propres', analysis.fonds_propres ?? '', '', ''],
-    ['Financement', 'Objectif bénéfice SIPA sur fonds propres', analysis.target_benefice_sipa_fonds_propres ?? '', analysis.target_benefice_sipa_fonds_propres_pct ?? '', ''],
+    ['Financement', 'Objectif bénéfice SIPA sur fonds propres', analysis.target_benefice_sipa_fonds_propres ?? '', targetBenefitPct ?? '', ''],
     ['Financement', 'Hypotheque', analysis.hypotheque ?? '', percentOf(analysis.hypotheque, purchaseSubtotal) ?? '', ''],
     ['Exploitation', 'Revenus locatifs hors charges', analysis.revenus_locatifs ?? '', '', ''],
     ['Exploitation', 'Taux de rendement brut', '', '', analysis.rendement_brut ?? ''],
@@ -1352,9 +1353,12 @@ function normalizeAnalysisDraft(draft, property) {
   const purchaseSubtotal = purchasePrice + transactionFees + construction;
   const hypotheque = Number(draft.hypotheque || 0);
   const fondsPropresAchat = purchaseSubtotal - hypotheque;
-  const targetPct = hasFinancialValue(draft.target_benefice_sipa_fonds_propres_pct)
+  const importedTargetPct = getSipaTargetBenefitPct(draft.sipa_data);
+  const targetPct = hasFinancialValue(importedTargetPct)
+    ? Number(importedTargetPct || 0)
+    : hasFinancialValue(draft.target_benefice_sipa_fonds_propres_pct)
     ? Number(draft.target_benefice_sipa_fonds_propres_pct || 0)
-    : percentOf(draft.target_benefice_sipa_fonds_propres, fondsPropresAchat);
+    : null;
   const targetBenefice = targetPct != null
     ? Math.round(fondsPropresAchat * targetPct / 100)
     : Number(draft.target_benefice_sipa_fonds_propres || 0);
@@ -1439,7 +1443,7 @@ function buildTechnicalAnalysisPayload(analysis) {
     fonds_propres: analysis.fonds_propres,
     fonds_propres_achat: analysis.fonds_propres_achat,
     target_benefice_sipa_fonds_propres: analysis.target_benefice_sipa_fonds_propres,
-    target_benefice_sipa_fonds_propres_pct: analysis.target_benefice_sipa_fonds_propres_pct,
+    target_benefice_sipa_fonds_propres_pct: getSipaTargetBenefitPct(analysis.sipa_data) ?? analysis.target_benefice_sipa_fonds_propres_pct,
     hypotheque: analysis.hypotheque,
     revenus_locatifs: analysis.revenus_locatifs,
     charges_operationnelles: analysis.charges_operationnelles,
