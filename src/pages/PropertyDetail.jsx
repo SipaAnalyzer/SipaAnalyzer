@@ -802,7 +802,8 @@ function SipaImportedDataTable({ analysis, collapsible = false }) {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
-                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-72">Montant</th>
+                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-56">Montant</th>
+                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-32">%</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -815,18 +816,16 @@ function SipaImportedDataTable({ analysis, collapsible = false }) {
                       <td className={`py-2.5 pr-4 text-sm font-medium whitespace-nowrap ${isSummaryRow ? 'font-semibold text-primary' : ''}`}>{rowLabel}</td>
                       <td className="py-2.5 pl-4 text-sm">
                         <div className={`flex flex-col items-end gap-0.5 font-mono ${isSummaryRow ? 'font-bold text-primary' : ''}`}>
-                          <div className="flex flex-col items-end">
-                            {display.values.map((v, j) => (
-                              <span key={`value-${j}`}>{formatSipaValue(v)}</span>
-                            ))}
-                          </div>
-                          {display.percentages.length > 0 && (
-                            <div className="flex flex-col items-end text-xs font-normal text-muted-foreground">
-                              {display.percentages.map((v, j) => (
-                                <span key={`pct-${j}`}>{formatSipaValue(v)}</span>
-                              ))}
-                            </div>
-                          )}
+                          {display.values.map((v, j) => (
+                            <span key={`value-${j}`}>{formatSipaValue(v)}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-2.5 pl-4 text-sm">
+                        <div className="flex flex-col items-end gap-0.5 font-mono text-xs text-muted-foreground">
+                          {display.percentages.map((v, j) => (
+                            <span key={`pct-${j}`}>{formatSipaValue(v)}</span>
+                          ))}
                         </div>
                       </td>
                     </tr>
@@ -977,7 +976,8 @@ function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBase
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
-                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-72">Montant</th>
+                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-56">Montant</th>
+                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-32">%</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -1001,36 +1001,34 @@ function ExcelSipaInvestmentSheet({ analysis, editable, onCellChange, exportBase
                       </td>
                       <td className="py-2.5 pl-4 text-sm">
                         <div className={`flex flex-col items-end gap-1 font-mono ${isSummaryRow && !editable ? 'font-bold text-primary' : ''}`}>
-                          <div className="flex flex-col items-end gap-1">
-                            {display.values.map((value, valueIndex) => {
-                              const sourceIndex = (entry.values || []).findIndex((candidate) => candidate === value);
-                              return editable ? (
-                                <SipaReadEditValue
-                                  key={`value-${valueIndex}`}
-                                  value={value}
-                                  onChange={(next) => onCellChange(index, sourceIndex, 'value', next)}
-                                />
-                              ) : (
-                                <span key={`value-${valueIndex}`}>{formatSipaValue(value)}</span>
-                              );
-                            })}
-                          </div>
-                          {display.percentages.length > 0 && (
-                            <div className="flex flex-col items-end gap-1 text-xs font-normal text-muted-foreground">
-                              {display.percentages.map((value, pctIndex) => {
-                                const sourceIndex = (entry.values || []).findIndex((candidate) => candidate === value);
-                                return editable ? (
-                                  <SipaReadEditValue
-                                    key={`pct-${pctIndex}`}
-                                    value={value}
-                                    onChange={(next) => onCellChange(index, sourceIndex, 'value', next)}
-                                  />
-                                ) : (
-                                  <span key={`pct-${pctIndex}`}>{formatSipaValue(value)}</span>
-                                );
-                              })}
-                            </div>
-                          )}
+                          {display.values.map((value, valueIndex) => {
+                            const sourceIndex = (entry.values || []).findIndex((candidate) => candidate === value);
+                            return editable ? (
+                              <SipaReadEditValue
+                                key={`value-${valueIndex}`}
+                                value={value}
+                                onChange={(next) => onCellChange(index, sourceIndex, 'value', next)}
+                              />
+                            ) : (
+                              <span key={`value-${valueIndex}`}>{formatSipaValue(value)}</span>
+                            );
+                          })}
+                        </div>
+                      </td>
+                      <td className="py-2.5 pl-4 text-sm">
+                        <div className="flex flex-col items-end gap-1 font-mono text-xs font-normal text-muted-foreground">
+                          {display.percentages.map((value, pctIndex) => {
+                            const sourceIndex = (entry.values || []).findIndex((candidate) => candidate === value);
+                            return editable ? (
+                              <SipaReadEditValue
+                                key={`pct-${pctIndex}`}
+                                value={value}
+                                onChange={(next) => onCellChange(index, sourceIndex, 'value', next)}
+                              />
+                            ) : (
+                              <span key={`pct-${pctIndex}`}>{formatSipaValue(value)}</span>
+                            );
+                          })}
                         </div>
                       </td>
                     </tr>

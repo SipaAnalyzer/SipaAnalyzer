@@ -1264,7 +1264,8 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                       <thead>
                         <tr className="border-b border-border">
                           <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
-                          <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-72">Montant</th>
+                          <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-56">Montant</th>
+                          <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-32">%</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/50">
@@ -1298,30 +1299,30 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
                               </td>
                               <td className="py-2 pl-4 text-sm">
                                 <div className="flex flex-col items-end gap-1">
-                                  <div className="flex flex-wrap items-center justify-end gap-2">
-                                    {editableValueItems.map(({ value, valueIndex }) => (
-                                      <SipaEditableValue
-                                        key={valueIndex}
-                                        value={value}
-                                        inputValue={isTransactionFee && value.type === 'amount' ? form.honoraires_sipa : value.value}
-                                        onChange={isTransactionFee && value.type === 'amount'
-                                          ? handlers.honoraires.amount
-                                          : (next) => updateSipaCell(index, valueIndex, 'value', next)}
-                                      />
-                                    ))}
-                                  </div>
-                                  <div className="flex flex-wrap items-center justify-end gap-2">
-                                    {editablePctItems.map(({ value, valueIndex }) => (
-                                      <SipaEditableValue
-                                        key={valueIndex}
-                                        value={value}
-                                        inputValue={isTransactionFee ? form.honoraires_sipa_pct : value.value}
-                                        onChange={isTransactionFee
-                                          ? handlers.honoraires.pct
-                                          : (next) => updateSipaCell(index, valueIndex, 'value', next)}
-                                      />
-                                    ))}
-                                  </div>
+                                  {editableValueItems.map(({ value, valueIndex }) => (
+                                    <SipaEditableValue
+                                      key={valueIndex}
+                                      value={value}
+                                      inputValue={isTransactionFee && value.type === 'amount' ? form.honoraires_sipa : value.value}
+                                      onChange={isTransactionFee && value.type === 'amount'
+                                        ? handlers.honoraires.amount
+                                        : (next) => updateSipaCell(index, valueIndex, 'value', next)}
+                                    />
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="py-2 pl-4 text-sm">
+                                <div className="flex flex-col items-end gap-1">
+                                  {editablePctItems.map(({ value, valueIndex }) => (
+                                    <SipaEditableValue
+                                      key={valueIndex}
+                                      value={value}
+                                      inputValue={isTransactionFee ? form.honoraires_sipa_pct : value.value}
+                                      onChange={isTransactionFee
+                                        ? handlers.honoraires.pct
+                                        : (next) => updateSipaCell(index, valueIndex, 'value', next)}
+                                    />
+                                  ))}
                                 </div>
                               </td>
                             </tr>
@@ -2135,7 +2136,8 @@ function ExcelSipaInvestmentSheet({ sipaData, onChange, transactionFeeAmount, tr
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Rubrique</th>
-                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-72">Montant</th>
+                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-56">Montant</th>
+                  <th className="text-right py-2 pl-4 font-medium text-muted-foreground w-32">%</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -2161,34 +2163,34 @@ function ExcelSipaInvestmentSheet({ sipaData, onChange, transactionFeeAmount, tr
                       </td>
                       <td className="py-2 pl-4 text-sm">
                         <div className="flex flex-col items-end gap-1">
-                          <div className="flex flex-wrap items-center justify-end gap-2">
-                            {valueItems.map(({ value, valueIndex }) => {
-                              const transactionValue = value.type === 'amount' ? transactionFeeAmount : value.value;
-                              const onTransactionChange = value.type === 'amount' ? onTransactionFeeAmount : null;
-                              return (
-                                <SipaEditableValue
-                                  key={valueIndex}
-                                  value={value}
-                                  inputValue={isTransactionFee ? transactionValue : value.value}
-                                  onChange={isTransactionFee && onTransactionChange
-                                    ? onTransactionChange
-                                    : (next) => updateCell(index, valueIndex, 'value', next)}
-                                />
-                              );
-                            })}
-                          </div>
-                          <div className="flex flex-wrap items-center justify-end gap-2">
-                            {pctItems.map(({ value, valueIndex }) => (
+                          {valueItems.map(({ value, valueIndex }) => {
+                            const transactionValue = value.type === 'amount' ? transactionFeeAmount : value.value;
+                            const onTransactionChange = value.type === 'amount' ? onTransactionFeeAmount : null;
+                            return (
                               <SipaEditableValue
                                 key={valueIndex}
                                 value={value}
-                                inputValue={isTransactionFee ? transactionFeePct : value.value}
-                                onChange={isTransactionFee && onTransactionFeePct
-                                  ? onTransactionFeePct
+                                inputValue={isTransactionFee ? transactionValue : value.value}
+                                onChange={isTransactionFee && onTransactionChange
+                                  ? onTransactionChange
                                   : (next) => updateCell(index, valueIndex, 'value', next)}
                               />
-                            ))}
-                          </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+                      <td className="py-2 pl-4 text-sm">
+                        <div className="flex flex-col items-end gap-1">
+                          {pctItems.map(({ value, valueIndex }) => (
+                            <SipaEditableValue
+                              key={valueIndex}
+                              value={value}
+                              inputValue={isTransactionFee ? transactionFeePct : value.value}
+                              onChange={isTransactionFee && onTransactionFeePct
+                                ? onTransactionFeePct
+                                : (next) => updateCell(index, valueIndex, 'value', next)}
+                            />
+                          ))}
                         </div>
                       </td>
                     </tr>
