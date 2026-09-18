@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calculator, RotateCcw } from 'lucide-react';
+import { Calculator, RotateCcw, Frown, Meh, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -105,14 +105,15 @@ export default function TestEstimation() {
 
 function YieldIndicator({ grossYield }) {
   const indicator = grossYield < 4.5
-    ? { emoji: '🙁', mood: 'Pas content', label: 'Rendement brut inférieur à 4,5 %', style: 'border-red-500/30 bg-red-500/10' }
+    ? { icon: Frown, color: 'text-red-500', mood: 'Pas content', label: 'Rendement brut inférieur à 4,5 %', style: 'border-red-500/30 bg-red-500/10' }
     : grossYield > 5.5
-      ? { emoji: '😃', mood: 'Joyeux', label: 'Rendement brut supérieur à 5,5 %', style: 'border-emerald-500/30 bg-emerald-500/10' }
-      : { emoji: '😐', mood: 'Neutre', label: 'Rendement brut entre 4,5 % et 5,5 % inclus', style: 'border-amber-500/30 bg-amber-500/10' };
+      ? { icon: Smile, color: 'text-emerald-500', mood: 'Content', label: 'Rendement brut supérieur à 5,5 %', style: 'border-emerald-500/30 bg-emerald-500/10' }
+      : { icon: Meh, color: 'text-orange-500', mood: 'Neutre', label: 'Rendement brut entre 4,5 % et 5,5 % inclus', style: 'border-orange-500/30 bg-orange-500/10' };
+  const Icon = indicator.icon;
 
   return (
     <div className={`flex items-center gap-3 rounded-lg border p-3 ${indicator.style}`}>
-      <span role="img" aria-label={indicator.mood} className="shrink-0 text-4xl">{indicator.emoji}</span>
+      <Icon role="img" aria-label={indicator.mood} strokeWidth={1.75} className={`h-10 w-10 shrink-0 ${indicator.color}`} />
       <p className="text-sm font-medium">{indicator.label}</p>
     </div>
   );
