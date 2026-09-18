@@ -81,6 +81,7 @@ export default function TestEstimation() {
                   ? `Pour un rendement brut de ${formatPercent(result.grossYield)}.`
                   : `Pour un prix du bien de ${formatCHF(result.price)}.`}
               </p>
+              <YieldIndicator grossYield={result.grossYield} />
               <dl className="space-y-3 border-t border-border pt-4 text-sm">
                 <ResultLine label="Charges opérationnelles / an" value={formatCHF(result.charges)} />
                 <ResultLine label="Revenu après charges / an" value={formatCHF(result.incomeAfterCharges)} />
@@ -98,6 +99,21 @@ export default function TestEstimation() {
           </div>
         </section>
       </div>
+    </div>
+  );
+}
+
+function YieldIndicator({ grossYield }) {
+  const indicator = grossYield < 4.5
+    ? { emoji: '🙁', mood: 'Pas content', label: 'Rendement brut inférieur à 4,5 %', style: 'border-red-500/30 bg-red-500/10' }
+    : grossYield > 5.5
+      ? { emoji: '😃', mood: 'Joyeux', label: 'Rendement brut supérieur à 5,5 %', style: 'border-emerald-500/30 bg-emerald-500/10' }
+      : { emoji: '😐', mood: 'Neutre', label: 'Rendement brut entre 4,5 % et 5,5 % inclus', style: 'border-amber-500/30 bg-amber-500/10' };
+
+  return (
+    <div className={`flex items-center gap-3 rounded-lg border p-3 ${indicator.style}`}>
+      <span role="img" aria-label={indicator.mood} className="shrink-0 text-4xl">{indicator.emoji}</span>
+      <p className="text-sm font-medium">{indicator.label}</p>
     </div>
   );
 }
