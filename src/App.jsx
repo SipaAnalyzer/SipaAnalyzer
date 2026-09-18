@@ -28,6 +28,7 @@ import Presentation from "./pages/Presentation";
 import Alerts from "./pages/Alerts";
 import Admin from "./pages/Admin";
 import ViewAnalysis from "./pages/ViewAnalysis";
+import TestEstimation from "./pages/TestEstimation";
 
 const AuthenticatedApp = () => {
   const {
@@ -73,6 +74,7 @@ const AuthenticatedApp = () => {
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/properties" element={<Properties />} />
+          <Route path="/test-estimation" element={<TestEstimation />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/property/:propertyId" element={<PropertyDetail />} />
           <Route path="/add-property" element={<AddProperty />} />

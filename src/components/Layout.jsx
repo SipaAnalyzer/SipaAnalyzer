@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
-import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star, Sun, Moon, Bell, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Building2, GitCompareArrows, LogOut, Plus, Menu, Shield, Presentation, Star, Sun, Moon, Bell, ChevronLeft, ChevronRight, Calculator } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,7 @@ const LogoSipaCrochet = () => (
 const navItems = [
   { path: '/', label: 'Tableau de bord', icon: LayoutDashboard },
   { path: '/properties', label: 'Biens immobiliers', icon: Building2 },
+  { path: '/test-estimation', label: 'Test estimation', icon: Calculator },
   { path: '/favorites', label: 'Favoris', icon: Star },
   { path: '/comparator', label: 'Comparateur', icon: GitCompareArrows },
   { path: '/presentation', label: 'Présentation', icon: Presentation },
