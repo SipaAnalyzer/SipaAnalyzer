@@ -21,10 +21,10 @@ export default function NewAnalysis() {
   const propertyId = params.get('propertyId') || '';
   const fromEstimation = params.get('source') === 'estimation';
   const view = params.get('view') || '';
-  return <NewAnalysisForm key={`${user?.id}-${propertyId}-${fromEstimation}-${view}`} userId={user?.id} propertyId={propertyId} fromEstimation={fromEstimation} fullView={view === 'full'} navigationDraft={location.state?.estimationDraft} />;
+  return <NewAnalysisForm key={`${user?.id}-${propertyId}-${fromEstimation}-${view}`} userId={user?.id} propertyId={propertyId} fromEstimation={fromEstimation} view={view} navigationDraft={location.state?.estimationDraft} />;
 }
 
-function NewAnalysisForm({ userId, propertyId, fromEstimation, fullView, navigationDraft }) {
+function NewAnalysisForm({ userId, propertyId, fromEstimation, view, navigationDraft }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { permissions, isAdmin } = usePermissions();
@@ -127,7 +127,13 @@ const handlePropertyChange = (id) => {
     );
   }
 
-  const isEssentials = isEstimation && property && !fullView;
+  const isEssentials = !!property && (isEstimation ? view !== 'full' : view === 'essentials');
+  const essentialsUrl = isEstimation
+    ? `/new-analysis?propertyId=${propertyId}&source=estimation`
+    : `/new-analysis?propertyId=${propertyId}&view=essentials`;
+  const fullUrl = isEstimation
+    ? `/new-analysis?propertyId=${propertyId}&source=estimation&view=full`
+    : `/new-analysis?propertyId=${propertyId}`;
 
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
@@ -141,9 +147,9 @@ const handlePropertyChange = (id) => {
               : 'Saisissez les donnees financieres pour obtenir une evaluation complete'}
           </p>
         </div>
-        {isEstimation && fullView && property && (
+        {property && !isEssentials && (
           <div className="ml-auto">
-            <Button variant="outline" onClick={() => navigate(`/new-analysis?propertyId=${propertyId}&source=estimation`)}>
+            <Button variant="outline" onClick={() => navigate(essentialsUrl)}>
               Version simplifiée
             </Button>
           </div>
@@ -162,7 +168,7 @@ const handlePropertyChange = (id) => {
           property={property}
           initialData={draft?.initialData}
           onBack={() => navigate(isEstimation ? '/test-estimation' : '/properties')}
-          onSwitchToFull={() => navigate(`/new-analysis?propertyId=${propertyId}&source=estimation&view=full`)}
+          onSwitchToFull={() => navigate(fullUrl)}
         />
       ) : (
         <AnalysisForm initialPropertyId={propertyId} initialData={draft?.initialData}
