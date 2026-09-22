@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
+import { getEssentialsViewForAnalysis } from '../utils/simplifiedAnalysis';
 import { formatSipaLabel, formatSipaValue, getSipaDisplayGroups, getSipaDisplayValues, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
 import { exportAnalysisPdf } from '../utils/pdfExports';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -31,6 +33,8 @@ export default function ViewAnalysis() {
     enabled: !!analysisRaw?.property_id,
   });
 
+  const [essentialsView, setEssentialsView] = useState(false);
+
   const analysis = normalizeAnalysis(analysisRaw, property);
   const syncedSipaData = syncSipaDataWithAnalysisFields(analysis?.sipa_data, analysis);
 
@@ -49,6 +53,8 @@ export default function ViewAnalysis() {
       </div>
     );
   }
+
+  const essentials = essentialsView ? getEssentialsViewForAnalysis(analysisRaw, property) : null;
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -74,14 +80,41 @@ export default function ViewAnalysis() {
         <PdfExportDialog onExport={(sections) => exportAnalysisPdf(property, analysis, sections)} />
       </div>
 
+      <div className="flex justify-end">
+        <div className="inline-flex rounded-lg border border-border bg-card p-1">
+          <button
+            type="button"
+            onClick={() => setEssentialsView(false)}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              !essentialsView
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Complète
+          </button>
+          <button
+            type="button"
+            onClick={() => setEssentialsView(true)}
+            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              essentialsView
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Essentielle
+          </button>
+        </div>
+      </div>
+
       <div className="bg-card rounded-xl border border-border p-6">
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           <div className="flex items-center gap-4">
-            <ScoreGauge score={analysis.score_global || 0} size={110} />
+            <ScoreGauge score={essentials ? essentials.scoreGlobal : analysis.score_global || 0} size={110} />
 
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <ScoreBadge note={analysis.note} />
+                <ScoreBadge note={essentials ? essentials.note : analysis.note} />
                 <StatusBadge statut={analysis.statut} />
               </div>
 
@@ -91,15 +124,31 @@ export default function ViewAnalysis() {
             </div>
           </div>
 
-          <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <MetricCard label="Prix total" value={formatCHF(analysis.prix_total)} />
-            <MetricCard label="Revenu net" value={formatCHF(analysis.revenu_net)} />
-            <MetricCard label="Revenu distribu" value={formatCHF(analysis.revenu_distribue)} />
-            <MetricCard label="Rdt. brut" value={formatPercent(analysis.rendement_brut)} />
-            <MetricCard label="Rdt. net / FP" value={formatPercent(analysis.rendement_net_fonds_propres)} highlight />
-            <MetricCard label="Rdt. dist. / FP" value={formatPercent(analysis.revenu_distribue_fonds_propres)} highlight />
-          </div>
+          {essentials ? (
+            <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <MetricCard label="Rend. net" value={formatPercent(essentials.rendementNet)} highlight />
+              <MetricCard label="Cash-flow/an" value={formatCHF(essentials.cashFlowAnnuel)} />
+              <MetricCard label="Rend. brut" value={formatPercent(essentials.rendementBrut)} />
+              <MetricCard label="Impôt estimé/an" value={formatCHF(essentials.impotEstime)} />
+              <MetricCard label="Revenu net" value={formatCHF(essentials.revenuNet)} />
+              <MetricCard label="Prix du bien" value={formatCHF(essentials.prixBien)} />
+            </div>
+          ) : (
+            <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <MetricCard label="Prix total" value={formatCHF(analysis.prix_total)} />
+              <MetricCard label="Revenu net" value={formatCHF(analysis.revenu_net)} />
+              <MetricCard label="Revenu distribu" value={formatCHF(analysis.revenu_distribue)} />
+              <MetricCard label="Rdt. brut" value={formatPercent(analysis.rendement_brut)} />
+              <MetricCard label="Rdt. net / FP" value={formatPercent(analysis.rendement_net_fonds_propres)} highlight />
+              <MetricCard label="Rdt. dist. / FP" value={formatPercent(analysis.revenu_distribue_fonds_propres)} highlight />
+            </div>
+          )}
         </div>
+        {essentials && (
+          <p className="mt-4 text-xs text-muted-foreground">
+            Vue simplifiée calculée depuis l’analyse enregistrée — rendement net sur prix du bien, sans modifier aucune donnée.
+          </p>
+        )}
       </div>
 
       <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">

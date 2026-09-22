@@ -1,3 +1,5 @@
+import { calculateAnalysis } from './calculations';
+
 function toNumber(value, fallback = 0) {
   const n = Number(String(value ?? '').replace(/[^\d.,-]/g, '').replace(',', '.'));
   return Number.isFinite(n) ? n : fallback;
@@ -59,6 +61,44 @@ export function calculateSimplifiedAnalysis(inputs) {
     impotEstime,
     cashFlowAnnuel,
     amortissementAnnuel,
+  };
+}
+
+// Read-only Essentials projection of an already-saved analysis.
+// Reuses the default logic (calculateAnalysis) for revenu net, brut, impot
+// and score, then applies the simplified definitions:
+//   rendementNet = revenuNet / prixBien (same base as rendement brut),
+//   cashFlow     = revenu distribué (revenu net − impôt).
+// No DB writes, no stored fields modified.
+export function getEssentialsViewForAnalysis(analysisRaw, property) {
+  if (!analysisRaw) return null;
+  const context = property
+    ? {
+      ville: property.ville,
+      canton: property.canton,
+      surface: property.surface,
+      annee_construction: property.annee_construction,
+    }
+    : {};
+  const calc = calculateAnalysis({ ...analysisRaw, ...context });
+  const prixBien = Number(analysisRaw.prix_bien || 0);
+  const revenuNet = Number(calc.revenu_net || 0);
+  const rendementNet = prixBien > 0 ? Math.round((revenuNet / prixBien) * 100 * 100) / 100 : 0;
+
+  return {
+    prixBien,
+    loyerAnnuel: Number(analysisRaw.revenus_locatifs || 0),
+    chargesAnnuelles: Number(analysisRaw.charges_operationnelles || 0),
+    interetsAnnuels: Number(analysisRaw.interets_hypothecaires || 0),
+    apportPersonnel: Number(analysisRaw.fonds_propres || 0),
+    emprunt: Number(analysisRaw.hypotheque || 0),
+    revenuNet,
+    rendementBrut: Number(calc.rendement_brut || 0),
+    rendementNet,
+    impotEstime: revenuNet - Number(calc.revenu_distribue || 0),
+    cashFlowAnnuel: Number(calc.revenu_distribue || 0),
+    scoreGlobal: Number(calc.score_global || 0),
+    note: calc.note,
   };
 }
 

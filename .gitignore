@@ -41,6 +41,9 @@ supabase/.temp/
 # Coverage
 coverage/
 
+# Local database backups (never commit)
+backups/
+
 # Local settings
 *.local
 
