@@ -2,7 +2,7 @@ import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
-import { getEssentialsViewForAnalysis, getSavedEssentialsSnapshot } from '../utils/simplifiedAnalysis';
+import { getSavedEssentialsSnapshot } from '../utils/simplifiedAnalysis';
 import AnalysisEssentials from '../components/AnalysisEssentials';
 import { formatSipaLabel, formatSipaValue, getSipaDisplayGroups, getSipaDisplayValues, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
 import { exportAnalysisPdf } from '../utils/pdfExports';
@@ -63,8 +63,6 @@ export default function ViewAnalysis() {
       </div>
     );
   }
-
-  const essentials = getEssentialsViewForAnalysis(analysisRaw, property);
 
   if (essentialsView) {
     return (
@@ -128,7 +126,7 @@ export default function ViewAnalysis() {
 
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-4">
             <MetricCard label="Prix total du bien" value={formatCHF(analysis.prix_total)} highlight />
-            <MetricCard label="Rendement net du bien" value={formatPercent(essentials.rendementNet)} highlight />
+            <MetricCard label="Rendement net sur fonds propres" value={formatPercent(analysis.rendement_net_fonds_propres)} highlight />
             <MetricCard label="Honoraires SIPA" value={formatCHF(analysis.honoraires_transaction_sipa_group)} highlight />
             <MetricCard label="Revenu net" value={formatCHF(analysis.revenu_net)} />
             <MetricCard label="Revenu distribué" value={formatCHF(analysis.revenu_distribue)} />
