@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { recordAuditLog } from '@/utils/auditLogs';
 import { formatCHF, formatPercent } from '@/utils/calculations';
+import { calculateSimplifiedAnalysis } from '@/utils/simplifiedAnalysis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,8 +27,8 @@ const FIELD_CONFIG = [
 
 const KPI_CONFIG = [
   { key: 'scoreGlobal', label: 'Score global', fmt: (v) => `${Math.round(v || 0)}/100`, icon: TrendingUp, thresholds: [60, 40] },
-  { key: 'rendementNetFP', label: 'Rend. net/FP', fmt: formatPercent, icon: TrendingUp, thresholds: [5, 3] },
-  { key: 'revenuDistribue', label: 'Cash-flow/an', fmt: formatCHF, icon: DollarSign, thresholds: [0, -10000] },
+  { key: 'rendementNet', label: 'Rend. net', fmt: formatPercent, icon: TrendingUp, thresholds: [5, 3] },
+  { key: 'cashFlowAnnuel', label: 'Cash-flow/an', fmt: formatCHF, icon: DollarSign, thresholds: [0, -10000] },
   { key: 'rendementBrut', label: 'Rend. brut', fmt: formatPercent, icon: Percent, thresholds: [5, 3] },
   { key: 'impot', label: 'Impôt estimé/an', fmt: formatCHF, icon: AlertCircle, thresholds: [0, -5000] },
 ];
@@ -83,43 +84,48 @@ export default function AnalysisEssentials({
   const [calculationDetail, setCalculationDetail] = useState(false);
 
   const computed = useMemo(() => {
-    const prix = parseNumber(form.prix_bien);
-    const loyer = parseNumber(form.revenus_locatifs);
-    const chargesPct = parseNumber(form.charges_pct) / 100;
-    const apportPct = parseNumber(form.apport_pct) / 100;
-    const taux = parseNumber(form.taux_hypotheque) / 100;
-    const duree = Math.round(parseNumber(form.duree_pret));
-    const fraisPct = parseNumber(form.frais_acquisition_pct) / 100;
-    const travaux = parseNumber(form.travaux);
+    const formData = {
+      prix_bien: form.prix_bien,
+      revenus_locatifs: form.revenus_locatifs,
+      charges_pct: form.charges_pct,
+      apport_pct: form.apport_pct,
+      taux_hypotheque: form.taux_hypotheque,
+      duree_pret: form.duree_pret,
+      frais_acquisition_pct: form.frais_acquisition_pct,
+      travaux: form.travaux,
+    };
+    const calc = calculateSimplifiedAnalysis(formData);
 
-    const charges = loyer * chargesPct;
-    const fraisAcquisition = prix * fraisPct;
-    const prixTotal = prix + fraisAcquisition + travaux;
-    const apport = prix * apportPct;
-    const hypotheque = Math.max(0, prixTotal - apport);
-
-    const mensualite = taux > 0 && duree > 0
-      ? hypotheque * (taux / 12) / (1 - Math.pow(1 + taux / 12, -duree * 12))
-      : 0;
-    const interetsAnnuels = hypotheque * taux;
-    const amortissementAnnuel = hypotheque / duree;
-
-    const revenuNet = loyer - charges - interetsAnnuels;
-    const impot = Math.max(0, revenuNet * 0.2);
-    const revenuDistribue = revenuNet - impot;
-
-    const rendementBrut = prix > 0 ? (loyer / prix) * 100 : 0;
-    const rendementNetFP = prix > 0 ? (revenuNet / prix) * 100 : 0;
-    const scoreRendementBrut = rendementBrut <= 4
-      ? rendementBrut / 4 * 60
-      : 60 + (rendementBrut - 4) / 4 * 25;
-    const scoreRendementNetFP = Math.min(Math.max(rendementNetFP / 15 * 5, 0), 5);
-    const scoreGlobal = Math.min(100, Math.max(0, scoreRendementBrut + scoreRendementNetFP + 15 + 5));
+    const scoreRendementBrut = calc.rendementBrut <= 4
+      ? calc.rendementBrut / 4 * 60
+      : 60 + (calc.rendementBrut - 4) / 4 * 25;
+    const scoreRendementNet = Math.min(Math.max(calc.rendementNet / 15 * 5, 0), 5);
+    const scoreGlobal = Math.min(100, Math.max(0, scoreRendementBrut + scoreRendementNet + 15 + 5));
 
     return {
-      prix, loyer, charges, chargesPct, apport, apportPct, taux, duree, fraisAcquisition, fraisPct, travaux,
-      prixTotal, hypotheque, mensualite, interetsAnnuels, amortissementAnnuel,
-      revenuNet, impot, revenuDistribue, rendementBrut, rendementNetFP, scoreGlobal,
+      prix: calc.prixBien,
+      loyer: Number(form.revenus_locatifs) || 0,
+      charges: calc.chargesAnnuelles,
+      chargesPct: Number(form.charges_pct) || 0,
+      apport: calc.apportPersonnel,
+      apportPct: Number(form.apport_pct) || 0,
+      taux: Number(form.taux_hypotheque) || 0,
+      duree: Math.max(0, Number(form.duree_pret) || 0),
+      fraisAcquisition: calc.fraisAcquisition,
+      fraisPct: Number(form.frais_acquisition_pct) || 0,
+      travaux: calc.travaux,
+      prixTotal: calc.prixTotal,
+      hypotheque: calc.emprunt,
+      mensualite: 0,
+      interetsAnnuels: calc.interetsAnnuels,
+      amortissementAnnuel: calc.amortissementAnnuel,
+      revenuNet: calc.revenuNet,
+      impot: calc.impotEstime,
+      revenuDistribue: calc.cashFlowAnnuel,
+      cashFlowAnnuel: calc.cashFlowAnnuel,
+      rendementBrut: calc.rendementBrut,
+      rendementNet: calc.rendementNet,
+      scoreGlobal,
     };
   }, [form]);
 
@@ -218,7 +224,7 @@ export default function AnalysisEssentials({
             </div>
             <div className="space-y-3">
               {kpis.map((kpi) => (
-                <KpiCard key={kpi.key} kpi={kpi} detail={calculationDetail && kpi.key === 'rendement_net_fonds_propres'} computed={computed} />
+                <KpiCard key={kpi.key} kpi={kpi} detail={calculationDetail && kpi.key === 'rendementNet'} computed={computed} />
               ))}
             </div>
             <div className="mt-4 pt-4 border-t border-border">
@@ -295,9 +301,9 @@ function KpiCard({ kpi, detail, computed }) {
       <div className="flex-1 min-w-0">
         <p className="text-xs text-muted-foreground uppercase tracking-wider">{kpi.label}</p>
         <p className="font-mono font-bold text-lg">{kpi.formatted}</p>
-        {detail && kpi.key === 'rendement_net_fonds_propres' && (
+        {detail && kpi.key === 'rendementNet' && (
           <p className="text-xs text-muted-foreground mt-1">
-            (Revenu net − impôt) / Apport = {formatCHF(computed.revenuDistribue)} / {formatCHF(computed.apport)}
+            Revenu net / Prix = {formatCHF(computed.revenuNet)} / {formatCHF(computed.prix)}
           </p>
         )}
       </div>
@@ -314,10 +320,10 @@ function CalculationDetail({ computed, form }) {
       <p><strong>Prix total :</strong> {formatCHF(computed.prixTotal)} (prix + frais {formatCHF(computed.fraisAcquisition)} + travaux {formatCHF(computed.travaux)})</p>
       <p><strong>Apport :</strong> {formatCHF(computed.apport)} ({Math.round(computed.apportPct * 100)} %)</p>
       <p><strong>Emprunt :</strong> {formatCHF(computed.hypotheque)} @ {computed.taux.toFixed(1)} % sur {computed.duree} ans</p>
-      <p><strong>Mensualité :</strong> {formatCHF(computed.mensualite)} → Intérêt/an {formatCHF(Math.round(computed.interetsAnnuels))} + Amort. {formatCHF(Math.round(computed.amortissementAnnuel))}</p>
-      <p><strong>Loyer :</strong> {formatCHF(computed.loyer)} − Charges {formatCHF(computed.charges)} ({Math.round(computed.chargesPct * 100)} %) = {formatCHF(computed.loyer - computed.charges)}</p>
+      <p><strong>Loyer :</strong> {formatCHF(computed.loyer)} − Charges {formatCHF(computed.charges)} ({Math.round(computed.chargesPct * 100)} %) = {formatCHF(computed.revenuNet + computed.impot)}</p>
       <p><strong>Revenu net :</strong> {formatCHF(computed.revenuNet)} − Impôt {formatCHF(computed.impot)} = {formatCHF(computed.revenuDistribue)}</p>
-      <p><strong>Rendement net/FP :</strong> {formatCHF(computed.revenuDistribue)} / {formatCHF(computed.apport)} = {formatPercent(computed.rendementNetFP)}</p>
+      <p><strong>Rendement brut :</strong> {formatPercent(computed.rendementBrut)}</p>
+      <p><strong>Rendement net :</strong> {formatCHF(computed.revenuNet)} / {formatCHF(computed.prix)} = {formatPercent(computed.rendementNet)}</p>
       <p><strong>Score global :</strong> {Math.round(computed.scoreGlobal)}/100</p>
     </div>
   );
