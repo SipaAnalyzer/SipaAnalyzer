@@ -1,3 +1,8 @@
+function toNumber(value, fallback = 0) {
+  const n = Number(String(value ?? '').replace(/[^\d.,-]/g, '').replace(',', '.'));
+  return Number.isFinite(n) ? n : fallback;
+}
+
 export function calculateSimplifiedAnalysis(inputs) {
   const {
     prix_bien,
@@ -11,15 +16,15 @@ export function calculateSimplifiedAnalysis(inputs) {
     taux_imposition = 20,
   } = inputs;
 
-  const prixBien = Number(prix_bien) || 0;
-  const loyerAnnuel = Number(revenus_locatifs) || 0;
-  const chargesPct = Number(charges_pct) || 0;
-  const apportPct = Number(apport_pct) || 0;
-  const taux = Number(taux_hypotheque) || 0;
-  const duree = Math.max(0, Number(duree_pret) || 0);
-  const fraisPct = Number(frais_acquisition_pct) || 0;
-  const travauxVal = Number(travaux) || 0;
-  const tauxImposition = Number(taux_imposition) || 20;
+  const prixBien = toNumber(prix_bien);
+  const loyerAnnuel = toNumber(revenus_locatifs);
+  const chargesPct = toNumber(charges_pct);
+  const apportPct = toNumber(apport_pct);
+  const taux = toNumber(taux_hypotheque);
+  const duree = Math.max(0, toNumber(duree_pret));
+  const fraisPct = toNumber(frais_acquisition_pct);
+  const travauxVal = toNumber(travaux);
+  const tauxImposition = toNumber(taux_imposition, 20);
 
   const fraisAcquisition = prixBien * fraisPct / 100;
   const prixTotal = prixBien + fraisAcquisition + travauxVal;

@@ -104,15 +104,15 @@ export default function AnalysisEssentials({
 
     return {
       prix: calc.prixBien,
-      loyer: Number(form.revenus_locatifs) || 0,
+      loyer: parseNumber(form.revenus_locatifs),
       charges: calc.chargesAnnuelles,
-      chargesPct: Number(form.charges_pct) || 0,
+      chargesPct: parseNumber(form.charges_pct) / 100,
       apport: calc.apportPersonnel,
-      apportPct: Number(form.apport_pct) || 0,
-      taux: Number(form.taux_hypotheque) || 0,
-      duree: Math.max(0, Number(form.duree_pret) || 0),
+      apportPct: parseNumber(form.apport_pct) / 100,
+      taux: parseNumber(form.taux_hypotheque),
+      duree: Math.max(0, Math.round(parseNumber(form.duree_pret))),
       fraisAcquisition: calc.fraisAcquisition,
-      fraisPct: Number(form.frais_acquisition_pct) || 0,
+      fraisPct: parseNumber(form.frais_acquisition_pct),
       travaux: calc.travaux,
       prixTotal: calc.prixTotal,
       hypotheque: calc.emprunt,
@@ -320,7 +320,7 @@ function CalculationDetail({ computed, form }) {
       <p><strong>Prix total :</strong> {formatCHF(computed.prixTotal)} (prix + frais {formatCHF(computed.fraisAcquisition)} + travaux {formatCHF(computed.travaux)})</p>
       <p><strong>Apport :</strong> {formatCHF(computed.apport)} ({Math.round(computed.apportPct * 100)} %)</p>
       <p><strong>Emprunt :</strong> {formatCHF(computed.hypotheque)} @ {computed.taux.toFixed(1)} % sur {computed.duree} ans</p>
-      <p><strong>Loyer :</strong> {formatCHF(computed.loyer)} − Charges {formatCHF(computed.charges)} ({Math.round(computed.chargesPct * 100)} %) = {formatCHF(computed.revenuNet + computed.impot)}</p>
+      <p><strong>Loyer :</strong> {formatCHF(computed.loyer)} − Charges {formatCHF(computed.charges)} ({Math.round(computed.chargesPct * 100)} %) = {formatCHF(computed.loyer - computed.charges)}</p>
       <p><strong>Revenu net :</strong> {formatCHF(computed.revenuNet)} − Impôt {formatCHF(computed.impot)} = {formatCHF(computed.revenuDistribue)}</p>
       <p><strong>Rendement brut :</strong> {formatPercent(computed.rendementBrut)}</p>
       <p><strong>Rendement net :</strong> {formatCHF(computed.revenuNet)} / {formatCHF(computed.prix)} = {formatPercent(computed.rendementNet)}</p>
