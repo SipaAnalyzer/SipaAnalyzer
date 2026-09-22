@@ -95,13 +95,13 @@ export default function AnalysisEssentials({
     const charges = loyer * chargesPct;
     const fraisAcquisition = prix * fraisPct;
     const prixTotal = prix + fraisAcquisition + travaux;
-    const apport = prixTotal * apportPct;
+    const apport = prix * apportPct;
     const hypotheque = Math.max(0, prixTotal - apport);
 
     const mensualite = taux > 0 && duree > 0
       ? hypotheque * (taux / 12) / (1 - Math.pow(1 + taux / 12, -duree * 12))
       : 0;
-    const interetsAnnuels = mensualite * 12 - (hypotheque / duree);
+    const interetsAnnuels = hypotheque * taux;
     const amortissementAnnuel = hypotheque / duree;
 
     const revenuNet = loyer - charges - interetsAnnuels;
