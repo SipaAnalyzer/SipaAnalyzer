@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { formatCHF, formatPercent } from '@/utils/calculations';
 import { buildAnalysisFromEstimation, calculateQuickEstimation, parseEstimationNumber } from '@/utils/quickEstimation';
-import { readEstimationDraft, writeEstimationDraft } from '@/utils/estimationDraft';
+import { readEstimationDraft, resolveEstimationAnalysisDraft, writeEstimationDraft } from '@/utils/estimationDraft';
 
 const INITIAL_VALUES = { rent: '', chargesPercent: '15', price: '', grossYield: '' };
 const INITIAL_PROPERTY = { nom_bien: '', ville: '', adresse: '' };
@@ -46,14 +46,18 @@ function EstimationWorkspace({ userId }) {
   }, [userId, mode, values, propertyDetails, createdProperty]);
 
   const continueAnalysis = (property) => {
-    const draft = readEstimationDraft(userId, property.id);
-    navigate(draft?.analysisId
-      ? `/analysis/${draft.analysisId}`
-      : `/new-analysis?propertyId=${encodeURIComponent(property.id)}&source=estimation`);
+    const draft = resolveEstimationAnalysisDraft(userId, property.id);
+    if (draft?.analysisId) {
+      navigate(`/analysis/${draft.analysisId}`);
+      return;
+    }
+    navigate(`/new-analysis?propertyId=${encodeURIComponent(property.id)}&source=estimation`, {
+      state: { estimationDraft: draft ? { ...draft, userId } : null },
+    });
   };
 
   const createProperty = useMutation({
-    mutationFn: (details) => base44.entities.Property.create({
+    mutationFn: ({ details }) => base44.entities.Property.create({
       nom_bien: details.nom_bien.trim(),
       ville: details.ville.trim(),
       adresse: details.adresse.trim(),
@@ -61,11 +65,12 @@ function EstimationWorkspace({ userId }) {
       statut: 'en_cours',
       date_creation_bien: new Date().toISOString().slice(0, 10),
     }),
-    onSuccess: (property) => {
-      const initialData = buildAnalysisFromEstimation({ mode, ...values }, property.id);
+    onSuccess: (property, { estimation, details }) => {
+      const initialData = buildAnalysisFromEstimation(estimation, property.id);
       // Persist before navigating so a return/reload reuses this property.
-      writeEstimationDraft(userId, { property, initialData, mode }, property.id);
-      writeEstimationDraft(userId, { mode, values, propertyDetails, createdProperty: property });
+      writeEstimationDraft(userId, { property, initialData, mode: estimation.mode, estimation }, property.id);
+      const { mode: submittedMode, ...submittedValues } = estimation;
+      writeEstimationDraft(userId, { mode: submittedMode, values: submittedValues, propertyDetails: details, createdProperty: property });
       setCreatedProperty(property);
       queryClient.setQueryData(['property', property.id], property);
       queryClient.invalidateQueries({ queryKey: ['properties'] });
@@ -92,7 +97,8 @@ function EstimationWorkspace({ userId }) {
     if (!propertyDetails.nom_bien.trim() || !propertyDetails.ville.trim()) return;
     creationInFlight.current = true;
     setCreationError('');
-    createProperty.mutate(propertyDetails);
+    // Capture the figures at confirmation, rather than reading mutable screen state after the request.
+    createProperty.mutate({ details: { ...propertyDetails }, estimation: { mode, ...values } });
   };
 
   const reset = () => {

@@ -305,7 +305,7 @@ function getSipaEditableGroups(entries = []) {
     .filter((group) => group.rows.length > 0);
 }
 
-export default function AnalysisForm({ initialData, initialPropertyId, onSubmit, isSubmitting, initialTab = 'financial', fixedProperty, onDraftChange }) {
+export default function AnalysisForm({ initialData, initialPropertyId, onSubmit, isSubmitting, initialTab = 'financial', fixedProperty, onDraftChange, onPropertyChange }) {
   const { data: listedProperties = [] } = useQuery({
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list('-created_date', 100),
@@ -802,7 +802,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block">Bien immobilier</Label>
-            <Select value={form.property_id} onValueChange={set('property_id')} disabled={!!fixedProperty}>
+            <Select value={form.property_id} onValueChange={(id) => { set('property_id')(id); onPropertyChange?.(id); }} disabled={!!fixedProperty}>
               <SelectTrigger className="bg-background border-border">
                 <SelectValue placeholder="Sélectionner un bien" />
               </SelectTrigger>

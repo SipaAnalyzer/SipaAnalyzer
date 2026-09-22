@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test, afterEach } from 'node:test';
 import { buildAnalysisFromEstimation } from '../src/utils/quickEstimation.js';
-import { readEstimationDraft, writeEstimationDraft } from '../src/utils/estimationDraft.js';
+import { readEstimationDraft, resolveEstimationAnalysisDraft, writeEstimationDraft } from '../src/utils/estimationDraft.js';
 
 const estimation = { mode: 'price', rent: '100000', chargesPercent: '15', grossYield: '5' };
 afterEach(() => { delete globalThis.window; });
@@ -75,4 +75,39 @@ test('supports blocked storage and ignores malformed persisted drafts', () => {
   assert.equal(readEstimationDraft('broken-storage'), null);
   globalThis.window.sessionStorage.getItem = () => '[]';
   assert.equal(readEstimationDraft('array-storage'), null);
+});
+
+test('opens a prefilled analysis from navigation state even without browser storage', () => {
+  const navigationDraft = { userId: 'route-user', property: { id: 'route-property' }, estimation, mode: 'price' };
+  const draft = resolveEstimationAnalysisDraft('route-user', 'route-property', navigationDraft);
+  assert.equal(draft.initialData.prix_bien, 2000000);
+  assert.equal(draft.initialData.revenus_locatifs, 100000);
+  assert.equal(draft.initialData.charges_operationnelles, 15000);
+  assert.equal(resolveEstimationAnalysisDraft('other-user', 'route-property', navigationDraft), null);
+  assert.equal(resolveEstimationAnalysisDraft('route-user', 'other-property', navigationDraft), null);
+});
+
+test('recovers an empty legacy form from the current estimation for the same property', () => {
+  const property = { id: 'legacy-property' };
+  const { mode, ...values } = estimation;
+  writeEstimationDraft('legacy-user', { mode, values, createdProperty: property });
+  writeEstimationDraft('legacy-user', {
+    property, mode,
+    initialData: { property_id: property.id, prix_bien: null, revenus_locatifs: null, charges_operationnelles: null },
+  }, property.id);
+  const draft = resolveEstimationAnalysisDraft('legacy-user', property.id);
+  assert.equal(draft.initialData.prix_bien, 2000000);
+  assert.equal(draft.initialData.revenus_locatifs, 100000);
+  assert.equal(draft.initialData.charges_operationnelles, 15000);
+  assert.equal(resolveEstimationAnalysisDraft('legacy-user', 'unrelated-property'), null);
+});
+
+test('resumes edited amounts rather than overwriting them with the original estimate', () => {
+  const property = { id: 'edited-property' };
+  const initialData = { ...buildAnalysisFromEstimation(estimation, property.id), prix_bien: 1800000, charges_operationnelles: 0 };
+  writeEstimationDraft('edited-user', { property, estimation, initialData }, property.id);
+  const draft = resolveEstimationAnalysisDraft('edited-user', property.id);
+  assert.equal(draft.initialData.prix_bien, 1800000);
+  assert.equal(draft.initialData.charges_operationnelles, 0);
+  assert.equal(draft.initialData.revenus_locatifs, 100000);
 });

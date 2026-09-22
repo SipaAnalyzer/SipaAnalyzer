@@ -1,3 +1,5 @@
+import { buildAnalysisFromEstimation } from './quickEstimation.js';
+
 // Per-user, per-tab drafts: retain the estimation and analysis through back/reload.
 // Memory fallback keeps navigation working when sessionStorage is unavailable.
 const memoryDrafts = new Map();
@@ -25,4 +27,32 @@ export function writeEstimationDraft(userId, draft, id = 'current') {
   } catch {
     // The in-memory copy remains available during this visit.
   }
+}
+
+export function resolveEstimationAnalysisDraft(userId, propertyId, navigationDraft) {
+  if (!userId || !propertyId) return null;
+  const stored = readEstimationDraft(userId, propertyId);
+  const transferred = navigationDraft?.userId === userId ? navigationDraft : null;
+  const matchesProperty = (draft) => draft?.property?.id === propertyId;
+  const draft = matchesProperty(stored) ? stored : matchesProperty(transferred) ? transferred : null;
+  const current = readEstimationDraft(userId);
+  const matchingCurrent = current?.createdProperty?.id === propertyId ? current : null;
+  const estimation = draft?.estimation
+    || (matchesProperty(transferred) ? transferred.estimation : null)
+    || (matchingCurrent ? { ...matchingCurrent.values, mode: matchingCurrent.mode } : null);
+  const seed = estimation ? buildAnalysisFromEstimation(estimation, propertyId) : null;
+  const initialData = draft?.initialData;
+  const hasAmounts = initialData?.property_id === propertyId
+    && ['prix_bien', 'revenus_locatifs', 'charges_operationnelles'].some((key) => Number(initialData[key]) > 0);
+
+  if (!draft && !seed) return null;
+  if (!hasAmounts && !seed && !draft?.analysisId) return null;
+  return {
+    ...draft,
+    property: draft?.property || matchingCurrent.createdProperty,
+    mode: draft?.mode || estimation?.mode,
+    estimation,
+    // Preserve edited amounts; recover a missing/empty initial payload from the original estimate.
+    initialData: hasAmounts ? initialData : { ...initialData, ...seed, property_id: propertyId },
+  };
 }
