@@ -72,7 +72,6 @@ export default function PropertyDetail() {
   const { permissions, isAdmin } = usePermissions();
   const queryClient = useQueryClient();
   const [selectedAnalysisId, setSelectedAnalysisId] = useState(null);
-  const [analysisViewMode, setAnalysisViewMode] = useState('simplified');
   const [technicalDraft, setTechnicalDraft] = useState(null);
 
   const canEdit = isAdmin || permissions.can_edit_property;
@@ -212,9 +211,7 @@ export default function PropertyDetail() {
   const selected = selectedAnalysisId
     ? normalizedAnalyses.find((analysis) => analysis.id === selectedAnalysisId) || latest
     : latest;
-  const displayedAnalysis = analysisViewMode === 'technical' && technicalDraft?.id === selected?.id
-    ? normalizeAnalysisDraft(technicalDraft, property)
-    : selected;
+  const displayedAnalysis = selected;
 
   useEffect(() => {
     if (selected?.id) {
@@ -305,7 +302,11 @@ export default function PropertyDetail() {
             <>
               {canViewFullAnalysis ? (
                 <>
-                  <AnalysisViewModeToggle value={analysisViewMode} onChange={setAnalysisViewMode} />
+                  <div className="flex justify-end">
+                    <Button asChild variant="outline">
+                      <Link to={`/analysis/${selected.id}?view=essentials`}>Version simplifiée</Link>
+                    </Button>
+                  </div>
                   <AnalysisSummary
                       property={property}
                       selected={displayedAnalysis}
@@ -316,7 +317,6 @@ export default function PropertyDetail() {
                       onStatusChange={(status) => updatePropertyStatus.mutate(status)}
                       collapsible
                     />
-                  {analysisViewMode === 'simplified' ? (
                     <>
                       <FinancialTable analysis={displayedAnalysis} collapsible />
                       {displayedAnalysis.sipa_data && displayedAnalysis.sipa_data.filter((e) => !e._custom).length > 0 && (
@@ -324,18 +324,6 @@ export default function PropertyDetail() {
                       )}
                       <Projection5Ans analysis={displayedAnalysis} collapsible />
                     </>
-                  ) : (
-                    <TechnicalAnalysisSnapshot
-                      property={property}
-                      analysis={displayedAnalysis}
-                      draft={technicalDraft || displayedAnalysis}
-                      setDraft={setTechnicalDraft}
-                      canEditAnalysis={canEditAnalysis}
-                      isSaving={updateTechnicalAnalysis.isPending}
-                      onSave={saveTechnicalDraft}
-                      canCollapseSections
-                    />
-                  )}
                   {normalizedAnalyses.length > 1 && (
                     <AnalysisSection title="Historique des analyses" defaultOpen>
                       <AnalysisHistory
@@ -399,45 +387,6 @@ export default function PropertyDetail() {
       </Tabs>
 
     </div>
-  );
-}
-
-function AnalysisViewModeToggle({ value, onChange }) {
-  return (
-    <section className="bg-card rounded-xl border border-border p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="font-heading font-semibold text-sm">Vue d'analyse</h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            La vue simplifiee garde l'affichage actuel. La vue technique presente les donnees en grille.
-          </p>
-        </div>
-        <div className="inline-flex rounded-lg border border-border bg-background p-1">
-          <button
-            type="button"
-            onClick={() => onChange('simplified')}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              value === 'simplified'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Simplifie
-          </button>
-          <button
-            type="button"
-            onClick={() => onChange('technical')}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              value === 'technical'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Technique
-          </button>
-        </div>
-      </div>
-    </section>
   );
 }
 

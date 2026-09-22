@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
@@ -33,7 +32,16 @@ export default function ViewAnalysis() {
     enabled: !!analysisRaw?.property_id,
   });
 
-  const [essentialsView, setEssentialsView] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const essentialsView = searchParams.get('view') === 'essentials';
+  const setEssentialsView = (enabled) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      if (enabled) next.set('view', 'essentials');
+      else next.delete('view');
+      return next;
+    });
+  };
 
   const analysis = normalizeAnalysis(analysisRaw, property);
   const syncedSipaData = syncSipaDataWithAnalysisFields(analysis?.sipa_data, analysis);
