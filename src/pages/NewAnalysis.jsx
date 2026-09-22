@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { recordAuditLog } from '@/utils/auditLogs';
 import AnalysisForm from '../components/AnalysisForm';
+import AnalysisEssentials from '../components/AnalysisEssentials';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { readEstimationDraft, resolveEstimationAnalysisDraft, writeEstimationDraft } from '@/utils/estimationDraft';
+import { useQuery } from '@tanstack/react-query';
 
 export default function NewAnalysis() {
   const { user } = useAuth();
@@ -65,7 +67,7 @@ function NewAnalysisForm({ userId, propertyId, fromEstimation, navigationDraft }
     },
   });
 
-  const handlePropertyChange = (id) => {
+const handlePropertyChange = (id) => {
     const saved = resolveEstimationAnalysisDraft(userId, id);
     if (saved && !saved.analysisId) {
       navigate(`/new-analysis?propertyId=${encodeURIComponent(id)}&source=estimation`, {
@@ -74,41 +76,91 @@ function NewAnalysisForm({ userId, propertyId, fromEstimation, navigationDraft }
     }
   };
 
+  const { data: property } = useQuery({
+    queryKey: ['property', propertyId],
+    queryFn: () => base44.entities.Property.get(propertyId),
+    enabled: !!propertyId,
+  });
+
+  if (fromEstimation && !draft) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <Link to="/test-estimation"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
+          <div>
+            <h1 className="font-display text-2xl font-bold">Nouvelle analyse</h1>
+            <p className="text-sm text-muted-foreground">Le brouillon de cette estimation n'est plus disponible.</p>
+          </div>
+        </div>
+        <Button asChild variant="outline"><Link to="/test-estimation">Retour a Test estimation</Link></Button>
+      </div>
+    );
+  }
+
+  if (savedAnalysisId) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <Link to={isEstimation ? '/test-estimation' : '/properties'}><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
+          <div>
+            <h1 className="font-display text-2xl font-bold">Nouvelle analyse</h1>
+            <p className="text-sm text-muted-foreground">L'analyse de ce bien a deja ete enregistree.</p>
+          </div>
+        </div>
+        <Button asChild><Link to={`/analysis/${savedAnalysisId}`}>Voir l'analyse</Link></Button>
+      </div>
+    );
+  }
+
+  if (isEstimation && !canCreate) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <Link to="/test-estimation"><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
+          <div>
+            <h1 className="font-display text-2xl font-bold">Nouvelle analyse</h1>
+            <p className="text-sm text-muted-foreground">Vous n'avez pas l'autorisation de creer une analyse.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isEssentials = isEstimation && property;
+
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Link to={isEstimation ? '/test-estimation' : '/properties'} aria-label={isEstimation ? 'Retour à l’estimation' : 'Retour aux biens'}><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
+        <Link to={isEstimation ? '/test-estimation' : '/properties'} aria-label={isEstimation ? 'Retour a l\'estimation' : 'Retour aux biens'}><Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button></Link>
         <div>
-          <h1 className="font-display text-2xl font-bold">Nouvelle analyse</h1>
-          <p className="text-sm text-muted-foreground">Saisissez les données financières pour obtenir une évaluation complète</p>
+          <h1 className="font-display text-2xl font-bold">{isEssentials ? 'Analyse essentielle' : 'Nouvelle analyse'}</h1>
+          <p className="text-sm text-muted-foreground">
+            {isEssentials
+              ? 'Parametres simplifies, resultats en temps reel'
+              : 'Saisissez les donnees financieres pour obtenir une evaluation complete'}
+          </p>
         </div>
       </div>
-      {fromEstimation && !draft ? (
-        <div className="space-y-3 rounded-xl border border-border bg-card p-6">
-          <p>Le brouillon de cette estimation n’est plus disponible dans cet onglet.</p>
-          <Button asChild variant="outline"><Link to="/test-estimation">Retour à Test estimation</Link></Button>
+      {draft && isEssentials && (
+        <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
+          <p><strong>{draft.property.nom_bien} — {draft.property.ville}</strong> : bien cree a partir de votre estimation.</p>
+          <p>Le prix, les loyers annuels et les charges sont preremplis. Ajustez si necessaire.</p>
+          {draft.mode === 'price' && <p className="text-muted-foreground">Le prix repris est un prix cible calcule, a confirmer avec le vendeur.</p>}
         </div>
-      ) : savedAnalysisId ? (
-        <div className="space-y-3 rounded-xl border border-border bg-card p-6">
-          <p>L’analyse de ce bien a déjà été enregistrée.</p>
-          <Button asChild><Link to={`/analysis/${savedAnalysisId}`}>Voir l’analyse</Link></Button>
-        </div>
-      ) : isEstimation && !canCreate ? (
-        <p className="text-sm text-muted-foreground">Vous n’avez pas l’autorisation de créer une analyse.</p>
+      )}
+      {isEssentials ? (
+        <AnalysisEssentials
+          propertyId={propertyId}
+          property={property}
+          initialData={draft?.initialData}
+          onBack={() => navigate(isEstimation ? '/test-estimation' : '/properties')}
+          onSwitchToFull={() => navigate(`/new-analysis?propertyId=${propertyId}&source=estimation`)}
+        />
       ) : (
-        <>
-          {draft && (
-            <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
-              <p><strong>{draft.property.nom_bien} — {draft.property.ville}</strong> : bien créé à partir de votre estimation.</p>
-              <p>Le prix, les loyers annuels et les charges sont préremplis. Complétez le financement et les autres postes avant d’enregistrer l’analyse.</p>
-              {draft.mode === 'price' && <p className="text-muted-foreground">Le prix repris est un prix cible calculé, à confirmer avec le vendeur.</p>}
-            </div>
-          )}
-          <AnalysisForm initialPropertyId={propertyId} initialData={draft?.initialData}
-            fixedProperty={draft?.property} onDraftChange={draft ? saveDraft : undefined}
-            onPropertyChange={handlePropertyChange}
-            onSubmit={create.mutateAsync} isSubmitting={create.isPending} />
-        </>
+        <AnalysisForm initialPropertyId={propertyId} initialData={draft?.initialData}
+          fixedProperty={draft?.property} onDraftChange={draft ? saveDraft : undefined}
+          onPropertyChange={handlePropertyChange}
+          onSubmit={create.mutateAsync} isSubmitting={create.isPending} />
       )}
     </div>
   );
