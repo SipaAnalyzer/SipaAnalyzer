@@ -21,3 +21,28 @@ export function calculateQuickEstimation({ mode, rent, chargesPercent, price, gr
   const result = { price: estimatedPrice, grossYield: estimatedYield, charges, incomeAfterCharges, yieldAfterCharges };
   return Object.values(result).every(Number.isFinite) && estimatedPrice > 0 ? result : null;
 }
+
+export function buildAnalysisFromEstimation(estimation, propertyId) {
+  const result = calculateQuickEstimation(estimation);
+  if (!result || !propertyId) return null;
+  return {
+    property_id: propertyId,
+    statut: 'en_cours',
+    prix_bien: result.price,
+    prix_achat: result.price,
+    revenus_locatifs: parseEstimationNumber(estimation.rent),
+    charges_operationnelles: result.charges,
+    // These defaults would otherwise add a margin/fees on the first recalculation.
+    // The quick estimate does not define them: leave them for the full analysis.
+    target_benefice_sipa_fonds_propres_pct: null,
+    honoraires_transaction_sipa_group_pct: null,
+    notes: [
+      'Analyse préparée depuis Test estimation.',
+      estimation.mode === 'price'
+        ? `Prix cible calculé pour un rendement brut de ${result.grossYield.toFixed(2)} % : à confirmer avec le vendeur.`
+        : 'Prix d’acquisition envisagé saisi lors de l’estimation.',
+      `Charges opérationnelles estimées à ${parseEstimationNumber(estimation.chargesPercent)} % des loyers annuels.`,
+      'Financement, travaux, honoraires et fiscalité à compléter.',
+    ].join('\n'),
+  };
+}

@@ -305,11 +305,16 @@ function getSipaEditableGroups(entries = []) {
     .filter((group) => group.rows.length > 0);
 }
 
-export default function AnalysisForm({ initialData, initialPropertyId, onSubmit, isSubmitting, initialTab = 'financial' }) {
-  const { data: properties = [] } = useQuery({
+export default function AnalysisForm({ initialData, initialPropertyId, onSubmit, isSubmitting, initialTab = 'financial', fixedProperty, onDraftChange }) {
+  const { data: listedProperties = [] } = useQuery({
     queryKey: ['properties'],
     queryFn: () => base44.entities.Property.list('-created_date', 100),
   });
+
+  // A newly created property must be available even before the list refreshes.
+  const properties = fixedProperty && !listedProperties.some((property) => property.id === fixedProperty.id)
+    ? [fixedProperty, ...listedProperties]
+    : listedProperties;
 
   const [form, setForm] = useState({
     property_id: initialPropertyId || '',
@@ -359,6 +364,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
     emplacement_bien: '',
     operating_projection: createEmptyExcelProjections().operating_projection,
     capital_projection: createEmptyExcelProjections().capital_projection,
+    ...initialData,
   });
 
   useEffect(() => {
@@ -519,7 +525,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const [saronRate, setSaronRate] = useState(null);
   const [customLabels, setCustomLabels] = useState([]);
   const [newLabel, setNewLabel] = useState('');
-  const [customFinancialFields, setCustomFinancialFields] = useState([]);
+  const [customFinancialFields, setCustomFinancialFields] = useState(() => normalizeFinancialCustomFields(initialData?.financial_custom_fields, initialData?.sipa_data));
   const [newCustomFieldName, setNewCustomFieldName] = useState('');
   const [newCustomFieldAmount, setNewCustomFieldAmount] = useState('');
   const [newCustomFieldPct, setNewCustomFieldPct] = useState('');
@@ -531,6 +537,12 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
   const [newCustomFieldSecondaryField, setNewCustomFieldSecondaryField] = useState('none');
   const [newCustomFieldMultiplierPct, setNewCustomFieldMultiplierPct] = useState('75');
   const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    if (onDraftChange && form.property_id) {
+      onDraftChange({ ...form, financial_custom_fields: customFinancialFields });
+    }
+  }, [form, customFinancialFields, onDraftChange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -790,7 +802,7 @@ export default function AnalysisForm({ initialData, initialPropertyId, onSubmit,
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block">Bien immobilier</Label>
-            <Select value={form.property_id} onValueChange={set('property_id')}>
+            <Select value={form.property_id} onValueChange={set('property_id')} disabled={!!fixedProperty}>
               <SelectTrigger className="bg-background border-border">
                 <SelectValue placeholder="Sélectionner un bien" />
               </SelectTrigger>

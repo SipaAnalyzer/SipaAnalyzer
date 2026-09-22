@@ -1,23 +1,106 @@
-import { useState } from 'react';
-import { Calculator, RotateCcw, Frown, Meh, Smile } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Calculator, RotateCcw, Frown, Meh, Smile, Plus, Loader2, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
+import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import { recordAuditLog } from '@/utils/auditLogs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { formatCHF, formatPercent } from '@/utils/calculations';
-import { calculateQuickEstimation, parseEstimationNumber } from '@/utils/quickEstimation';
+import { buildAnalysisFromEstimation, calculateQuickEstimation, parseEstimationNumber } from '@/utils/quickEstimation';
+import { readEstimationDraft, writeEstimationDraft } from '@/utils/estimationDraft';
 
 const INITIAL_VALUES = { rent: '', chargesPercent: '15', price: '', grossYield: '' };
+const INITIAL_PROPERTY = { nom_bien: '', ville: '', adresse: '' };
 
 export default function TestEstimation() {
-  const [mode, setMode] = useState('price');
-  const [values, setValues] = useState(INITIAL_VALUES);
+  const { user } = useAuth();
+  return <EstimationWorkspace key={user?.id} userId={user?.id} />;
+}
+
+function EstimationWorkspace({ userId }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { permissions, isAdmin } = usePermissions();
+  const canCreate = isAdmin || (permissions.can_create_property && permissions.can_create_analysis);
+  const canContinue = isAdmin || permissions.can_create_analysis;
+  const [saved] = useState(() => readEstimationDraft(userId));
+  const [mode, setMode] = useState(saved?.mode === 'yield' ? 'yield' : 'price');
+  const [values, setValues] = useState({ ...INITIAL_VALUES, ...saved?.values });
+  const [propertyDetails, setPropertyDetails] = useState({ ...INITIAL_PROPERTY, ...saved?.propertyDetails });
+  const [createdProperty, setCreatedProperty] = useState(saved?.createdProperty || null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [creationError, setCreationError] = useState('');
+  const creationInFlight = useRef(false);
   const result = calculateQuickEstimation({ mode, ...values });
   const calculatingPrice = mode === 'price';
   const set = (key) => (event) => setValues((current) => ({ ...current, [key]: event.target.value }));
 
+  useEffect(() => {
+    writeEstimationDraft(userId, { mode, values, propertyDetails, createdProperty });
+  }, [userId, mode, values, propertyDetails, createdProperty]);
+
+  const continueAnalysis = (property) => {
+    const draft = readEstimationDraft(userId, property.id);
+    navigate(draft?.analysisId
+      ? `/analysis/${draft.analysisId}`
+      : `/new-analysis?propertyId=${encodeURIComponent(property.id)}&source=estimation`);
+  };
+
+  const createProperty = useMutation({
+    mutationFn: (details) => base44.entities.Property.create({
+      nom_bien: details.nom_bien.trim(),
+      ville: details.ville.trim(),
+      adresse: details.adresse.trim(),
+      pays: 'Suisse',
+      statut: 'en_cours',
+      date_creation_bien: new Date().toISOString().slice(0, 10),
+    }),
+    onSuccess: (property) => {
+      const initialData = buildAnalysisFromEstimation({ mode, ...values }, property.id);
+      // Persist before navigating so a return/reload reuses this property.
+      writeEstimationDraft(userId, { property, initialData, mode }, property.id);
+      writeEstimationDraft(userId, { mode, values, propertyDetails, createdProperty: property });
+      setCreatedProperty(property);
+      queryClient.setQueryData(['property', property.id], property);
+      queryClient.invalidateQueries({ queryKey: ['properties'] });
+      queryClient.invalidateQueries({ queryKey: ['nav-alert-properties'] });
+      void recordAuditLog({
+        eventType: 'property_created', targetType: 'property', targetId: property.id,
+        targetLabel: property.nom_bien, metadata: { source: 'test_estimation' },
+      }).catch((error) => console.warn('[Estimation] audit log failed:', error));
+      toast.success('Bien créé. Complétez maintenant son analyse.');
+      setDialogOpen(false);
+      continueAnalysis(property);
+    },
+    onError: (error) => {
+      console.error('[Estimation] property creation failed:', error);
+      setCreationError('Impossible de créer le bien. Vos informations sont conservées, vous pouvez réessayer.');
+    },
+    onSettled: () => { creationInFlight.current = false; },
+  });
+
+  const handleCreate = (event) => {
+    event.preventDefault();
+    if (creationInFlight.current || !canCreate || !result) return;
+    if (createdProperty) return continueAnalysis(createdProperty);
+    if (!propertyDetails.nom_bien.trim() || !propertyDetails.ville.trim()) return;
+    creationInFlight.current = true;
+    setCreationError('');
+    createProperty.mutate(propertyDetails);
+  };
+
   const reset = () => {
     setValues(INITIAL_VALUES);
     setMode('price');
+    setPropertyDetails(INITIAL_PROPERTY);
+    setCreatedProperty(null);
+    setCreationError('');
   };
 
   return (
@@ -28,18 +111,18 @@ export default function TestEstimation() {
           <p className="mt-1 text-sm text-muted-foreground">Un prix ou un rendement, en quelques secondes.</p>
         </div>
         <Button variant="ghost" onClick={reset} className="gap-2">
-          <RotateCcw className="h-4 w-4" /> Réinitialiser
+          <RotateCcw className="h-4 w-4" /> {createdProperty ? 'Nouvelle estimation' : 'Réinitialiser'}
         </Button>
       </div>
 
       <section className="rounded-xl border border-border bg-card p-4 sm:p-6">
         <h2 className="mb-3 text-sm font-medium">Que souhaitez-vous calculer ?</h2>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" role="group" aria-label="Scénario d'estimation">
-          <Button variant={calculatingPrice ? 'default' : 'outline'} aria-pressed={calculatingPrice}
+          <Button disabled={!!createdProperty} variant={calculatingPrice ? 'default' : 'outline'} aria-pressed={calculatingPrice}
             onClick={() => setMode('price')} className="h-auto min-h-12 whitespace-normal py-3">
             Estimer le prix du bien
           </Button>
-          <Button variant={!calculatingPrice ? 'default' : 'outline'} aria-pressed={!calculatingPrice}
+          <Button disabled={!!createdProperty} variant={!calculatingPrice ? 'default' : 'outline'} aria-pressed={!calculatingPrice}
             onClick={() => setMode('yield')} className="h-auto min-h-12 whitespace-normal py-3">
             Calculer le rendement brut
           </Button>
@@ -47,7 +130,7 @@ export default function TestEstimation() {
       </section>
 
       <div className="grid items-start gap-6 md:grid-cols-2">
-        <section className="space-y-5 rounded-xl border border-border bg-card p-4 sm:p-6">
+        <fieldset disabled={!!createdProperty} className="min-w-0 space-y-5 rounded-xl border border-border bg-card p-4 sm:p-6">
           <h2 className="font-heading font-semibold">Vos paramètres</h2>
           <EstimationInput id="estimation-rent" label="Revenu locatif annuel" unit="CHF / an"
             value={values.rent} onChange={set('rent')} placeholder="Ex. 100000"
@@ -64,7 +147,7 @@ export default function TestEstimation() {
               value={values.price} onChange={set('price')} placeholder="Ex. 2000000"
               hint="Prix d'acquisition envisagé." />
           )}
-        </section>
+        </fieldset>
 
         <section className="min-w-0 space-y-5 rounded-xl border border-primary/30 bg-card p-4 sm:p-6" aria-live="polite" aria-atomic="true">
           <div className="flex items-center gap-2 text-primary">
@@ -88,6 +171,21 @@ export default function TestEstimation() {
                 <ResultLine label="Rendement après charges" value={formatPercent(result.yieldAfterCharges)} />
               </dl>
               <p className="text-xs text-muted-foreground">Après charges opérationnelles uniquement, avant financement et impôts.</p>
+              {createdProperty ? (
+                <div className="space-y-3 rounded-lg bg-muted/50 p-3">
+                  <p className="text-sm">Bien créé : <strong>{createdProperty.nom_bien}</strong> — {createdProperty.ville}. Vous pouvez reprendre son analyse ou démarrer une nouvelle estimation.</p>
+                  {canContinue && (
+                    <Button onClick={() => continueAnalysis(createdProperty)} className="w-full gap-2">
+                      <ArrowRight className="h-4 w-4" />
+                      {readEstimationDraft(userId, createdProperty.id)?.analysisId ? 'Voir l’analyse enregistrée' : 'Reprendre l’analyse'}
+                    </Button>
+                  )}
+                </div>
+              ) : canCreate && (
+                <Button onClick={() => setDialogOpen(true)} className="h-auto min-h-12 w-full gap-2 whitespace-normal py-3">
+                  <Plus className="h-4 w-4 shrink-0" /> Créer un bien et son analyse
+                </Button>
+              )}
             </>
           ) : (
             <p className="py-6 text-sm text-muted-foreground">Renseignez les paramètres pour afficher votre estimation. Le résultat se met à jour automatiquement.</p>
@@ -99,6 +197,42 @@ export default function TestEstimation() {
           </div>
         </section>
       </div>
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!creationInFlight.current) setDialogOpen(open); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Créer le bien</DialogTitle>
+            <DialogDescription>Renseignez le nom et la ville. Votre estimation sera reprise dans le formulaire d’analyse à compléter.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <fieldset disabled={createProperty.isPending} className="space-y-4">
+              {[
+                { key: 'nom_bien', label: 'Nom du bien *', placeholder: 'Ex. Résidence du Lac', required: true },
+                { key: 'ville', label: 'Ville *', placeholder: 'Ex. Lausanne', required: true },
+                { key: 'adresse', label: 'Adresse (facultatif)', placeholder: 'Rue et numéro' },
+              ].map((field) => (
+                <div key={field.key} className="space-y-2">
+                  <Label htmlFor={`estimation-property-${field.key}`}>{field.label}</Label>
+                  <Input id={`estimation-property-${field.key}`} value={propertyDetails[field.key]}
+                    onChange={(event) => setPropertyDetails((current) => ({ ...current, [field.key]: event.target.value }))}
+                    required={field.required} placeholder={field.placeholder} className="h-12" />
+                </div>
+              ))}
+            </fieldset>
+            <p className="text-xs text-muted-foreground">
+              {calculatingPrice ? 'Le prix calculé est un prix cible à confirmer avec le vendeur. ' : ''}
+              Le bien sera créé maintenant ; l’analyse sera enregistrée après validation du formulaire suivant.
+            </p>
+            {creationError && <p role="alert" className="text-sm text-destructive">{creationError}</p>}
+            <DialogFooter className="gap-2">
+              <Button type="button" variant="outline" disabled={createProperty.isPending} onClick={() => setDialogOpen(false)}>Annuler</Button>
+              <Button type="submit" disabled={createProperty.isPending || !canCreate || !result || !propertyDetails.nom_bien.trim() || !propertyDetails.ville.trim()} className="gap-2">
+                {createProperty.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                {createProperty.isPending ? 'Création du bien…' : 'Continuer vers l’analyse'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
