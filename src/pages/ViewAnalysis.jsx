@@ -104,30 +104,9 @@ export default function ViewAnalysis() {
       </div>
 
       <div className="flex justify-end">
-        <div className="inline-flex rounded-lg border border-border bg-card p-1">
-          <button
-            type="button"
-            onClick={() => setEssentialsView(false)}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              !essentialsView
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Complète
-          </button>
-          <button
-            type="button"
-            onClick={() => setEssentialsView(true)}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              essentialsView
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Essentielle
-          </button>
-        </div>
+        <Button type="button" variant="outline" onClick={() => setEssentialsView(true)}>
+          Simplifié
+        </Button>
       </div>
 
       <div className="bg-card rounded-xl border border-border p-6">
