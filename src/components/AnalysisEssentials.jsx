@@ -110,12 +110,11 @@ export default function AnalysisEssentials({
 
     const rendementBrut = prix > 0 ? (loyer / prix) * 100 : 0;
     const rendementNetFP = apport > 0 ? (revenuDistribue / apport) * 100 : 0;
-    const scoreGlobal = Math.min(100, Math.max(0,
-      Math.min(rendementBrut / 4 * 60, 85) +
-      Math.min(rendementNetFP / 15 * 25, 25) +
-      15 +
-      5
-    ));
+    const scoreRendementBrut = rendementBrut <= 4
+      ? rendementBrut / 4 * 60
+      : 60 + (rendementBrut - 4) / 4 * 25;
+    const scoreRendementNetFP = Math.min(Math.max(rendementNetFP / 15 * 5, 0), 5);
+    const scoreGlobal = Math.min(100, Math.max(0, scoreRendementBrut + scoreRendementNetFP + 15 + 5));
 
     return {
       prix, loyer, charges, chargesPct, apport, apportPct, taux, duree, fraisAcquisition, fraisPct, travaux,
