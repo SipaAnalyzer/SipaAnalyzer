@@ -85,14 +85,14 @@ export default function AnalysisEssentials({
 
   const computed = useMemo(() => {
     const formData = {
-      prix_bien: form.prix_bien,
-      revenus_locatifs: form.revenus_locatifs,
-      charges_pct: form.charges_pct,
-      apport_pct: form.apport_pct,
-      taux_hypotheque: form.taux_hypotheque,
-      duree_pret: form.duree_pret,
-      frais_acquisition_pct: form.frais_acquisition_pct,
-      travaux: form.travaux,
+      prix_bien: parseNumber(form.prix_bien),
+      revenus_locatifs: parseNumber(form.revenus_locatifs),
+      charges_pct: parseNumber(form.charges_pct),
+      apport_pct: parseNumber(form.apport_pct),
+      taux_hypotheque: parseNumber(form.taux_hypotheque),
+      duree_pret: parseNumber(form.duree_pret),
+      frais_acquisition_pct: parseNumber(form.frais_acquisition_pct),
+      travaux: parseNumber(form.travaux),
     };
     const calc = calculateSimplifiedAnalysis(formData);
 
