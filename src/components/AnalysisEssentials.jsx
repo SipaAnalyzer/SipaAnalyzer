@@ -109,7 +109,7 @@ export default function AnalysisEssentials({
     const revenuDistribue = revenuNet - impot;
 
     const rendementBrut = prix > 0 ? (loyer / prix) * 100 : 0;
-    const rendementNetFP = apport > 0 ? (revenuDistribue / apport) * 100 : 0;
+    const rendementNetFP = prix > 0 ? (revenuNet / prix) * 100 : 0;
     const scoreRendementBrut = rendementBrut <= 4
       ? rendementBrut / 4 * 60
       : 60 + (rendementBrut - 4) / 4 * 25;
