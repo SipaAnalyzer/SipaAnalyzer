@@ -25,10 +25,10 @@ const FIELD_CONFIG = [
 ];
 
 const KPI_CONFIG = [
-  { key: 'score_global', label: 'Score global', fmt: (v) => `${Math.round(v || 0)}/100`, icon: TrendingUp, thresholds: [60, 40] },
-  { key: 'rendement_net_fonds_propres', label: 'Rend. net/FP', fmt: formatPercent, icon: TrendingUp, thresholds: [5, 3] },
-  { key: 'revenu_distribue', label: 'Cash-flow/an', fmt: formatCHF, icon: DollarSign, thresholds: [0, -10000] },
-  { key: 'rendement_brut', label: 'Rend. brut', fmt: formatPercent, icon: Percent, thresholds: [5, 3] },
+  { key: 'scoreGlobal', label: 'Score global', fmt: (v) => `${Math.round(v || 0)}/100`, icon: TrendingUp, thresholds: [60, 40] },
+  { key: 'rendementNetFP', label: 'Rend. net/FP', fmt: formatPercent, icon: TrendingUp, thresholds: [5, 3] },
+  { key: 'revenuDistribue', label: 'Cash-flow/an', fmt: formatCHF, icon: DollarSign, thresholds: [0, -10000] },
+  { key: 'rendementBrut', label: 'Rend. brut', fmt: formatPercent, icon: Percent, thresholds: [5, 3] },
   { key: 'impot', label: 'Impôt estimé/an', fmt: formatCHF, icon: AlertCircle, thresholds: [0, -5000] },
 ];
 
