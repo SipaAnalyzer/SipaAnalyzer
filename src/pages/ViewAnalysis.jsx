@@ -1,8 +1,9 @@
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { formatCHF, formatPercent, normalizeAnalysis } from '../utils/calculations';
-import { getEssentialsViewForAnalysis } from '../utils/simplifiedAnalysis';
+import { getEssentialsViewForAnalysis, getSavedEssentialsSnapshot } from '../utils/simplifiedAnalysis';
+import AnalysisEssentials from '../components/AnalysisEssentials';
 import { formatSipaLabel, formatSipaValue, getSipaDisplayGroups, getSipaDisplayValues, syncSipaDataWithAnalysisFields } from '../utils/excelImport';
 import { exportAnalysisPdf } from '../utils/pdfExports';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -17,6 +18,7 @@ import moment from 'moment';
 
 export default function ViewAnalysis() {
   const { analysisId } = useParams();
+  const navigate = useNavigate();
   const { permissions, isAdmin } = usePermissions();
   const canEditAnalysis = isAdmin || permissions.can_edit_analysis;
 
@@ -63,6 +65,19 @@ export default function ViewAnalysis() {
   }
 
   const essentials = essentialsView ? getEssentialsViewForAnalysis(analysisRaw, property) : null;
+
+  if (essentialsView) {
+    return (
+      <AnalysisEssentials
+        key={analysisRaw.id}
+        propertyId={analysisRaw.property_id}
+        property={property}
+        savedSnapshot={getSavedEssentialsSnapshot(analysisRaw, property)}
+        onBack={() => navigate(`/property/${analysisRaw.property_id}`)}
+        onSwitchToFull={() => setEssentialsView(false)}
+      />
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">

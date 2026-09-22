@@ -99,6 +99,37 @@ export function getEssentialsViewForAnalysis(analysisRaw, property) {
     cashFlowAnnuel: Number(calc.revenu_distribue || 0),
     scoreGlobal: Number(calc.score_global || 0),
     note: calc.note,
+    prixTotal: calc.prix_total,
+  };
+}
+
+export function getSavedEssentialsSnapshot(analysis, property) {
+  const result = getEssentialsViewForAnalysis(analysis, property);
+  if (!result) return null;
+  const percent = (amount, base) => base > 0 ? amount / base * 100 : 0;
+  const chargesPct = percent(result.chargesAnnuelles, result.loyerAnnuel);
+  const apportPct = percent(result.apportPersonnel, result.prixBien);
+  const taux = result.emprunt > 0 ? percent(result.interetsAnnuels, result.emprunt) : 0;
+  // Legacy analyses have no reliable acquisition-fee percentage or loan duration.
+  // Keep unknown inputs empty rather than inventing defaults or reclassifying costs.
+  const fraisPct = analysis.frais_acquisition_pct ?? null;
+  const travaux = Number(analysis.construction ?? analysis.travaux ?? 0);
+  const duree = analysis.duree_pret ?? null;
+  return {
+    inputs: {
+      prix_bien: result.prixBien, revenus_locatifs: result.loyerAnnuel,
+      charges_pct: chargesPct, apport_pct: apportPct, taux_hypotheque: taux,
+      duree_pret: duree, frais_acquisition_pct: fraisPct, travaux,
+    },
+    values: {
+      ...result,
+      prix: result.prixBien, loyer: result.loyerAnnuel,
+      charges: result.chargesAnnuelles, chargesPct: chargesPct / 100,
+      apport: result.apportPersonnel, apportPct: apportPct / 100,
+      hypotheque: result.emprunt, taux, duree: duree ?? '—', travaux,
+      fraisAcquisition: fraisPct == null ? null : result.prixBien * Number(fraisPct) / 100,
+      impot: result.impotEstime, revenuDistribue: result.cashFlowAnnuel,
+    },
   };
 }
 

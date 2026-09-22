@@ -56,6 +56,7 @@ export default function AnalysisEssentials({
   propertyId,
   property,
   initialData = {},
+  savedSnapshot,
   onBack,
   onSwitchToFull,
 }) {
@@ -63,6 +64,11 @@ export default function AnalysisEssentials({
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState(() => {
+    if (savedSnapshot) {
+      return Object.fromEntries(FIELD_CONFIG.map((field) => [
+        field.key, formatInput(savedSnapshot.inputs[field.key], field.unit),
+      ]));
+    }
     const defaults = {};
     FIELD_CONFIG.forEach((f) => {
       let val = initialData?.[f.key];
@@ -84,6 +90,7 @@ export default function AnalysisEssentials({
   const [calculationDetail, setCalculationDetail] = useState(false);
 
   const computed = useMemo(() => {
+    if (savedSnapshot) return savedSnapshot.values;
     const formData = {
       prix_bien: parseNumber(form.prix_bien),
       revenus_locatifs: parseNumber(form.revenus_locatifs),
@@ -127,7 +134,7 @@ export default function AnalysisEssentials({
       rendementNet: calc.rendementNet,
       scoreGlobal,
     };
-  }, [form]);
+  }, [form, savedSnapshot]);
 
   const kpis = useMemo(() => KPI_CONFIG.map((k) => {
     const val = computed[k.key];
@@ -148,6 +155,7 @@ export default function AnalysisEssentials({
   });
 
   const handleSubmit = () => {
+    if (savedSnapshot) return;
     const payload = {
       property_id: propertyId,
       statut: 'en_cours',
@@ -211,6 +219,7 @@ export default function AnalysisEssentials({
                 value={form[field.key]}
                 onChange={(v) => setForm((prev) => ({ ...prev, [field.key]: v }))}
                 computed={computed}
+                readOnly={!!savedSnapshot}
               />
             ))}
           </div>
@@ -233,17 +242,17 @@ export default function AnalysisEssentials({
                 {calculationDetail ? 'Masquer' : 'Détail'} du calcul
               </Button>
               {calculationDetail && (
-                <CalculationDetail computed={computed} form={form} />
+                <CalculationDetail computed={computed} saved={!!savedSnapshot} />
               )}
             </div>
           </section>
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onBack} className="flex-1">Annuler</Button>
-            <Button onClick={handleSubmit} disabled={create.isPending} className="flex-1 gap-2">
+            <Button variant="outline" onClick={onBack} className="flex-1">{savedSnapshot ? 'Retour au bien' : 'Annuler'}</Button>
+            {!savedSnapshot && <Button onClick={handleSubmit} disabled={create.isPending} className="flex-1 gap-2">
               {create.isPending && <Save className="h-4 w-4 animate-spin" />}
               {create.isPending ? 'Enregistrement…' : 'Enregistrer l\'analyse'}
-            </Button>
+            </Button>}
           </div>
         </aside>
       </div>
@@ -251,7 +260,7 @@ export default function AnalysisEssentials({
   );
 }
 
-function EssentialsInput({ field, value, onChange, computed }) {
+function EssentialsInput({ field, value, onChange, computed, readOnly }) {
   const isPct = field.unit === '%';
   const isYears = field.unit === 'ans';
   const displayValue = value === '' ? '' : value;
@@ -263,7 +272,7 @@ function EssentialsInput({ field, value, onChange, computed }) {
   const hint = field.key === 'charges_pct' ? `≈ ${formatCHF(computed.charges)}/an` :
     field.key === 'apport_pct' ? `≈ ${formatCHF(computed.apport)}` :
     field.key === 'taux_hypotheque' ? `≈ ${formatCHF(Math.round(computed.interetsAnnuels))} intérêt/an` :
-    field.key === 'frais_acquisition_pct' ? `≈ ${formatCHF(computed.fraisAcquisition)}` :
+    field.key === 'frais_acquisition_pct' ? (computed.fraisAcquisition == null ? '' : `≈ ${formatCHF(computed.fraisAcquisition)}`) :
     field.key === 'travaux' ? 'Montant des rénovations' : '';
 
   return (
@@ -277,8 +286,9 @@ function EssentialsInput({ field, value, onChange, computed }) {
           type="text"
           inputMode="decimal"
           value={displayValue}
+          readOnly={readOnly}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={field.defaultPct ? `Défaut: ${field.defaultPct}${field.unit}` : ''}
+          placeholder={readOnly ? 'Non renseigné' : field.defaultPct ? `Défaut: ${field.defaultPct}${field.unit}` : ''}
           className={`h-12 bg-background text-base pr-16 ${invalid ? 'border-destructive' : 'border-border'}`}
           aria-invalid={invalid}
         />
@@ -314,13 +324,14 @@ function KpiCard({ kpi, detail, computed }) {
   );
 }
 
-function CalculationDetail({ computed, form }) {
+function CalculationDetail({ computed, saved }) {
   return (
     <div className="mt-3 space-y-2 text-xs text-muted-foreground font-mono bg-muted/50 rounded p-3">
-      <p><strong>Prix total :</strong> {formatCHF(computed.prixTotal)} (prix + frais {formatCHF(computed.fraisAcquisition)} + travaux {formatCHF(computed.travaux)})</p>
+      <p><strong>Prix total :</strong> {formatCHF(computed.prixTotal)} {!saved && <>(prix + frais {formatCHF(computed.fraisAcquisition)} + travaux {formatCHF(computed.travaux)})</>}</p>
       <p><strong>Apport :</strong> {formatCHF(computed.apport)} ({Math.round(computed.apportPct * 100)} %)</p>
       <p><strong>Emprunt :</strong> {formatCHF(computed.hypotheque)} @ {computed.taux.toFixed(1)} % sur {computed.duree} ans</p>
-      <p><strong>Loyer :</strong> {formatCHF(computed.loyer)} − Charges {formatCHF(computed.charges)} ({Math.round(computed.chargesPct * 100)} %) = {formatCHF(computed.loyer - computed.charges)}</p>
+      <p><strong>Loyer :</strong> {formatCHF(computed.loyer)} — Charges {formatCHF(computed.charges)} ({Math.round(computed.chargesPct * 100)} %)</p>
+      {saved && <p>Lecture de l’analyse enregistrée : les frais, la gestion et les postes personnalisés du modèle complet restent inclus dans ses résultats.</p>}
       <p><strong>Revenu net :</strong> {formatCHF(computed.revenuNet)} − Impôt {formatCHF(computed.impot)} = {formatCHF(computed.revenuDistribue)}</p>
       <p><strong>Rendement brut :</strong> {formatPercent(computed.rendementBrut)}</p>
       <p><strong>Rendement net :</strong> {formatCHF(computed.revenuNet)} / {formatCHF(computed.prix)} = {formatPercent(computed.rendementNet)}</p>
