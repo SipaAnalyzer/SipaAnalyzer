@@ -157,9 +157,12 @@ function EstimationWorkspace({ userId }) {
         </fieldset>
 
         <section className="min-w-0 space-y-5 rounded-xl border border-primary/30 bg-card p-4 sm:p-6" aria-live="polite" aria-atomic="true">
-          <div className="flex items-center gap-2 text-primary">
-            <Calculator className="h-5 w-5" />
-            <h2 className="font-heading font-semibold">{calculatingPrice ? 'Prix du bien estimé' : 'Rendement brut estimé'}</h2>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2 text-primary">
+              <Calculator className="h-5 w-5 shrink-0" />
+              <h2 className="font-heading font-semibold">{calculatingPrice ? 'Prix du bien estimé' : 'Rendement brut estimé'}</h2>
+            </div>
+            {result && <YieldIndicator grossYield={result.grossYield} />}
           </div>
           {result ? (
             <>
@@ -171,7 +174,6 @@ function EstimationWorkspace({ userId }) {
                   ? `Pour un rendement brut de ${formatPercent(result.grossYield)}.`
                   : `Pour un prix du bien de ${formatCHF(result.price)}.`}
               </p>
-              <YieldIndicator grossYield={result.grossYield} />
               {suggestion && (
                 <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
                   <p className="font-medium">Pour atteindre {formatPercent(suggestion.targetYield)} de rendement brut :</p>
@@ -263,7 +265,7 @@ function YieldIndicator({ grossYield }) {
   const Icon = indicator.icon;
 
   return (
-    <div className={`flex items-center gap-3 rounded-lg border p-3 ${indicator.style}`}>
+    <div className={`flex shrink-0 items-center rounded-lg border p-2 ${indicator.style}`}>
       <Icon role="img" aria-label={indicator.mood} strokeWidth={1.75} className={`h-10 w-10 shrink-0 ${indicator.color}`} />
     </div>
   );
