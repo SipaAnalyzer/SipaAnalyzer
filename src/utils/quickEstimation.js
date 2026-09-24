@@ -1,3 +1,5 @@
+export const SATISFACTORY_GROSS_YIELD = 4;
+
 // Accept French decimals and Swiss thousands separators on mobile keyboards.
 export function parseEstimationNumber(value) {
   const text = String(value ?? '').trim().replace(/[\s'’]/g, '').replace(',', '.');
@@ -45,4 +47,15 @@ export function buildAnalysisFromEstimation(estimation, propertyId) {
       'Financement, travaux, honoraires et fiscalité à compléter.',
     ].join('\n'),
   };
+}
+
+export function getYieldSuggestion(estimation) {
+  const result = calculateQuickEstimation(estimation);
+  if (!result || result.grossYield >= SATISFACTORY_GROSS_YIELD) return null;
+  const annualRent = parseEstimationNumber(estimation.rent);
+  // Round in the direction that actually reaches the target at whole-CHF precision.
+  const maximumPrice = Math.floor(annualRent * 100 / SATISFACTORY_GROSS_YIELD);
+  const minimumAnnualRent = Math.ceil(result.price * SATISFACTORY_GROSS_YIELD / 100);
+  if (!Number.isFinite(maximumPrice) || !Number.isFinite(minimumAnnualRent)) return null;
+  return { targetYield: SATISFACTORY_GROSS_YIELD, maximumPrice, minimumAnnualRent };
 }

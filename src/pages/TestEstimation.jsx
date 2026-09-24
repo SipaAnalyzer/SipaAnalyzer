@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { formatCHF, formatPercent } from '@/utils/calculations';
-import { buildAnalysisFromEstimation, calculateQuickEstimation, parseEstimationNumber } from '@/utils/quickEstimation';
+import { buildAnalysisFromEstimation, calculateQuickEstimation, parseEstimationNumber, getYieldSuggestion, SATISFACTORY_GROSS_YIELD } from '@/utils/quickEstimation';
 import { readEstimationDraft, resolveEstimationAnalysisDraft, writeEstimationDraft } from '@/utils/estimationDraft';
 
 const INITIAL_VALUES = { rent: '', chargesPercent: '15', price: '', grossYield: '' };
@@ -38,6 +38,7 @@ function EstimationWorkspace({ userId }) {
   const [creationError, setCreationError] = useState('');
   const creationInFlight = useRef(false);
   const result = calculateQuickEstimation({ mode, ...values });
+  const suggestion = getYieldSuggestion({ mode, ...values });
   const calculatingPrice = mode === 'price';
   const set = (key) => (event) => setValues((current) => ({ ...current, [key]: event.target.value }));
 
@@ -171,6 +172,16 @@ function EstimationWorkspace({ userId }) {
                   : `Pour un prix du bien de ${formatCHF(result.price)}.`}
               </p>
               <YieldIndicator grossYield={result.grossYield} />
+              {suggestion && (
+                <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                  <p className="font-medium">Pour atteindre {formatPercent(suggestion.targetYield)} de rendement brut :</p>
+                  <ul className="list-disc space-y-1 pl-5">
+                    <li>À loyer annuel inchangé, viser un prix d’achat de <strong>{formatCHF(suggestion.maximumPrice)}</strong> maximum.</li>
+                    <li>Ou, à prix inchangé{calculatingPrice ? ' (prix estimé ci-dessus)' : ''}, viser un loyer annuel de <strong>{formatCHF(suggestion.minimumAnnualRent)}</strong> minimum.</li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground">Objectifs indicatifs, à vérifier selon le marché et les baux. Rendement avant charges, financement et impôts.</p>
+                </div>
+              )}
               <dl className="space-y-3 border-t border-border pt-4 text-sm">
                 <ResultLine label="Charges opérationnelles / an" value={formatCHF(result.charges)} />
                 <ResultLine label="Revenu après charges / an" value={formatCHF(result.incomeAfterCharges)} />
@@ -246,7 +257,7 @@ function EstimationWorkspace({ userId }) {
 function YieldIndicator({ grossYield }) {
   const indicator = grossYield < 3
     ? { icon: Frown, color: 'text-red-500', mood: 'Pas content', label: 'Rendement brut inférieur à 3 %', style: 'border-red-500/30 bg-red-500/10' }
-    : grossYield >= 4
+    : grossYield >= SATISFACTORY_GROSS_YIELD
       ? { icon: Smile, color: 'text-emerald-500', mood: 'Content', label: 'Rendement brut supérieur ou égal à 4 %', style: 'border-emerald-500/30 bg-emerald-500/10' }
       : { icon: Meh, color: 'text-orange-500', mood: 'Neutre', label: 'Rendement brut de 3 % à moins de 4 %', style: 'border-orange-500/30 bg-orange-500/10' };
   const Icon = indicator.icon;
