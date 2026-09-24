@@ -244,11 +244,11 @@ function EstimationWorkspace({ userId }) {
 }
 
 function YieldIndicator({ grossYield }) {
-  const indicator = grossYield < 4.5
-    ? { icon: Frown, color: 'text-red-500', mood: 'Pas content', label: 'Rendement brut inférieur à 4,5 %', style: 'border-red-500/30 bg-red-500/10' }
-    : grossYield > 5.5
-      ? { icon: Smile, color: 'text-emerald-500', mood: 'Content', label: 'Rendement brut supérieur à 5,5 %', style: 'border-emerald-500/30 bg-emerald-500/10' }
-      : { icon: Meh, color: 'text-orange-500', mood: 'Neutre', label: 'Rendement brut entre 4,5 % et 5,5 % inclus', style: 'border-orange-500/30 bg-orange-500/10' };
+  const indicator = grossYield < 3
+    ? { icon: Frown, color: 'text-red-500', mood: 'Pas content', label: 'Rendement brut inférieur à 3 %', style: 'border-red-500/30 bg-red-500/10' }
+    : grossYield >= 4
+      ? { icon: Smile, color: 'text-emerald-500', mood: 'Content', label: 'Rendement brut supérieur ou égal à 4 %', style: 'border-emerald-500/30 bg-emerald-500/10' }
+      : { icon: Meh, color: 'text-orange-500', mood: 'Neutre', label: 'Rendement brut de 3 % à moins de 4 %', style: 'border-orange-500/30 bg-orange-500/10' };
   const Icon = indicator.icon;
 
   return (
