@@ -265,7 +265,6 @@ function YieldIndicator({ grossYield }) {
   return (
     <div className={`flex items-center gap-3 rounded-lg border p-3 ${indicator.style}`}>
       <Icon role="img" aria-label={indicator.mood} strokeWidth={1.75} className={`h-10 w-10 shrink-0 ${indicator.color}`} />
-      <p className="text-sm font-medium">{indicator.label}</p>
     </div>
   );
 }
